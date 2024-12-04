@@ -15,21 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     const audioContext = new (window.AudioContext || window.webkitAudioContext)(); // Web Audio API context
-
-    // Add Accompaniment Toggle Button
-    const accompanimentToggle = document.createElement("button");
-    accompanimentToggle.textContent = "Accompaniment OFF";
-    accompanimentToggle.classList.add("accompaniment-toggle");
-    document.body.appendChild(accompanimentToggle);
-
-    let isAccompanimentOn = false;
-
-    // Toggle accompaniment state
-    accompanimentToggle.addEventListener("click", () => {
-        isAccompanimentOn = !isAccompanimentOn;
-        accompanimentToggle.textContent = isAccompanimentOn ? "Accompaniment ON" : "Accompaniment OFF";
-    });
-
+    
     // Define sounds for each key with dynamic paths
     const keySounds = {
         1: ["1CCPiano.mp3"], 2: ["2DDPiano.mp3"], 3: ["3FFPiano.mp3"], 4: ["4GGPiano.mp3"],
@@ -67,6 +53,7 @@ document.addEventListener("DOMContentLoaded", () => {
     for (let index = 1; index <= 24; index++) {
         const keyDiv = document.createElement("div");
         keyDiv.classList.add("key", index <= 10 ? "black-key" : "white-key");
+        keyDiv.setAttribute("data-key", index); // Add a data-key attribute
 
         keyDiv.addEventListener("click", () => {
             if (audioContext.state === "suspended") audioContext.resume();
@@ -85,6 +72,17 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
 
+        // Add touchstart and touchend listeners for mobile interaction
+        keyDiv.addEventListener("touchstart", (event) => {
+            event.preventDefault(); // Prevent default touch actions like scrolling
+            handleTouchEvent(event, index);
+        });
+
+        keyDiv.addEventListener("touchend", (event) => {
+            event.preventDefault();
+            handleTouchEvent(event, index, true);
+        });
+
         pianoContainer.appendChild(keyDiv);
     }
 
@@ -96,4 +94,38 @@ document.addEventListener("DOMContentLoaded", () => {
             audioContext.resume().catch(err => console.error("Error resuming AudioContext:", err));
         }
     });
+
+    // Handle touch events for each key
+    function handleTouchEvent(event, key, isEnd = false) {
+        if (isEnd) {
+            removeKeyVisual(key); // Remove visual effect
+        } else {
+            addKeyVisual(key); // Add visual effect
+            if (audioContext.state === "suspended") audioContext.resume();
+
+            // Play sound when touched
+            if (audioFiles[key]) {
+                Promise.all(audioFiles[key]).then(bufferList => {
+                    bufferList.forEach(buffer => {
+                        const source = audioContext.createBufferSource();
+                        source.buffer = buffer;
+                        source.connect(audioContext.destination);
+                        source.start(0);
+                    });
+                }).catch(err => console.error("Error playing sound:", err));
+            }
+        }
+    }
+
+    // Add visual effect to the pressed key
+    function addKeyVisual(key) {
+        const keyElement = document.querySelector(`.key[data-key="${key}"]`);
+        if (keyElement) keyElement.classList.add("pressed");
+    }
+
+    // Remove visual effect when key is released
+    function removeKeyVisual(key) {
+        const keyElement = document.querySelector(`.key[data-key="${key}"]`);
+        if (keyElement) keyElement.classList.remove("pressed");
+    }
 });

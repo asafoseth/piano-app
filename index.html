@@ -5,13 +5,36 @@
     <title>Piano App</title>
     
     <!-- Style CSS -->
-     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css">
   </head>
   <body>
     <div class="main">
         <div class="container">
             <h1>Piano App</h1>
-            <div class="piano-container"></div>
+
+            <!-- Container for the Chord Mode toggle button and key switcher buttons -->
+            <div class="controls-container">
+              <!-- Add the chord mode toggle button -->
+              <button id="chord-mode-toggle">Chord Mode: OFF</button>
+
+            <!-- Key switcher buttons -->
+            <div class="key-switcher-container">
+                <button class="key-switch-button" id="key-C">C</button>
+                <button class="key-switch-button" id="key-Csharp">C#</button>
+                <button class="key-switch-button" id="key-D">D</button>
+                <button class="key-switch-button" id="key-Dsharp">D#</button>
+                <button class="key-switch-button" id="key-E">E</button>
+                <button class="key-switch-button" id="key-F">F</button>
+                <button class="key-switch-button" id="key-Fsharp">F#</button>
+                <button class="key-switch-button" id="key-G">G</button>
+                <button class="key-switch-button" id="key-Gsharp">G#</button>
+                <button class="key-switch-button" id="key-A">A</button>
+                <button class="key-switch-button" id="key-Asharp">A#</button>
+                <button class="key-switch-button" id="key-B">B</button>
+            </div>
+            </div>
+            <!-- Container for Piano Keys -->
+            <div class="piano-container" id="keyboard-container"></div>
         </div>
     </div>
     
