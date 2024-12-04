@@ -1,6 +1,20 @@
+import { chordMaps } from './chordMapping.js'; // Import chord maps
+
+/**
+ * Main function to enable chord playing functionality.
+ * Sets up event listeners and handles both single notes and chord mode.
+ * @param {AudioContext} audioContext - Web Audio API context for managing sound.
+ * @param {Object} audioFiles - Preloaded audio buffers for each key.
+ */
 export default function enableChordPlaying(audioContext, audioFiles) {
     const activeKeys = new Set();
     let chordMode = false; // State to track if chord mode is enabled
+    let currentKey = "A"; // Default key
+    let chordMap = chordMaps[currentKey]; // Get the current chord map
+
+    // Log initial state
+    console.log(`Initial Key: ${currentKey}`);
+    console.log(`Initial Chord Map:`, chordMap);
 
     // Map physical keys to piano keys, including 12 invisible bass keys
     const keyMap = {
@@ -12,23 +26,10 @@ export default function enableChordPlaying(audioContext, audioFiles) {
         '7': 31, '8': 32, '9': 33, '0': 34, '-': 35, '=': 36
     };
 
-    // Predefined chords for chord mode
-    const chordMap = {
-        11: [18, 20, 22, 30],
-        12: [16, 19, 21, 31],
-        13: [17, 20, 22, 32], 
-        14: [16, 18, 21, 33],
-        15: [17, 19, 22, 34], 
-        16: [16, 18, 20, 35], 
-        17: [17, 19, 8, 36], 
-        18: [18, 20, 22, 30], 
-        19: [16, 19, 21, 31], 
-        20: [17, 20, 22, 32], 
-        21: [16, 18, 21, 33], 
-        22: [17, 19, 22, 34],
-    };
-
-    // Play the sound for a given key
+    /**
+     * Plays the sound associated with a given key.
+     * @param {number} key - Index of the sound to play.
+     */
     function playSoundForKey(key) {
         if (audioFiles[key]) {
             Promise.all(audioFiles[key]).then(bufferList => {
@@ -45,10 +46,10 @@ export default function enableChordPlaying(audioContext, audioFiles) {
     }
 
     function playChord(keys) {
+        console.log(`Playing chord for keys: ${keys}`);
         keys.forEach(playSoundForKey);
     }
 
-    // Add visual indication
     function addKeyVisual(keyIndex) {
         const keyElement = document.querySelector(`.key:nth-child(${keyIndex})`);
         if (keyElement) keyElement.classList.add("pressed");
@@ -59,7 +60,9 @@ export default function enableChordPlaying(audioContext, audioFiles) {
         if (keyElement) keyElement.classList.remove("pressed");
     }
 
-    // Toggle chord mode
+    /**
+     * Toggles chord mode on or off and updates the UI.
+     */
     function toggleChordMode() {
         chordMode = !chordMode;
         const toggleButton = document.getElementById("chord-mode-toggle");
@@ -68,52 +71,32 @@ export default function enableChordPlaying(audioContext, audioFiles) {
         }
     }
 
-    // Create a toggle button for chord mode
-    function createToggleButton() {
-        const toggleButton = document.createElement("button");
-        toggleButton.id = "chord-mode-toggle";
-        toggleButton.textContent = "Chord Mode: OFF";
-        toggleButton.style.position = "fixed";
-        toggleButton.style.bottom = "20px";
-        toggleButton.style.right = "20px";
-        toggleButton.style.zIndex = "1000";
-        toggleButton.style.padding = "10px 20px";
-        toggleButton.style.backgroundColor = "#ff7f50";
-        toggleButton.style.color = "white";
-        toggleButton.style.border = "none";
-        toggleButton.style.borderRadius = "5px";
-        toggleButton.style.cursor = "pointer";
-        toggleButton.addEventListener("click", toggleChordMode);
-        document.body.appendChild(toggleButton);
+    /**
+     * Switches to a new key and updates the chord map.
+     * Ensures the new key exists in chordMaps and is valid.
+     * @param {string} newKey - Name of the new key (e.g., "C#", "D").
+     */
+    function switchKey(newKey) {
+        // Ensure consistent key format (e.g., replace "#" with "sharp")
+        const formattedKey = newKey.replace("#", "sharp");
+
+        if (chordMaps[formattedKey]) {
+            currentKey = formattedKey;
+            chordMap = chordMaps[currentKey];
+            console.log(`Switched to key: ${currentKey}`);
+            console.log(`Chord Map for ${currentKey}:`, chordMap);
+        } else {
+            console.warn(`Chord map for key "${formattedKey}" not found.`);
+            console.warn("Retaining previous key:", currentKey);
+        }
     }
 
-    // Handle keyboard events
-    window.addEventListener("keydown", (event) => {
-        const key = keyMap[event.key.toLowerCase()];
-        if (!key || activeKeys.has(key)) return;
-
-        activeKeys.add(key);
-
-        if (chordMode && chordMap[key]) {
-            chordMap[key].forEach(addKeyVisual);
-            playChord(chordMap[key]);
-        } else {
-            addKeyVisual(key);
-            playSoundForKey(key);
-        }
-    });
-
-    window.addEventListener("keyup", (event) => {
-        const key = keyMap[event.key.toLowerCase()];
-        if (key) {
-            activeKeys.delete(key);
-
-            if (chordMode && chordMap[key]) {
-                chordMap[key].forEach(removeKeyVisual);
-            } else {
-                removeKeyVisual(key);
-            }
-        }
+    // Add event listeners to key switcher buttons
+    document.querySelectorAll(".key-switch-button").forEach((button) => {
+        button.addEventListener("click", () => {
+            const newKey = button.textContent.trim();
+            switchKey(newKey);
+        });
     });
 
     // Handle touch events for touchscreens
@@ -123,7 +106,7 @@ export default function enableChordPlaying(audioContext, audioFiles) {
         const keyIndex = index + 1;
 
         keyElement.addEventListener("touchstart", (event) => {
-            event.preventDefault(); // Prevent scrolling during touch
+            event.preventDefault();
             if (audioContext.state === "suspended") audioContext.resume();
 
             if (!activeKeys.has(keyIndex)) {
@@ -151,6 +134,33 @@ export default function enableChordPlaying(audioContext, audioFiles) {
         });
     });
 
-    // Create the toggle button on initialization
-    createToggleButton();
+    // Handle keyboard events
+    window.addEventListener("keydown", (event) => {
+        const key = keyMap[event.key.toLowerCase()];
+        if (!key || activeKeys.has(key)) return;
+
+        activeKeys.add(key);
+        if (chordMode && chordMap[key]) {
+            chordMap[key].forEach(addKeyVisual);
+            playChord(chordMap[key]);
+        } else {
+            addKeyVisual(key);
+            playSoundForKey(key);
+        }
+    });
+
+    window.addEventListener("keyup", (event) => {
+        const key = keyMap[event.key.toLowerCase()];
+        if (!key) return;
+
+        activeKeys.delete(key);
+        if (chordMode && chordMap[key]) {
+            chordMap[key].forEach(removeKeyVisual);
+        } else {
+            removeKeyVisual(key);
+        }
+    });
+
+    // Add event listener for the chord mode toggle button
+    document.getElementById("chord-mode-toggle").addEventListener("click", toggleChordMode);
 }
