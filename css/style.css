@@ -97,6 +97,67 @@ body {
     transform: scale(0.95); /* Slightly scale down */
 }
 
+/* Style for the Chord Mode Toggle Button */
+#chord-mode-toggle {
+    background-color: #4CAF50; /* Green background */
+    color: white; /* White text */
+    font-size: 16px; /* Font size */
+    padding: 10px 20px; /* Padding inside the button */
+    border: none; /* Remove border */
+    border-radius: 5px; /* Rounded corners */
+    cursor: pointer; /* Pointer cursor on hover */
+    transition: background-color 0.3s ease; /* Smooth background transition */
+    margin: 10px 10px 10px 0; /* Margin to separate it from key switchers, keep right margin */
+    display: inline-block; /* Inline display for alignment */
+    width: auto; /* Adjust width to content */
+}
+
+/* Hover effect */
+#chord-mode-toggle:hover {
+    background-color: #45a049; /* Darker green on hover */
+}
+
+/* Active (pressed) button effect */
+#chord-mode-toggle:active {
+    background-color: #3e8e41; /* Even darker green when pressed */
+}
+
+/* Focus effect */
+#chord-mode-toggle:focus {
+    outline: none; /* Remove default focus outline */
+    box-shadow: 0 0 5px 2px rgba(0, 128, 0, 0.6); /* Add green shadow on focus */
+}
+
+/* Style for Key Switcher Buttons */
+.key-switcher-container {
+    display: flex;
+    justify-content: center;
+    align-items: center; /* Align buttons in the center vertically */
+    margin-bottom: 20px;
+}
+
+.key-switch-button {
+    margin: 5px;
+    padding: 10px;
+    font-size: 16px;
+    background-color: #333;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+}
+
+.key-switch-button:hover {
+    background-color: #444;
+}
+
+/* Container to align both elements (Chord Mode and Key Switchers) inline */
+.controls-container {
+    display: flex;
+    justify-content: center;
+    align-items: center; /* Ensure the buttons align vertically */
+    flex-wrap: wrap; /* Allow wrapping in case the screen size is small */
+}
+
 @media screen and (max-width: 1000px) {
     .piano-container {
         font-size: 0.7em;
