@@ -17,8 +17,8 @@
               <!-- Add the chord mode toggle button -->
               <button id="chord-mode-toggle">Chord Mode: OFF</button>
 
-            <!-- Key switcher buttons -->
-            <div class="key-switcher-container">
+              <!-- Key switcher buttons -->
+              <div class="key-switcher-container">
                 <button class="key-switch-button" id="key-C">C</button>
                 <button class="key-switch-button" id="key-Csharp">C#</button>
                 <button class="key-switch-button" id="key-D">D</button>
@@ -31,8 +31,17 @@
                 <button class="key-switch-button" id="key-A">A</button>
                 <button class="key-switch-button" id="key-Asharp">A#</button>
                 <button class="key-switch-button" id="key-B">B</button>
+              </div>
+
+              <!-- Transpose Controls -->
+              <div class="transpose-container">
+                <label for="transpose-value">Transpose:</label>
+                <button class="transpose-btn" id="transpose-decrease">-</button>
+                <span id="transpose-value">0</span>
+                <button class="transpose-btn" id="transpose-increase">+</button>
+              </div>
             </div>
-            </div>
+
             <!-- Container for Piano Keys -->
             <div class="piano-container" id="keyboard-container"></div>
         </div>
