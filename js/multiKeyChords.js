@@ -95,9 +95,44 @@ export default function enableChordPlaying(audioContext, audioFiles) {
         }
     }
 
+        // Event listeners for key switcher buttons
+    document.querySelectorAll(".key-switch-button").forEach((button) => {
+        button.addEventListener("click", () => {
+            const newKey = button.textContent.trim();
+            console.log(`Switching to new key: ${newKey}`);
+            switchKey(newKey);
+        });
+    });
+
+    // Event listeners for key switcher buttons
+    document.querySelectorAll(".key-switch-button").forEach((button) => {
+        button.addEventListener("click", () => {
+            const newKey = button.textContent.trim();
+            console.log(`Switching to new key: ${newKey}`);
+            switchKey(newKey);
+        });
+    });
+
     // Define the order of keys for transposition
     const keyOrder = ["A", "Asharp", "B", "C", "Csharp", "D", "Dsharp", "E", "F", "Fsharp", "G", "Gsharp", "A"];
 
+    // Define the order of keys for each chord map
+    const chordMapKeyOrder = {
+    "C": [11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    "Csharp": [1, 2, 14, 3, 4, 5, 11, 6, 7, 21, 8, 9, 10, 18, 12, 13, 15, 16, 17, 19, 20, 22, 23, 24],
+    "D": [12, 13, 3, 15, 16, 17, 1, 19, 20, 8, 22, 23, 24, 6, 2, 14, 4, 5, 11, 7, 21, 9, 10, 18],
+    "Dsharp": [2, 14, 15, 4, 5, 11, 12, 7, 21, 22, 9, 10, 18, 19, 13, 3, 16, 17, 1, 20, 8, 23, 24, 6],
+    "E": [13, 3, 4, 16, 17, 1, 2, 20, 8, 9, 23, 24, 6, 7, 14, 15, 5, 11, 12, 21, 22, 10, 18, 19],
+    "F": [14, 15, 16, 5, 11, 12, 13, 21, 22, 23, 10, 18, 19, 20, 3, 4, 17, 1, 2, 8, 9, 24, 6, 7],
+    "Fsharp": [3, 4, 5, 17, 1, 2, 14, 8, 9, 10, 24, 6, 7, 21, 15, 16, 11, 12, 13, 22, 23, 18, 19, 20],
+    "G": [15, 16, 17, 11, 12, 13, 3, 22, 23, 24, 18, 19, 20, 8, 4, 5, 1, 2, 14, 9, 10, 6, 7, 21],
+    "Gsharp": [4, 5, 11, 1, 2, 14, 15, 9, 10, 18, 6, 7, 21, 22, 16, 17, 12, 13, 3, 23, 24, 19, 20, 8],
+    "A": [16, 17, 1, 12, 13, 3, 4, 23, 24, 6, 19, 20, 8, ,9, 5, 11, 2, 14, 15, 10, 18, 7, 21, 22],
+    "Asharp": [5, 11, 12, 2, 14, 15, 16, 10, 18, 19, 7, 21, 22, 23, 17, 1, 13, 3, 4, 24, 6, 20, 8, 9],
+    "B": [17, 1, 2, 13, 3, 4, 5, 24, 6, 7, 20, 8, 9, 10, 11, 12, 14, 15, 16, 18, 19, 21, 22, 23]
+};
+    
+    
     // Function to transpose the key
     function transposeKey(currentKey, offset) {
         if (!currentKey || typeof offset !== 'number') {
@@ -110,7 +145,7 @@ export default function enableChordPlaying(audioContext, audioFiles) {
         const currentIndex = keyOrder.indexOf(currentKey);
         if (currentIndex === -1) {
             console.log(`Invalid currentKey: ${currentKey}`);
-            return null;  // Exit if the key is not valid
+            return null; // Exit if the key is not valid
         }
 
         let newIndex = (currentIndex + offset) % keyOrder.length;
@@ -121,6 +156,7 @@ export default function enableChordPlaying(audioContext, audioFiles) {
 
         const transposedKey = keyOrder[newIndex];
         console.log(`Transposed key: ${transposedKey}`);
+
         return transposedKey;
     }
 
@@ -143,56 +179,46 @@ export default function enableChordPlaying(audioContext, audioFiles) {
 
         console.log(`Transposed from ${currentKey} to ${transposedKey}`);
 
-        // Get the inner dictionary of the transposed key
-        const transposedChordMap = transposeMaps[transposedKey];
-        if (!transposedChordMap) {
-            console.log(`No chord map found for key: ${transposedKey}`);
+        // Call switchKey with the transposed key to update the chord map
+        switchKey(transposedKey);
+
+        // Get the chord maps
+        const currentChordMap = chordMaps[currentKey];
+        const transposedChordMap = chordMaps[transposedKey];
+
+        if (!currentChordMap || !transposedChordMap) {
+            console.log(`Chord maps not found for one of the keys: ${currentKey} or ${transposedKey}`);
             return;
         }
 
         console.log(`Chord Map for ${transposedKey} (before reassignment):`, transposedChordMap);
 
-        // Extract only the lists (arrays) from the transposed key's chord map
-        const extractedLists = [];
-        for (const innerKey in transposedChordMap) {
-            extractedLists.push(transposedChordMap[innerKey]); // Push the array directly, maintaining their order
-        }
+        // Get the key order arrays
+        const currentKeys = chordMapKeyOrder[currentKey];
+        const transposedKeysOrder = chordMapKeyOrder[transposedKey];
 
-        // Log the extracted lists for confirmation
-        console.log(`Extracted lists from ${transposedKey}:`, extractedLists);
-
-        // Reassign these lists to the current key's chord map
-        const currentChordMap = chordMaps[currentKey];
-        if (!currentChordMap) {
-            console.log(`No chord map found for key: ${currentKey}`);
+        if (!currentKeys || !transposedKeysOrder) {
+            console.log(`Key order not defined for current key: ${currentKey} or transposed key: ${transposedKey}`);
             return;
         }
 
-        // Maintain the order of reassignment
-        let index = 0;
-        for (const innerKey in currentChordMap) {
-            if (extractedLists[index]) {
-                currentChordMap[innerKey] = extractedLists[index];
-                index++;
+        // Extract the lists from the transposed chord map in their defined order
+        const transposedValues = transposedKeysOrder.map(key => transposedChordMap[key]);
+
+        console.log(`Extracted lists from ${transposedKey}:`, transposedValues);
+
+        // Assign to current chord map based on current keys' order
+        currentKeys.forEach((key, index) => {
+            if (transposedValues[index]) {
+                currentChordMap[key] = transposedValues[index];
             } else {
-                console.log(`Warning: No corresponding list for innerKey ${innerKey} in transposed key.`);
+                console.log(`Warning: No corresponding list for innerKey ${key} in transposed key.`);
             }
-        }
-
-        console.log(`Chord Map for ${currentKey} (after reassignment):`, chordMaps[currentKey]);
-        return chordMaps[currentKey];
-    }
-
-
-
-    // Event listeners for key switcher buttons
-    document.querySelectorAll(".key-switch-button").forEach((button) => {
-        button.addEventListener("click", () => {
-            const newKey = button.textContent.trim();
-            console.log(`Switching to new key: ${newKey}`);
-            switchKey(newKey);
         });
-    });
+
+        console.log(`Chord Map for ${currentKey} (after reassignment):`, currentChordMap);
+        return currentChordMap;
+    }
 
     // Handle touch events for touchscreens
     const keys = document.querySelectorAll(".key");
