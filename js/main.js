@@ -10,8 +10,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Define base paths for different types of sounds
     const basePaths = {
-        piano: "./audio/", // Base path for regular piano sounds
-        bass: "./Bass/"    // Base path for bass sounds
+        piano: "./audio/piano-tones/", // Base path for regular piano sounds
+        string: "./audio/string-tones/",   // Base path for bass sounds
+        bass: "./audio/bass-tones/"   // Base path for bass sounds
     };
 
     const audioContext = new (window.AudioContext || window.webkitAudioContext)(); // Web Audio API context
