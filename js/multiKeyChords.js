@@ -1,6 +1,8 @@
-import { chordMaps } from './chordMapping.js'; // Import chord maps
-import { transposeMaps } from './transposeMaps.js';
-// import { transposeKey } from './transpose.js'; // Correct import for named export
+import { chordMaps } from './maps/chordMapping.js'; // Import chord maps
+import { keyMap } from './maps/keyMapping.js';
+import { chordMapKeyOrder } from './maps/chordMapping.js';
+import { lockedKeysMap } from './maps/chordMapping.js';
+import { keyValueMaps } from './maps/chordMapping.js';
 
 /**
  * Main function to enable chord playing functionality.
@@ -20,15 +22,55 @@ export default function enableChordPlaying(audioContext, audioFiles) {
     console.log(`Initial Key: ${currentKey}`);
     console.log(`Initial Chord Map:`, chordMap);
 
-    // Map physical keys to piano keys, including 12 invisible bass keys
-    const keyMap = {
-        q: 1, w: 2, e: 3, r: 4, t: 5, y: 6, u: 7, i: 8, o: 9, p: 10,
-        a: 11, s: 12, d: 13, f: 14, g: 15, h: 16, j: 17, k: 18, l: 19,
-        z: 20, x: 21, c: 22, v: 23, b: 24,
-        // Invisible bass keys
-        '1': 25, '2': 26, '3': 27, '4': 28, '5': 29, '6': 30,
-        '7': 31, '8': 32, '9': 33, '0': 34, '-': 35, '=': 36
-    };
+    function getKeyValue(currentKey, keyNumber) {
+        const currentKeyValueMap = keyValueMaps[currentKey] || {};
+        return currentKeyValueMap[keyNumber] || ""; // Return "" if not found
+    }
+
+    // Function to display locked key labels
+    function showLockedKeyLabels(currentKey) {
+        const lockedKeys = lockedKeysMap[currentKey] || [];
+        
+        // Loop through all keys and add a "locked" visual to those in the lockedKeys list
+        const keys = document.querySelectorAll(".key");
+        keys.forEach((key, index) => {
+            const keyIndex = index + 1; // nth-child starts at 1
+            if (lockedKeys.includes(keyIndex)) {
+                const keyValue = getKeyValue(currentKey, keyIndex); // Get the corresponding value for the current key
+                key.classList.add("locked");
+                key.textContent = keyValue; // Example label
+            } else {
+                key.classList.remove("locked");
+                key.textContent = ""; // Clear any previous labels
+            }
+        });
+    }
+    
+
+    // Function to clear locked key labels
+    function clearLockedKeyLabels() {
+        const labels = document.querySelectorAll('.key-label');
+        labels.forEach(label => label.remove());
+
+        const lockedKeys = document.querySelectorAll('.locked-key');
+        lockedKeys.forEach(key => key.classList.remove('locked-key'));
+    }
+
+    // Function to update visuals when selecting a key
+    function selectKey(keyName) {
+        // Highlight the selected key (optional)
+        document.querySelectorAll('.key').forEach(key => {
+            key.classList.remove('selected-key');
+        });
+
+        const selectedKeyElement = document.querySelector(`.key[data-key='${keyName}']`);
+        if (selectedKeyElement) {
+            selectedKeyElement.classList.add('selected-key');
+        }
+
+        // Show locked keys for the selected key
+        showLockedKeyLabels(keyName);
+    }
 
     /**
      * Plays the sound associated with a given key.
@@ -89,20 +131,14 @@ export default function enableChordPlaying(audioContext, audioFiles) {
             chordMap = chordMaps[currentKey];
             console.log(`Switched to key: ${currentKey}`);
             console.log(`Chord Map for ${currentKey}:`, chordMap);
+
+            // Update visuals for the new key
+            selectKey(formattedKey);
         } else {
             console.warn(`Chord map for key "${formattedKey}" not found.`);
             console.warn("Retaining previous key:", currentKey);
         }
     }
-
-        // Event listeners for key switcher buttons
-    document.querySelectorAll(".key-switch-button").forEach((button) => {
-        button.addEventListener("click", () => {
-            const newKey = button.textContent.trim();
-            console.log(`Switching to new key: ${newKey}`);
-            switchKey(newKey);
-        });
-    });
 
     // Event listeners for key switcher buttons
     document.querySelectorAll(".key-switch-button").forEach((button) => {
@@ -112,113 +148,6 @@ export default function enableChordPlaying(audioContext, audioFiles) {
             switchKey(newKey);
         });
     });
-
-    // Define the order of keys for transposition
-    const keyOrder = ["A", "Asharp", "B", "C", "Csharp", "D", "Dsharp", "E", "F", "Fsharp", "G", "Gsharp", "A"];
-
-    // Define the order of keys for each chord map
-    const chordMapKeyOrder = {
-    "C": [11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-    "Csharp": [1, 2, 14, 3, 4, 5, 11, 6, 7, 21, 8, 9, 10, 18, 12, 13, 15, 16, 17, 19, 20, 22, 23, 24],
-    "D": [12, 13, 3, 15, 16, 17, 1, 19, 20, 8, 22, 23, 24, 6, 2, 14, 4, 5, 11, 7, 21, 9, 10, 18],
-    "Dsharp": [2, 14, 15, 4, 5, 11, 12, 7, 21, 22, 9, 10, 18, 19, 13, 3, 16, 17, 1, 20, 8, 23, 24, 6],
-    "E": [13, 3, 4, 16, 17, 1, 2, 20, 8, 9, 23, 24, 6, 7, 14, 15, 5, 11, 12, 21, 22, 10, 18, 19],
-    "F": [14, 15, 16, 5, 11, 12, 13, 21, 22, 23, 10, 18, 19, 20, 3, 4, 17, 1, 2, 8, 9, 24, 6, 7],
-    "Fsharp": [3, 4, 5, 17, 1, 2, 14, 8, 9, 10, 24, 6, 7, 21, 15, 16, 11, 12, 13, 22, 23, 18, 19, 20],
-    "G": [15, 16, 17, 11, 12, 13, 3, 22, 23, 24, 18, 19, 20, 8, 4, 5, 1, 2, 14, 9, 10, 6, 7, 21],
-    "Gsharp": [4, 5, 11, 1, 2, 14, 15, 9, 10, 18, 6, 7, 21, 22, 16, 17, 12, 13, 3, 23, 24, 19, 20, 8],
-    "A": [16, 17, 1, 12, 13, 3, 4, 23, 24, 6, 19, 20, 8, ,9, 5, 11, 2, 14, 15, 10, 18, 7, 21, 22],
-    "Asharp": [5, 11, 12, 2, 14, 15, 16, 10, 18, 19, 7, 21, 22, 23, 17, 1, 13, 3, 4, 24, 6, 20, 8, 9],
-    "B": [17, 1, 2, 13, 3, 4, 5, 24, 6, 7, 20, 8, 9, 10, 11, 12, 14, 15, 16, 18, 19, 21, 22, 23]
-};
-    
-    
-    // Function to transpose the key
-    function transposeKey(currentKey, offset) {
-        if (!currentKey || typeof offset !== 'number') {
-            console.log("Invalid parameters passed to transposeKey.");
-            return null; // Handle invalid input
-        }
-
-        console.log(`Transpose called with currentKey: ${currentKey} and offset: ${offset}`);
-
-        const currentIndex = keyOrder.indexOf(currentKey);
-        if (currentIndex === -1) {
-            console.log(`Invalid currentKey: ${currentKey}`);
-            return null; // Exit if the key is not valid
-        }
-
-        let newIndex = (currentIndex + offset) % keyOrder.length;
-        // Handle negative wrap-around (e.g., -1 from A should be G#)
-        if (newIndex < 0) {
-            newIndex += keyOrder.length; // Handle negative wrap-around
-        }
-
-        const transposedKey = keyOrder[newIndex];
-        console.log(`Transposed key: ${transposedKey}`);
-
-        return transposedKey;
-    }
-
-    // Function to update the current key with the new transposed key's chord map
-    function updateTransposedKey(currentKey, transposeOffset) {
-        console.log(`updateTransposedKey called with currentKey: ${currentKey} and transposeOffset: ${transposeOffset}`);
-        
-        if (!currentKey || typeof transposeOffset !== 'number') {
-            console.log("Invalid parameters in updateTransposedKey.");
-            return;
-        }
-        
-        // Find the transposed key
-        const transposedKey = transposeKey(currentKey, transposeOffset);
-        
-        if (transposedKey === null) {
-            console.log("Invalid transposed key, aborting");
-            return;
-        }
-
-        console.log(`Transposed from ${currentKey} to ${transposedKey}`);
-
-        // Call switchKey with the transposed key to update the chord map
-        switchKey(transposedKey);
-
-        // Get the chord maps
-        const currentChordMap = chordMaps[currentKey];
-        const transposedChordMap = chordMaps[transposedKey];
-
-        if (!currentChordMap || !transposedChordMap) {
-            console.log(`Chord maps not found for one of the keys: ${currentKey} or ${transposedKey}`);
-            return;
-        }
-
-        console.log(`Chord Map for ${transposedKey} (before reassignment):`, transposedChordMap);
-
-        // Get the key order arrays
-        const currentKeys = chordMapKeyOrder[currentKey];
-        const transposedKeysOrder = chordMapKeyOrder[transposedKey];
-
-        if (!currentKeys || !transposedKeysOrder) {
-            console.log(`Key order not defined for current key: ${currentKey} or transposed key: ${transposedKey}`);
-            return;
-        }
-
-        // Extract the lists from the transposed chord map in their defined order
-        const transposedValues = transposedKeysOrder.map(key => transposedChordMap[key]);
-
-        console.log(`Extracted lists from ${transposedKey}:`, transposedValues);
-
-        // Assign to current chord map based on current keys' order
-        currentKeys.forEach((key, index) => {
-            if (transposedValues[index]) {
-                currentChordMap[key] = transposedValues[index];
-            } else {
-                console.log(`Warning: No corresponding list for innerKey ${key} in transposed key.`);
-            }
-        });
-
-        console.log(`Chord Map for ${currentKey} (after reassignment):`, currentChordMap);
-        return currentChordMap;
-    }
 
     // Handle touch events for touchscreens
     const keys = document.querySelectorAll(".key");
@@ -284,23 +213,4 @@ export default function enableChordPlaying(audioContext, audioFiles) {
 
     // Add event listener for the chord mode toggle button
     document.getElementById("chord-mode-toggle").addEventListener("click", toggleChordMode);
-
-    // Function to update the displayed transpose value
-    function updateTransposeDisplay(offset) {
-        document.getElementById("transpose-value").textContent = offset;
-    }
-
-    // Add event listener for transpose buttons
-    document.getElementById("transpose-increase").addEventListener("click", () => {
-        transposeOffset++;
-        console.log(`Transpose increased. New offset: ${transposeOffset}`);
-        updateTransposeDisplay(transposeOffset); // Update the displayed value
-        updateTransposedKey(currentKey,transposeOffset);
-    });
-    document.getElementById("transpose-decrease").addEventListener("click", () => {
-        transposeOffset--;
-        console.log(`Transpose decreased. New offset: ${transposeOffset}`);
-        updateTransposeDisplay(transposeOffset); // Update the displayed value
-        updateTransposedKey(currentKey,transposeOffset);
-    });
 }
