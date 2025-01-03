@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Volume Control</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #303c48;
+            color: #fff;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            margin-top: 20px;
+        }
+
+        .key-group {
+            margin: 20px;
+            padding: 20px;
+            background-color: #444;
+            border-radius: 8px;
+            width: 90%;
+        }
+
+        .key-group h2 {
+            margin-top: 0;
+        }
+
+        .audio-control {
+            margin: 10px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .audio-control label {
+            flex: 1;
+        }
+
+        .audio-control input[type="range"] {
+            flex: 2;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Audio Volume Control</h1>
+    <div id="controlsContainer"></div>
+
+    <script>
+        // Example manifest for audios
+        const manifest = {
+            A: [
+            "A1 Ominous.mp3",
+            "A2 Adventurous.mp3",
+            "A3 Solemn.mp3",
+            "A4 Uplifting.mp3",
+            "A5 Majestic.mp3",
+            "A6 Magical.mp3",
+            "A7 Foreboding.mp3",
+            "A8 Somber.mp3",
+            "A9 Dramatic.mp3",
+            "A10 Action.mp3",
+            "A11 Sinister.mp3",
+            "A12 Shadowy.mp3",
+            "A13 Nostalgic.mp3",
+            "A14 Dreamy.mp3",
+            "A15 Hypnotic.mp3",
+            "A16 Jubilant.mp3",
+            "A17 Stirring.mp3",
+            "A18 Tender.mp3",
+            "A19 Gentle.mp3",
+            "A20 Curious.mp3"
+            ],
+            Asharp: [
+            "A_sharp1 Ominous.mp3",
+            "A_sharp2 Adventurous.mp3",
+            "A_sharp3 Solemn.mp3",
+            "A_sharp4 Uplifting.mp3",
+            "A_sharp5 Majestic.mp3",
+            "A_sharp6 Magical.mp3",
+            "A_sharp7 Foreboding.mp3",
+            "A_sharp8 Somber.mp3",
+            "A_sharp9 Dramatic.mp3",
+            "A_sharp10 Action.mp3",
+            "A_sharp11 Sinister.mp3",
+            "A_sharp12 Shadowy.mp3",
+            "A_sharp13 Nostalgic.mp3",
+            "A_sharp14 Dreamy.mp3",
+            "A_sharp15 Hypnotic.mp3",
+            "A_sharp16 Jubilant.mp3",
+            "A_sharp17 Stirring.mp3",
+            "A_sharp18 Tender.mp3",
+            "A_sharp19 Gentle.mp3",
+            "A_sharp20 Curious.mp3"
+            ],
+            B: [
+            "B1 Ominous.mp3",
+            "B2 Adventurous.mp3",
+            "B3 Solemn.mp3",
+            "B4 Uplifting.mp3",
+            "B5 Majestic.mp3",
+            "B6 Magical.mp3",
+            "B7 Foreboding.mp3",
+            "B8 Somber.mp3",
+            "B9 Dramatic.mp3",
+            "B10 Action.mp3",
+            "B11 Sinister.mp3",
+            "B12 Shadowy.mp3",
+            "B13 Nostalgic.mp3",
+            "B14 Dreamy.mp3",
+            "B15 Hypnotic.mp3",
+            "B16 Jubilant.mp3",
+            "B17 Stirring.mp3",
+            "B18 Tender.mp3",
+            "B19 Gentle.mp3",
+            "B20 Curious.mp3"
+        ],
+            C: [
+            "C1 Ominous.mp3",
+            "C2 Adventurous.mp3",
+            "C3 Solemn.mp3",
+            "C4 Uplifting.mp3",
+            "C5 Majestic.mp3",
+            "C6 Magical.mp3",
+            "C7 Foreboding.mp3",
+            "C8 Somber.mp3",
+            "C9 Dramatic.mp3",
+            "C10 Action.mp3",
+            "C11 Sinister.mp3",
+            "C12 Shadowy.mp3",
+            "C13 Nostalgic.mp3",
+            "C14 Dreamy.mp3",
+            "C15 Hypnotic.mp3",
+            "C16 Jubilant.mp3",
+            "C17 Stirring.mp3",
+            "C18 Tender.mp3",
+            "C19 Gentle.mp3",
+            "C20 Curious.mp3"
+        ],
+            Csharp: [
+            "C_sharp1 Ominous.mp3",
+            "C_sharp2 Adventurous.mp3",
+            "C_sharp3 Solemn.mp3",
+            "C_sharp4 Uplifting.mp3",
+            "C_sharp5 Majestic.mp3",
+            "C_sharp6 Magical.mp3",
+            "C_sharp7 Foreboding.mp3",
+            "C_sharp8 Somber.mp3",
+            "C_sharp9 Dramatic.mp3",
+            "C_sharp10 Action.mp3",
+            "C_sharp11 Sinister.mp3",
+            "C_sharp12 Shadowy.mp3",
+            "C_sharp13 Nostalgic.mp3",
+            "C_sharp14 Dreamy.mp3",
+            "C_sharp15 Hypnotic.mp3",
+            "C_sharp16 Jubilant.mp3",
+            "C_sharp17 Stirring.mp3",
+            "C_sharp18 Tender.mp3",
+            "C_sharp19 Gentle.mp3",
+            "C_sharp20 Curious.mp3"
+        ],
+            D: [
+            "D1 Ominous.mp3",
+            "D2 Adventurous.mp3",
+            "D3 Solemn.mp3",
+            "D4 Uplifting.mp3",
+            "D5 Majestic.mp3",
+            "D6 Magical.mp3",
+            "D7 Foreboding.mp3",
+            "D8 Somber.mp3",
+            "D9 Dramatic.mp3",
+            "D10 Action.mp3",
+            "D11 Sinister.mp3",
+            "D12 Shadowy.mp3",
+            "D13 Nostalgic.mp3",
+            "D14 Dreamy.mp3",
+            "D15 Hypnotic.mp3",
+            "D16 Jubilant.mp3",
+            "D17 Stirring.mp3",
+            "D18 Tender.mp3",
+            "D19 Gentle.mp3",
+            "D20 Curious.mp3"
+        ],
+            Dsharp: [
+            "D_sharp1 Ominous.mp3",
+            "D_sharp2 Adventurous.mp3",
+            "D_sharp3 Solemn.mp3",
+            "D_sharp4 Uplifting.mp3",
+            "D_sharp5 Majestic.mp3",
+            "D_sharp6 Magical.mp3",
+            "D_sharp7 Foreboding.mp3",
+            "D_sharp8 Somber.mp3",
+            "D_sharp9 Dramatic.mp3",
+            "D_sharp10 Action.mp3",
+            "D_sharp11 Sinister.mp3",
+            "D_sharp12 Shadowy.mp3",
+            "D_sharp13 Nostalgic.mp3",
+            "D_sharp14 Dreamy.mp3",
+            "D_sharp15 Hypnotic.mp3",
+            "D_sharp16 Jubilant.mp3",
+            "D_sharp17 Stirring.mp3",
+            "D_sharp18 Tender.mp3",
+            "D_sharp19 Gentle.mp3",
+            "D_sharp20 Curious.mp3"
+        ],
+            E: [
+            "E1 Ominous.mp3",
+            "E2 Adventurous.mp3",
+            "E3 Solemn.mp3",
+            "E4 Uplifting.mp3",
+            "E5 Majestic.mp3",
+            "E6 Magical.mp3",
+            "E7 Foreboding.mp3",
+            "E8 Somber.mp3",
+            "E9 Dramatic.mp3",
+            "E10 Action.mp3",
+            "E11 Sinister.mp3",
+            "E12 Shadowy.mp3",
+            "E13 Nostalgic.mp3",
+            "E14 Dreamy.mp3",
+            "E15 Hypnotic.mp3",
+            "E16 Jubilant.mp3",
+            "E17 Stirring.mp3",
+            "E18 Tender.mp3",
+            "E19 Gentle.mp3",
+            "E20 Curious.mp3"
+        ],
+            F: [
+            "F1 Ominous.mp3",
+            "F2 Adventurous.mp3",
+            "F3 Solemn.mp3",
+            "F4 Uplifting.mp3",
+            "F5 Majestic.mp3",
+            "F6 Magical.mp3",
+            "F7 Foreboding.mp3",
+            "F8 Somber.mp3",
+            "F9 Dramatic.mp3",
+            "F10 Action.mp3",
+            "F11 Sinister.mp3",
+            "F12 Shadowy.mp3",
+            "F13 Nostalgic.mp3",
+            "F14 Dreamy.mp3",
+            "F15 Hypnotic.mp3",
+            "F16 Jubilant.mp3",
+            "F17 Stirring.mp3",
+            "F18 Tender.mp3",
+            "F19 Gentle.mp3",
+            "F20 Curious.mp3"
+        ],
+            Fsharp: [
+            "F_sharp1 Ominous.mp3",
+            "F_sharp2 Adventurous.mp3",
+            "F_sharp3 Solemn.mp3",
+            "F_sharp4 Uplifting.mp3",
+            "F_sharp5 Majestic.mp3",
+            "F_sharp6 Magical.mp3",
+            "F_sharp7 Foreboding.mp3",
+            "F_sharp8 Somber.mp3",
+            "F_sharp9 Dramatic.mp3",
+            "F_sharp10 Action.mp3",
+            "F_sharp11 Sinister.mp3",
+            "F_sharp12 Shadowy.mp3",
+            "F_sharp13 Nostalgic.mp3",
+            "F_sharp14 Dreamy.mp3",
+            "F_sharp15 Hypnotic.mp3",
+            "F_sharp16 Jubilant.mp3",
+            "F_sharp17 Stirring.mp3",
+            "F_sharp18 Tender.mp3",
+            "F_sharp19 Gentle.mp3",
+            "F_sharp20 Curious.mp3"
+        ],
+            G: [
+            "G1 Ominous.mp3",
+            "G2 Adventurous.mp3",
+            "G3 Solemn.mp3",
+            "G4 Uplifting.mp3",
+            "G5 Majestic.mp3",
+            "G6 Magical.mp3",
+            "G7 Foreboding.mp3",
+            "G8 Somber.mp3",
+            "G9 Dramatic.mp3",
+            "G10 Action.mp3",
+            "G11 Sinister.mp3",
+            "G12 Shadowy.mp3",
+            "G13 Nostalgic.mp3",
+            "G14 Dreamy.mp3",
+            "G15 Hypnotic.mp3",
+            "G16 Jubilant.mp3",
+            "G17 Stirring.mp3",
+            "G18 Tender.mp3",
+            "G19 Gentle.mp3",
+            "G20 Curious.mp3"
+        ],
+            Gsharp: [
+            "G_sharp1 Ominous.mp3",
+            "G_sharp2 Adventurous.mp3",
+            "G_sharp3 Solemn.mp3",
+            "G_sharp4 Uplifting.mp3",
+            "G_sharp5 Majestic.mp3",
+            "G_sharp6 Magical.mp3",
+            "G_sharp7 Foreboding.mp3",
+            "G_sharp8 Somber.mp3",
+            "G_sharp9 Dramatic.mp3",
+            "G_sharp10 Action.mp3",
+            "G_sharp11 Sinister.mp3",
+            "G_sharp12 Shadowy.mp3",
+            "G_sharp13 Nostalgic.mp3",
+            "G_sharp14 Dreamy.mp3",
+            "G_sharp15 Hypnotic.mp3",
+            "G_sharp16 Jubilant.mp3",
+            "G_sharp17 Stirring.mp3",
+            "G_sharp18 Tender.mp3",
+            "G_sharp19 Gentle.mp3",
+            "G_sharp20 Curious.mp3"
+        ],
+        };
+
+        // Storage for volume settings
+        const volumes = {};
+
+        // Initialize or load volume levels
+        for (const [key, audios] of Object.entries(manifest)) {
+            volumes[key] = {};
+            audios.forEach(audio => {
+                volumes[key][audio] = parseFloat(localStorage.getItem(`volume_${key}_${audio}`)) || 1;
+            });
+        }
+
+        // Reference to the container
+        const controlsContainer = document.getElementById("controlsContainer");
+
+        // Generate controls dynamically
+        for (const [key, audios] of Object.entries(manifest)) {
+            const keyGroup = document.createElement("div");
+            keyGroup.className = "key-group";
+            keyGroup.innerHTML = `<h2>${key}</h2>`;
+
+            audios.forEach(audio => {
+                const control = document.createElement("div");
+                control.className = "audio-control";
+                control.innerHTML = `
+                    <label for="volume_${key}_${audio}">${audio}</label>
+                    <input type="range" id="volume_${key}_${audio}" min="0" max="1" step="0.1" value="${volumes[key][audio]}">
+                `;
+
+                // Update volume on change
+                const slider = control.querySelector("input[type='range']");
+                slider.addEventListener("input", (e) => {
+                    volumes[key][audio] = parseFloat(e.target.value);
+                    localStorage.setItem(`volume_${key}_${audio}`, volumes[key][audio]);
+                });
+
+                keyGroup.appendChild(control);
+            });
+
+            controlsContainer.appendChild(keyGroup);
+        }
+
+        // Function to get volume for a specific audio
+        function getVolumeForAudio(key, audio) {
+            return volumes[key]?.[audio] || 1;
+        }
+
+        // Example usage: Get volume for "C1.mp3" in key "C"
+        console.log(getVolumeForAudio("C", "C1.mp3"));
+    </script>
+</body>
+</html>
