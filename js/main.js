@@ -129,4 +129,5 @@ document.addEventListener("DOMContentLoaded", () => {
         const keyElement = document.querySelector(`.key[data-key="${key}"]`);
         if (keyElement) keyElement.classList.remove("pressed");
     }
+
 });
