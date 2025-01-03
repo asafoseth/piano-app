@@ -150,6 +150,10 @@ body {
     background-color: #444;
 }
 
+.key-switch-button:active {
+    background-color: #8f913d;
+}
+
 /* Container to align both elements (Chord Mode and Key Switchers) inline */
 .controls-container {
     display: flex;
@@ -201,6 +205,50 @@ body {
     font-weight: bold;
 }
 
+/* Sync Controls */
+.sync-controls-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    color: #ddd;
+}
+
+.sync-volume-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#syncKeyFinderToggle {
+    transform: scale(2);
+    margin-right: 10px; /* Add spacing between toggle and text */
+    cursor: pointer;
+}
+
+#syncKeyVolumeControl {
+    width: 100px;
+    height: 8px;
+    background: #333;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#syncKeyVolumeControl::-webkit-slider-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #4CAF50;
+    cursor: pointer;
+}
+
+#syncKeyVolumeControl::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #4CAF50;
+    cursor: pointer;
+}
 
 
 /* Responsive Design */
