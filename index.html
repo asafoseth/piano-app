@@ -12,8 +12,8 @@
         <div class="container">
             <h1>UAT Piano</h1>
 
-            <!-- Container for the Chord Mode toggle button and key switcher buttons -->
-            <div class="controls-container">
+        <!-- Container for the Chord Mode toggle button and key switcher buttons -->
+        <div class="controls-container">
               <!-- Add the chord mode toggle button -->
               <button id="chord-mode-toggle">Chord Mode: OFF</button>
 
@@ -42,9 +42,19 @@
               </div>
             </div> -->
 
-            <!-- Container for Piano Keys -->
-            <div class="piano-container" id="keyboard-container"></div>
+            <!-- Sync Key Finder and Volume Controls -->
+            <div class="sync-controls-container">
+              <label for="syncKeyFinderToggle">
+                  <input type="checkbox" id="syncKeyFinderToggle"> Enable Sync Key
+              </label>
+              <div class="sync-volume-container">
+                  <label for="syncKeyVolumeControl">Sync Key Vol</label>
+                  <input type="range" id="syncKeyVolumeControl" min="0" max="1" step="0.01" value="1">
+              </div>
+            </div>
         </div>
+        <!-- Container for Piano Keys -->
+        <div class="piano-container" id="keyboard-container"></div>
     </div>
     
     <script type="module" src="/js/main.js"></script>
