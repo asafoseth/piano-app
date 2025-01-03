@@ -27,38 +27,23 @@ export default function enableChordPlaying(audioContext, audioFiles) {
         return currentKeyValueMap[keyNumber] || ""; // Return "" if not found
     }
 
-    // Function to display locked key labels
     function showLockedKeyLabels(currentKey) {
         const lockedKeys = lockedKeysMap[currentKey] || [];
-        
-        // Loop through all keys and add a "locked" visual to those in the lockedKeys list
         const keys = document.querySelectorAll(".key");
         keys.forEach((key, index) => {
             const keyIndex = index + 1; // nth-child starts at 1
             if (lockedKeys.includes(keyIndex)) {
-                const keyValue = getKeyValue(currentKey, keyIndex); // Get the corresponding value for the current key
+                const keyValue = getKeyValue(currentKey, keyIndex);
                 key.classList.add("locked");
-                key.textContent = keyValue; // Example label
+                key.textContent = keyValue;
             } else {
                 key.classList.remove("locked");
                 key.textContent = ""; // Clear any previous labels
             }
         });
     }
-    
 
-    // Function to clear locked key labels
-    function clearLockedKeyLabels() {
-        const labels = document.querySelectorAll('.key-label');
-        labels.forEach(label => label.remove());
-
-        const lockedKeys = document.querySelectorAll('.locked-key');
-        lockedKeys.forEach(key => key.classList.remove('locked-key'));
-    }
-
-    // Function to update visuals when selecting a key
     function selectKey(keyName) {
-        // Highlight the selected key (optional)
         document.querySelectorAll('.key').forEach(key => {
             key.classList.remove('selected-key');
         });
@@ -68,14 +53,9 @@ export default function enableChordPlaying(audioContext, audioFiles) {
             selectedKeyElement.classList.add('selected-key');
         }
 
-        // Show locked keys for the selected key
         showLockedKeyLabels(keyName);
     }
 
-    /**
-     * Plays the sound associated with a given key.
-     * @param {number} key - Index of the sound to play.
-     */
     function playSoundForKey(key) {
         if (audioFiles[key]) {
             Promise.all(audioFiles[key]).then(bufferList => {
@@ -89,6 +69,9 @@ export default function enableChordPlaying(audioContext, audioFiles) {
         } else {
             console.warn(`No sound assigned for key ${key}`);
         }
+
+        // Trigger Sync Key Finder playback
+        // handleKeyPress(currentKey);
     }
 
     function playChord(keys) {
@@ -106,9 +89,6 @@ export default function enableChordPlaying(audioContext, audioFiles) {
         if (keyElement) keyElement.classList.remove("pressed");
     }
 
-    /**
-     * Toggles chord mode on or off and updates the UI.
-     */
     function toggleChordMode() {
         chordMode = !chordMode;
         const toggleButton = document.getElementById("chord-mode-toggle");
@@ -118,11 +98,6 @@ export default function enableChordPlaying(audioContext, audioFiles) {
         console.log(`Chord Mode: ${chordMode ? "ON" : "OFF"}`);
     }
 
-    /**
-     * Switches to a new key and updates the chord map.
-     * Ensures the new key exists in chordMaps and is valid.
-     * @param {string} newKey - Name of the new key (e.g., "C#", "D").
-     */
     function switchKey(newKey) {
         const formattedKey = newKey.replace("#", "sharp");
 
@@ -132,24 +107,23 @@ export default function enableChordPlaying(audioContext, audioFiles) {
             console.log(`Switched to key: ${currentKey}`);
             console.log(`Chord Map for ${currentKey}:`, chordMap);
 
-            // Update visuals for the new key
             selectKey(formattedKey);
+
+            // Trigger Sync Key Finder playback
+            // handleKeyPress(currentKey);
         } else {
             console.warn(`Chord map for key "${formattedKey}" not found.`);
             console.warn("Retaining previous key:", currentKey);
         }
     }
 
-    // Event listeners for key switcher buttons
     document.querySelectorAll(".key-switch-button").forEach((button) => {
         button.addEventListener("click", () => {
             const newKey = button.textContent.trim();
-            console.log(`Switching to new key: ${newKey}`);
             switchKey(newKey);
         });
     });
 
-    // Handle touch events for touchscreens
     const keys = document.querySelectorAll(".key");
 
     keys.forEach((keyElement, index) => {
@@ -184,7 +158,6 @@ export default function enableChordPlaying(audioContext, audioFiles) {
         });
     });
 
-    // Handle keyboard events
     window.addEventListener("keydown", (event) => {
         const key = keyMap[event.key.toLowerCase()];
         if (!key || activeKeys.has(key)) return;
@@ -211,6 +184,84 @@ export default function enableChordPlaying(audioContext, audioFiles) {
         }
     });
 
-    // Add event listener for the chord mode toggle button
     document.getElementById("chord-mode-toggle").addEventListener("click", toggleChordMode);
+
+
+    let syncKeyFinderEnabled = false;
+    let currentlyPlayingAudios = []; // Store references to currently playing audio elements
+
+    function setSyncKeyFinderEnabled(enabled) {
+        syncKeyFinderEnabled = enabled;
+    }
+
+    function playSyncKeyAudios(currentKey) {
+        if (!syncKeyFinderEnabled) {
+            // Stop any currently playing audios when sync key finder is disabled
+            stopAllAudio();
+            return;
+        }
+        console.log(`Fetching manifest for currentKey: ${currentKey}`);
+        const folderPath = `/audio/sync-key-finder/${currentKey}/`;
+        fetch(`${folderPath}manifest.json`)
+            .then(response => response.json())
+            .then(fileList => {
+                fileList.forEach(file => {
+                    const audio = new Audio(`${folderPath}${file}`);
+                    // Set the audio to loop indefinitely
+                    audio.loop = true;
+                    // Store the audio in the list
+                    currentlyPlayingAudios.push(audio);
+                    audio.play();
+                });
+            })
+            .catch(err => console.error("Error fetching audio files:", err));
+    }
+
+    // Function to stop all audio immediately
+    function stopAllAudio() {
+        currentlyPlayingAudios.forEach(audio => {
+            audio.pause();
+            audio.currentTime = 0; // Reset playback position to the start
+        });
+        currentlyPlayingAudios = []; // Clear the list of playing audios
+    }
+
+    function handleKeyPress(currentKey) {
+        playSyncKeyAudios(currentKey);
+    }
+
+    function getVolumeForKey(key) {
+        const volumes = JSON.parse(localStorage.getItem('volumeSettings')) || {};
+        return volumes[key] || 1.0;
+    }
+
+    function updateVolumeForKey(key, volume) {
+        const volumes = JSON.parse(localStorage.getItem('volumeSettings')) || {};
+        volumes[key] = volume;
+        localStorage.setItem('volumeSettings', JSON.stringify(volumes));
+    }
+
+    // Volume control for sync key audio
+    document.getElementById("syncKeyVolumeControl").addEventListener("input", (event) => {
+        const volume = event.target.value;
+        currentlyPlayingAudios.forEach(audio => {
+            audio.volume = volume; // Set volume for each currently playing audio
+        });
+    });
+
+    // Handling sync key finder toggle
+    document.getElementById("syncKeyFinderToggle").addEventListener("change", (event) => {
+        toggleSyncKeyFinder(event.target.checked);
+    });
+
+    function toggleSyncKeyFinder(enabled) {
+        setSyncKeyFinderEnabled(enabled);
+        if (enabled) {
+            handleKeyPress(currentKey); // Start playing immediately
+        } else {
+            stopAllAudio(); // Stop all audio immediately when unchecked
+        }
+    }
 }
+
+
