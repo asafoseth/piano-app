@@ -1,6 +1,5 @@
 import { chordMaps } from './maps/chordMapping.js'; // Import chord maps
 import { keyMap } from './maps/keyMapping.js';
-import { chordMapKeyOrder } from './maps/chordMapping.js';
 import { lockedKeysMap } from './maps/chordMapping.js';
 import { keyValueMaps } from './maps/chordMapping.js';
 
@@ -10,11 +9,12 @@ import { keyValueMaps } from './maps/chordMapping.js';
  * @param {AudioContext} audioContext - Web Audio API context for managing sound.
  * @param {Object} audioFiles - Preloaded audio buffers for each key.
  */
+
 export default function enableChordPlaying(audioContext, audioFiles) {
     const activeKeys = new Set();
     let chordMode = false; // State to track if chord mode is enabled
     let currentKey = "A"; // Default key
-    let chordMap = chordMaps[currentKey]; // Get the current chord map
+    let chordMap = chordMaps[currentKey][0]; // Get the "0" object (default chords) for the current key
     const allKeys = Object.keys(chordMaps); // List of all available keys
     let transposeOffset = 0; // Tracks transposition amount (semitones)
 
@@ -98,29 +98,45 @@ export default function enableChordPlaying(audioContext, audioFiles) {
         console.log(`Chord Mode: ${chordMode ? "ON" : "OFF"}`);
     }
 
-    function switchKey(newKey) {
+    function switchKey(newKey, chordIndex = 0) {
         const formattedKey = newKey.replace("#", "sharp");
 
-        if (chordMaps[formattedKey]) {
+        // Ensure that the key exists and has the chord map at the given index
+        if (chordMaps[formattedKey] && chordMaps[formattedKey][chordIndex]) {
             currentKey = formattedKey;
-            chordMap = chordMaps[currentKey];
+            chordMap = chordMaps[currentKey][chordIndex]; // Update chordMap with the correct index
+
             console.log(`Switched to key: ${currentKey}`);
             console.log(`Chord Map for ${currentKey}:`, chordMap);
 
-            selectKey(formattedKey);
-
-            // Trigger Sync Key Finder playback
-            // handleKeyPress(currentKey);
+            selectKey(formattedKey);  // Update UI for the selected key
+            handleKeyPress(currentKey); // Trigger key press (e.g., for sync key finder)
         } else {
-            console.warn(`Chord map for key "${formattedKey}" not found.`);
+            console.warn(`Chord map for key "${formattedKey}" at index ${chordIndex} not found.`);
             console.warn("Retaining previous key:", currentKey);
         }
+    }
+
+    // Transpose callup 
+    function transpose(semitones) {
+        transposeOffset += semitones; // Update transpose offset
+
+        const newChordIndex = (transposeOffset + 12) % 12; // Correct semitone index (from -11 to +11)
+
+        console.log(`Transposed from ${currentKey} to ${currentKey} with chord map index ${newChordIndex}`);
+        console.log(chordMap);
+
+        // Update the key while preserving key positions
+        switchKey(currentKey, newChordIndex); // Pass the new chord index to switchKey
+
+        // Update the transpose display value
+        document.getElementById("transpose-value").textContent = transposeOffset; // Display current transpose offset
     }
 
     document.querySelectorAll(".key-switch-button").forEach((button) => {
         button.addEventListener("click", () => {
             const newKey = button.textContent.trim();
-            switchKey(newKey);
+            switchKey(newKey, 0);  // Use index 0 (or pass a different index if necessary)
         });
     });
 
@@ -185,7 +201,6 @@ export default function enableChordPlaying(audioContext, audioFiles) {
     });
 
     document.getElementById("chord-mode-toggle").addEventListener("click", toggleChordMode);
-
 
     let syncKeyFinderEnabled = false;
     let currentlyPlayingAudios = []; // Store references to currently playing audio elements
@@ -262,6 +277,7 @@ export default function enableChordPlaying(audioContext, audioFiles) {
             stopAllAudio(); // Stop all audio immediately when unchecked
         }
     }
+
+    document.getElementById("transpose-up").addEventListener("click", () => transpose(1));
+    document.getElementById("transpose-down").addEventListener("click", () => transpose(-1));
 }
-
-

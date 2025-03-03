@@ -1,22 +1,20 @@
-// Key sequence for transposition
-const keySequence = ['A', 'Asharp', 'B', 'C', 'Csharp', 'D', 'Dsharp', 'E', 'F', 'Fsharp', 'G', 'Gsharp'];
+export function transposeKey(currentKey, semitones, transposeMap) {
+    const allKeys = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+    const currentIndex = allKeys.indexOf(currentKey);
 
-// Function to transpose the key and its associated chords
-export function transposeKey(currentKey, transposeSteps) {
-    const keyIndex = keySequence.indexOf(currentKey);
-    if (keyIndex === -1) {
-        console.error("Invalid key provided.");
-        return currentKey; // Return the same key if invalid
+    if (currentIndex === -1) {
+        console.warn(`Current key "${currentKey}" not found.`);
+        return { newKey: currentKey, remappedChordMap: transposeMap[currentKey][0] };
     }
 
-    // Calculate the target key index using modulo for wraparound
-    const targetIndex = (keyIndex + transposeSteps + keySequence.length) % keySequence.length;
-    const targetKey = keySequence[targetIndex];
+    // Calculate new key index and wrap within 12 keys
+    let newIndex = (currentIndex + semitones) % allKeys.length;
+    if (newIndex < 0) newIndex += allKeys.length; // Handle negative wrap-around
 
-    // Reassign the chord lists for the current key to the target key
-    chordMaps[currentKey] = { ...chordMaps[targetKey] };
+    const newKey = allKeys[newIndex];
 
-    console.log(`Transposed key from ${currentKey} to ${targetKey}`);
+    // Fetch the correct transposed chord mapping
+    const remappedChordMap = transposeMap[currentKey][semitones] || transposeMap[currentKey][0];
 
-    return targetKey; // Ensure this returns the transposed key
+    return { newKey, remappedChordMap };
 }
