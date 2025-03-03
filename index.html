@@ -10,8 +10,17 @@
   <body>
     <div class="main">
         <div class="container">
-            <h1>UAT Piano</h1>
 
+        <h1>UAT Piano</h1>
+
+        <!-- Transpose Controls -->
+        <div class="transpose-container">
+            <label for="transpose-value">Transpose:</label>
+            <button class="transpose-btn" id="transpose-decrease">-</button>
+            <span id="transpose-value">0</span>
+            <button class="transpose-btn" id="transpose-increase">+</button>
+        </div>         
+           
         <!-- Container for the Chord Mode toggle button and key switcher buttons -->
         <div class="controls-container">
               <!-- Add the chord mode toggle button -->
@@ -32,15 +41,6 @@
                 <button class="key-switch-button" id="key-Asharp">A#</button>
                 <button class="key-switch-button" id="key-B">B</button>
               </div>
-
-              <!-- Transpose Controls -->
-              <!-- <div class="transpose-container">
-                <label for="transpose-value">Transpose:</label>
-                <button class="transpose-btn" id="transpose-decrease">-</button>
-                <span id="transpose-value">0</span>
-                <button class="transpose-btn" id="transpose-increase">+</button>
-              </div>
-            </div> -->
 
             <!-- Sync Key Finder and Volume Controls -->
             <div class="sync-controls-container">
