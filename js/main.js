@@ -59,7 +59,7 @@ document.addEventListener("DOMContentLoaded", () => {
         keyDiv.addEventListener("click", () => {
             if (audioContext.state === "suspended") audioContext.resume();
 
-            if (audioFiles[index]) {
+            if (!chordMode && audioFiles[index]) {
                 Promise.all(audioFiles[index]).then(bufferList => {
                     bufferList.forEach(buffer => {
                         const source = audioContext.createBufferSource();
@@ -105,7 +105,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (audioContext.state === "suspended") audioContext.resume();
 
             // Play sound when touched
-            if (audioFiles[key]) {
+            if (!chordMode && audioFiles[key]) {
                 Promise.all(audioFiles[key]).then(bufferList => {
                     bufferList.forEach(buffer => {
                         const source = audioContext.createBufferSource();
