@@ -119,15 +119,13 @@ export default function enableChordPlaying(audioContext, audioFiles) {
 
     // Transpose callup 
     function transpose(semitones) {
-        transposeOffset += semitones; // Update transpose offset
+        transposeOffset = (transposeOffset + semitones + 12) % 12; // Ensure it wraps within 0-11
 
-        const newChordIndex = (transposeOffset + 12) % 12; // Correct semitone index (from -11 to +11)
-
-        console.log(`Transposed from ${currentKey} to ${currentKey} with chord map index ${newChordIndex}`);
+        console.log(`Transposed to chord map index ${transposeOffset}`);
         console.log(chordMap);
 
         // Update the key while preserving key positions
-        switchKey(currentKey, newChordIndex); // Pass the new chord index to switchKey
+        switchKey(currentKey, transposeOffset); // Pass the wrapped transpose offset
 
         // Update the transpose display value
         document.getElementById("transpose-value").textContent = transposeOffset; // Display current transpose offset
