@@ -98,16 +98,22 @@ export default function enableChordPlaying(audioContext, audioFiles) {
         console.log(`Chord Mode: ${chordMode ? "ON" : "OFF"}`);
     }
 
-    function switchKey(newKey, chordIndex = 0) {
+    function switchKey(newKey, chordIndex = transposeOffset) {
         const formattedKey = newKey.replace("#", "sharp");
 
         // Ensure that the key exists and has the chord map at the given index
         if (chordMaps[formattedKey] && chordMaps[formattedKey][chordIndex]) {
+            if (formattedKey !== currentKey) {
+                transposeOffset = 0; // Reset transposeOffset only if switching to a new 
+                document.getElementById("transpose-value").textContent = transposeOffset;
+            }
+
             currentKey = formattedKey;
-            chordMap = chordMaps[currentKey][chordIndex]; // Update chordMap with the correct index
+            chordMap = chordMaps[currentKey][chordIndex]; // Update chordMap based on transpose offset
 
             console.log(`Switched to key: ${currentKey}`);
-            console.log(`Chord Map for ${currentKey}:`, chordMap);
+            console.log(`Reset Transpose Offset: ${transposeOffset}`);
+            console.log(`New Chord Map for ${currentKey}:`, chordMap);
 
             selectKey(formattedKey);  // Update UI for the selected key
             handleKeyPress(currentKey); // Trigger key press (e.g., for sync key finder)
@@ -121,11 +127,12 @@ export default function enableChordPlaying(audioContext, audioFiles) {
     function transpose(semitones) {
         transposeOffset = (transposeOffset + semitones + 12) % 12; // Ensure it wraps within 0-11
 
-        console.log(`Transposed to chord map index ${transposeOffset}`);
-        console.log(chordMap);
+        console.log(`Transposing by ${semitones} semitones`);
+        console.log(`New Transpose Offset: ${transposeOffset}`);
 
         // Update the key while preserving key positions
-        switchKey(currentKey, transposeOffset); // Pass the wrapped transpose offset
+        switchKey(currentKey, transposeOffset); // Keep the same key but apply the new transpose offset
+        // chordMap = chordMaps[currentKey][transposeOffset] || chordMap; // Ensure chordMap updates
 
         // Update the transpose display value
         document.getElementById("transpose-value").textContent = transposeOffset; // Display current transpose offset
@@ -146,14 +153,15 @@ export default function enableChordPlaying(audioContext, audioFiles) {
         keyElement.addEventListener("touchstart", (event) => {
             event.preventDefault();
             if (audioContext.state === "suspended") audioContext.resume();
-
+        
             if (!activeKeys.has(keyIndex)) {
                 activeKeys.add(keyIndex);
-
+        
                 if (chordMode && chordMap[keyIndex]) {
                     chordMap[keyIndex].forEach(addKeyVisual);
-                    playChord(chordMap[keyIndex]);
-                } else {
+                    playChord(chordMap[keyIndex]); // Play only the chord
+                } else if (!chordMode) {
+                    // ONLY play the single note if chord mode is OFF
                     addKeyVisual(keyIndex);
                     playSoundForKey(keyIndex);
                 }
