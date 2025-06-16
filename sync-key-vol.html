@@ -3,373 +3,352 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Audio Volume Control</title>
+    <title>Sing Key Audio Mixer</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background-color: #303c48;
-            color: #fff;
+            font-family: 'Poppins', sans-serif; /* Match app font */
+            background: linear-gradient(to bottom right, #2c3e50, #4a5a70); /* Match app background */
+            color: #e0e0e0; /* Match app text color */
             margin: 0;
-            padding: 0;
+            padding: 20px; /* Add padding */
             display: flex;
             flex-direction: column;
             align-items: center;
         }
 
         h1 {
-            margin-top: 20px;
+            margin-top: 0; /* Remove default top margin */
+            margin-bottom: 30px; /* Add space below title */
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); /* Match app title shadow */
         }
 
         .key-group {
-            margin: 20px;
+            margin-bottom: 25px; /* Space between key groups */
             padding: 20px;
-            background-color: #444;
+            background-color: rgba(36, 39, 46, 0.8); /* Slightly transparent background matching piano container */
             border-radius: 8px;
             width: 90%;
+            max-width: 700px; /* Max width for readability */
+            box-shadow: 0 10px 20px rgba(7, 0, 53, 0.25); /* Match app shadow style */
         }
 
         .key-group h2 {
             margin-top: 0;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #5c6bc0; /* Accent color border */
+            padding-bottom: 8px;
+            color: #fff; /* Brighter header */
         }
 
         .audio-control {
-            margin: 10px 0;
+            margin-bottom: 12px; /* Space between controls */
             display: flex;
+            flex-wrap: wrap; /* Allow wrapping on smaller screens */
             justify-content: space-between;
             align-items: center;
+            gap: 10px; /* Space between label, slider, value */
         }
 
         .audio-control label {
-            flex: 1;
+            flex-basis: 200px; /* Give label decent space */
+            flex-grow: 1;
+            font-size: 0.9em;
+            word-break: break-all; /* Prevent long names overflowing */
+            margin-right: 10px; /* Add space between label and button */
         }
 
+        /* Style for the Play button */
+        .play-button {
+            flex-shrink: 0; /* Prevent button from shrinking */
+            background-color: #616161; /* Grey background */
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 8px; /* Smaller padding */
+            font-size: 0.8em;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            margin-left: 5px; /* Space before slider */
+            min-width: 35px; /* Ensure minimum width */
+            text-align: center;
+        }
+        .play-button:hover {
+            background-color: #757575;
+        }
+        .play-button:active {
+            background-color: #424242;
+        }
+
+
         .audio-control input[type="range"] {
-            flex: 2;
-            margin-left: 10px;
+            flex-basis: 150px; /* Slider width */
+            flex-grow: 2; /* Allow slider to take more space */
+            cursor: pointer;
+            accent-color: #5c6bc0; /* Match app accent */
+        }
+
+        .audio-control .volume-value {
+            flex-basis: 30px; /* Space for value display */
+            text-align: right;
+            font-size: 0.9em;
+            color: #bdbdbd; /* Slightly dimmer value */
+            min-width: 30px; /* Ensure space */
+        }
+
+        /* Style for the Save All button */
+        #save-all-button {
+            background-color: #5c6bc0; /* Match app accent */
+            color: white;
+            font-size: 18px;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+            margin-top: 20px; /* Space above the button */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        #save-all-button:hover {
+            background-color: #3f51b5;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        #save-all-button:active {
+            background-color: #303f9f;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+
+        #loading-message {
+            font-size: 1.2em;
+            margin-top: 50px;
+        }
+         #save-confirmation {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            z-index: 100;
+        }
+        #save-confirmation.show {
+            opacity: 1;
         }
     </style>
 </head>
 <body>
-    <h1>Audio Volume Control</h1>
-    <div id="controlsContainer"></div>
+    <h1>Sync Key Audio Mixer</h1>
+    <div id="loading-message">Loading audio manifests...</div>
+    <div id="controlsContainer">
+        <!-- Controls will be generated here -->
+    </div>
+
+    <!-- Add the Save All button after the controls container -->
+    <button id="save-all-button">Save All Settings</button>
+
+    <div id="save-confirmation">Settings Saved!</div>
 
     <script>
-        // Example manifest for audios
-        const manifest = {
-            A: [
-            "A1 Ominous.mp3",
-            "A2 Adventurous.mp3",
-            "A3 Solemn.mp3",
-            "A4 Uplifting.mp3",
-            "A5 Majestic.mp3",
-            "A6 Magical.mp3",
-            "A7 Foreboding.mp3",
-            "A8 Somber.mp3",
-            "A9 Dramatic.mp3",
-            "A10 Action.mp3",
-            "A11 Sinister.mp3",
-            "A12 Shadowy.mp3",
-            "A13 Nostalgic.mp3",
-            "A14 Dreamy.mp3",
-            "A15 Hypnotic.mp3",
-            "A16 Jubilant.mp3",
-            "A17 Stirring.mp3",
-            "A18 Tender.mp3",
-            "A19 Gentle.mp3",
-            "A20 Curious.mp3"
-            ],
-            Asharp: [
-            "A_sharp1 Ominous.mp3",
-            "A_sharp2 Adventurous.mp3",
-            "A_sharp3 Solemn.mp3",
-            "A_sharp4 Uplifting.mp3",
-            "A_sharp5 Majestic.mp3",
-            "A_sharp6 Magical.mp3",
-            "A_sharp7 Foreboding.mp3",
-            "A_sharp8 Somber.mp3",
-            "A_sharp9 Dramatic.mp3",
-            "A_sharp10 Action.mp3",
-            "A_sharp11 Sinister.mp3",
-            "A_sharp12 Shadowy.mp3",
-            "A_sharp13 Nostalgic.mp3",
-            "A_sharp14 Dreamy.mp3",
-            "A_sharp15 Hypnotic.mp3",
-            "A_sharp16 Jubilant.mp3",
-            "A_sharp17 Stirring.mp3",
-            "A_sharp18 Tender.mp3",
-            "A_sharp19 Gentle.mp3",
-            "A_sharp20 Curious.mp3"
-            ],
-            B: [
-            "B1 Ominous.mp3",
-            "B2 Adventurous.mp3",
-            "B3 Solemn.mp3",
-            "B4 Uplifting.mp3",
-            "B5 Majestic.mp3",
-            "B6 Magical.mp3",
-            "B7 Foreboding.mp3",
-            "B8 Somber.mp3",
-            "B9 Dramatic.mp3",
-            "B10 Action.mp3",
-            "B11 Sinister.mp3",
-            "B12 Shadowy.mp3",
-            "B13 Nostalgic.mp3",
-            "B14 Dreamy.mp3",
-            "B15 Hypnotic.mp3",
-            "B16 Jubilant.mp3",
-            "B17 Stirring.mp3",
-            "B18 Tender.mp3",
-            "B19 Gentle.mp3",
-            "B20 Curious.mp3"
-        ],
-            C: [
-            "C1 Ominous.mp3",
-            "C2 Adventurous.mp3",
-            "C3 Solemn.mp3",
-            "C4 Uplifting.mp3",
-            "C5 Majestic.mp3",
-            "C6 Magical.mp3",
-            "C7 Foreboding.mp3",
-            "C8 Somber.mp3",
-            "C9 Dramatic.mp3",
-            "C10 Action.mp3",
-            "C11 Sinister.mp3",
-            "C12 Shadowy.mp3",
-            "C13 Nostalgic.mp3",
-            "C14 Dreamy.mp3",
-            "C15 Hypnotic.mp3",
-            "C16 Jubilant.mp3",
-            "C17 Stirring.mp3",
-            "C18 Tender.mp3",
-            "C19 Gentle.mp3",
-            "C20 Curious.mp3"
-        ],
-            Csharp: [
-            "C_sharp1 Ominous.mp3",
-            "C_sharp2 Adventurous.mp3",
-            "C_sharp3 Solemn.mp3",
-            "C_sharp4 Uplifting.mp3",
-            "C_sharp5 Majestic.mp3",
-            "C_sharp6 Magical.mp3",
-            "C_sharp7 Foreboding.mp3",
-            "C_sharp8 Somber.mp3",
-            "C_sharp9 Dramatic.mp3",
-            "C_sharp10 Action.mp3",
-            "C_sharp11 Sinister.mp3",
-            "C_sharp12 Shadowy.mp3",
-            "C_sharp13 Nostalgic.mp3",
-            "C_sharp14 Dreamy.mp3",
-            "C_sharp15 Hypnotic.mp3",
-            "C_sharp16 Jubilant.mp3",
-            "C_sharp17 Stirring.mp3",
-            "C_sharp18 Tender.mp3",
-            "C_sharp19 Gentle.mp3",
-            "C_sharp20 Curious.mp3"
-        ],
-            D: [
-            "D1 Ominous.mp3",
-            "D2 Adventurous.mp3",
-            "D3 Solemn.mp3",
-            "D4 Uplifting.mp3",
-            "D5 Majestic.mp3",
-            "D6 Magical.mp3",
-            "D7 Foreboding.mp3",
-            "D8 Somber.mp3",
-            "D9 Dramatic.mp3",
-            "D10 Action.mp3",
-            "D11 Sinister.mp3",
-            "D12 Shadowy.mp3",
-            "D13 Nostalgic.mp3",
-            "D14 Dreamy.mp3",
-            "D15 Hypnotic.mp3",
-            "D16 Jubilant.mp3",
-            "D17 Stirring.mp3",
-            "D18 Tender.mp3",
-            "D19 Gentle.mp3",
-            "D20 Curious.mp3"
-        ],
-            Dsharp: [
-            "D_sharp1 Ominous.mp3",
-            "D_sharp2 Adventurous.mp3",
-            "D_sharp3 Solemn.mp3",
-            "D_sharp4 Uplifting.mp3",
-            "D_sharp5 Majestic.mp3",
-            "D_sharp6 Magical.mp3",
-            "D_sharp7 Foreboding.mp3",
-            "D_sharp8 Somber.mp3",
-            "D_sharp9 Dramatic.mp3",
-            "D_sharp10 Action.mp3",
-            "D_sharp11 Sinister.mp3",
-            "D_sharp12 Shadowy.mp3",
-            "D_sharp13 Nostalgic.mp3",
-            "D_sharp14 Dreamy.mp3",
-            "D_sharp15 Hypnotic.mp3",
-            "D_sharp16 Jubilant.mp3",
-            "D_sharp17 Stirring.mp3",
-            "D_sharp18 Tender.mp3",
-            "D_sharp19 Gentle.mp3",
-            "D_sharp20 Curious.mp3"
-        ],
-            E: [
-            "E1 Ominous.mp3",
-            "E2 Adventurous.mp3",
-            "E3 Solemn.mp3",
-            "E4 Uplifting.mp3",
-            "E5 Majestic.mp3",
-            "E6 Magical.mp3",
-            "E7 Foreboding.mp3",
-            "E8 Somber.mp3",
-            "E9 Dramatic.mp3",
-            "E10 Action.mp3",
-            "E11 Sinister.mp3",
-            "E12 Shadowy.mp3",
-            "E13 Nostalgic.mp3",
-            "E14 Dreamy.mp3",
-            "E15 Hypnotic.mp3",
-            "E16 Jubilant.mp3",
-            "E17 Stirring.mp3",
-            "E18 Tender.mp3",
-            "E19 Gentle.mp3",
-            "E20 Curious.mp3"
-        ],
-            F: [
-            "F1 Ominous.mp3",
-            "F2 Adventurous.mp3",
-            "F3 Solemn.mp3",
-            "F4 Uplifting.mp3",
-            "F5 Majestic.mp3",
-            "F6 Magical.mp3",
-            "F7 Foreboding.mp3",
-            "F8 Somber.mp3",
-            "F9 Dramatic.mp3",
-            "F10 Action.mp3",
-            "F11 Sinister.mp3",
-            "F12 Shadowy.mp3",
-            "F13 Nostalgic.mp3",
-            "F14 Dreamy.mp3",
-            "F15 Hypnotic.mp3",
-            "F16 Jubilant.mp3",
-            "F17 Stirring.mp3",
-            "F18 Tender.mp3",
-            "F19 Gentle.mp3",
-            "F20 Curious.mp3"
-        ],
-            Fsharp: [
-            "F_sharp1 Ominous.mp3",
-            "F_sharp2 Adventurous.mp3",
-            "F_sharp3 Solemn.mp3",
-            "F_sharp4 Uplifting.mp3",
-            "F_sharp5 Majestic.mp3",
-            "F_sharp6 Magical.mp3",
-            "F_sharp7 Foreboding.mp3",
-            "F_sharp8 Somber.mp3",
-            "F_sharp9 Dramatic.mp3",
-            "F_sharp10 Action.mp3",
-            "F_sharp11 Sinister.mp3",
-            "F_sharp12 Shadowy.mp3",
-            "F_sharp13 Nostalgic.mp3",
-            "F_sharp14 Dreamy.mp3",
-            "F_sharp15 Hypnotic.mp3",
-            "F_sharp16 Jubilant.mp3",
-            "F_sharp17 Stirring.mp3",
-            "F_sharp18 Tender.mp3",
-            "F_sharp19 Gentle.mp3",
-            "F_sharp20 Curious.mp3"
-        ],
-            G: [
-            "G1 Ominous.mp3",
-            "G2 Adventurous.mp3",
-            "G3 Solemn.mp3",
-            "G4 Uplifting.mp3",
-            "G5 Majestic.mp3",
-            "G6 Magical.mp3",
-            "G7 Foreboding.mp3",
-            "G8 Somber.mp3",
-            "G9 Dramatic.mp3",
-            "G10 Action.mp3",
-            "G11 Sinister.mp3",
-            "G12 Shadowy.mp3",
-            "G13 Nostalgic.mp3",
-            "G14 Dreamy.mp3",
-            "G15 Hypnotic.mp3",
-            "G16 Jubilant.mp3",
-            "G17 Stirring.mp3",
-            "G18 Tender.mp3",
-            "G19 Gentle.mp3",
-            "G20 Curious.mp3"
-        ],
-            Gsharp: [
-            "G_sharp1 Ominous.mp3",
-            "G_sharp2 Adventurous.mp3",
-            "G_sharp3 Solemn.mp3",
-            "G_sharp4 Uplifting.mp3",
-            "G_sharp5 Majestic.mp3",
-            "G_sharp6 Magical.mp3",
-            "G_sharp7 Foreboding.mp3",
-            "G_sharp8 Somber.mp3",
-            "G_sharp9 Dramatic.mp3",
-            "G_sharp10 Action.mp3",
-            "G_sharp11 Sinister.mp3",
-            "G_sharp12 Shadowy.mp3",
-            "G_sharp13 Nostalgic.mp3",
-            "G_sharp14 Dreamy.mp3",
-            "G_sharp15 Hypnotic.mp3",
-            "G_sharp16 Jubilant.mp3",
-            "G_sharp17 Stirring.mp3",
-            "G_sharp18 Tender.mp3",
-            "G_sharp19 Gentle.mp3",
-            "G_sharp20 Curious.mp3"
-        ],
-        };
+        // Define the keys you have sync audio folders for
+        const keys = ["A", "Asharp", "B", "C", "Csharp", "D", "Dsharp", "E", "F", "Fsharp", "G", "Gsharp"];
+        const baseAudioPath = './audio/sync-key-finder/'; // Relative path to sync audio
 
-        // Storage for volume settings
-        const volumes = {};
+        const controlsContainer = document.getElementById("controlsContainer");
+        const loadingMessage = document.getElementById("loading-message");
+        const saveConfirmation = document.getElementById("save-confirmation");
+        const saveAllButton = document.getElementById("save-all-button"); // Get the save button
+        let saveTimeout;
+        let currentTestAudio = null; // Variable to hold the currently playing test audio
 
-        // Initialize or load volume levels
-        for (const [key, audios] of Object.entries(manifest)) {
-            volumes[key] = {};
-            audios.forEach(audio => {
-                volumes[key][audio] = parseFloat(localStorage.getItem(`volume_${key}_${audio}`)) || 1;
-            });
+        // Function to fetch manifest for a single key
+        async function fetchManifest(key) {
+            const manifestUrl = `${baseAudioPath}${key}/manifest.json`;
+            try {
+                const response = await fetch(manifestUrl);
+                if (!response.ok) {
+                    throw new Error(`Manifest not found for key ${key}: ${response.statusText}`);
+                }
+                const fileList = await response.json();
+                 if (!Array.isArray(fileList)) {
+                     throw new Error(`Invalid manifest format for ${key}. Expected an array.`);
+                }
+                return fileList;
+            } catch (error) {
+                console.error(`Error fetching or parsing manifest for ${key}:`, error);
+                return null; // Return null if fetching fails for this key
+            }
         }
 
-        // Reference to the container
-        const controlsContainer = document.getElementById("controlsContainer");
+        // --- Updated Function to create UI for a single audio file ---
+        function createVolumeControl(key, audioFile) {
+            const controlId = `volume_${key}_${audioFile}`;
+            const storageKey = controlId; // Use the same ID for localStorage key
 
-        // Generate controls dynamically
-        for (const [key, audios] of Object.entries(manifest)) {
-            const keyGroup = document.createElement("div");
-            keyGroup.className = "key-group";
-            keyGroup.innerHTML = `<h2>${key}</h2>`;
+            // Load saved volume or default to 1.0
+            const savedVolume = parseFloat(localStorage.getItem(storageKey)) || 1.0;
 
-            audios.forEach(audio => {
-                const control = document.createElement("div");
-                control.className = "audio-control";
-                control.innerHTML = `
-                    <label for="volume_${key}_${audio}">${audio}</label>
-                    <input type="range" id="volume_${key}_${audio}" min="0" max="1" step="0.1" value="${volumes[key][audio]}">
-                `;
+            const control = document.createElement("div");
+            control.className = "audio-control";
 
-                // Update volume on change
-                const slider = control.querySelector("input[type='range']");
-                slider.addEventListener("input", (e) => {
-                    volumes[key][audio] = parseFloat(e.target.value);
-                    localStorage.setItem(`volume_${key}_${audio}`, volumes[key][audio]);
+            const label = document.createElement("label");
+            label.htmlFor = controlId;
+            label.textContent = audioFile;
+
+            // --- Create Play Button ---
+            const playButton = document.createElement("button");
+            playButton.textContent = "▶"; // Play symbol
+            playButton.className = "play-button";
+            playButton.title = `Play ${audioFile}`; // Tooltip
+
+            const slider = document.createElement("input");
+            slider.type = "range";
+            slider.id = controlId;
+            slider.min = "0";
+            slider.max = "1";
+            slider.step = "0.05"; // Finer control
+            slider.value = savedVolume.toFixed(2); // Set initial value
+            // --- Add data attributes to slider for saving ---
+            slider.dataset.key = key;
+            slider.dataset.filename = audioFile;
+            // --- End data attributes ---
+
+            const valueDisplay = document.createElement("span");
+            valueDisplay.className = "volume-value";
+            valueDisplay.textContent = savedVolume.toFixed(2);
+
+            // --- Play Button Event Listener (Keep as is) ---
+            playButton.addEventListener("click", () => {
+                // Stop any previously playing test audio
+                if (currentTestAudio && !currentTestAudio.paused) {
+                    currentTestAudio.pause();
+                    currentTestAudio.currentTime = 0;
+                }
+
+                const audioPath = `${baseAudioPath}${key}/${audioFile}`;
+                const currentVolume = parseFloat(slider.value); // Get volume from slider
+
+                console.log(`Playing test audio: ${audioPath} at volume ${currentVolume}`);
+
+                currentTestAudio = new Audio(audioPath); // Create new Audio object
+                currentTestAudio.volume = currentVolume;
+
+                currentTestAudio.play().catch(err => {
+                    console.error("Error playing test audio:", err);
+                    alert(`Error playing sound: ${err.message}`); // Notify user
                 });
 
-                keyGroup.appendChild(control);
+                // Optional: Reset currentTestAudio when playback finishes
+                currentTestAudio.addEventListener('ended', () => {
+                    if (currentTestAudio && currentTestAudio.src.endsWith(audioPath)) { // Check if it's still the same audio
+                       currentTestAudio = null;
+                    }
+                });
+            });
+            // --- End Play Button Listener ---
+
+
+            // --- Updated Slider Event listener ---
+            // Only updates the visual display, does NOT save to localStorage
+            slider.addEventListener("input", (e) => {
+                const newVolume = parseFloat(e.target.value);
+                valueDisplay.textContent = newVolume.toFixed(2);
+                // REMOVED: localStorage.setItem(storageKey, newVolume);
+                // REMOVED: Save confirmation logic from here
+            });
+            // --- End Updated Slider Listener ---
+
+            // Append elements in order
+            control.appendChild(label);
+            control.appendChild(playButton); // Add button after label
+            control.appendChild(slider);
+            control.appendChild(valueDisplay);
+
+            return control;
+        }
+        // --- End Updated createVolumeControl ---
+
+        // Main function to build the UI (no changes needed here)
+        async function buildMixerUI() {
+            // ... (keep existing manifest fetching and UI building loop) ...
+             let manifestsLoaded = 0;
+            for (const key of keys) {
+                const audioFiles = await fetchManifest(key);
+
+                if (audioFiles && audioFiles.length > 0) {
+                    manifestsLoaded++;
+                    const keyGroup = document.createElement("div");
+                    keyGroup.className = "key-group";
+                    keyGroup.innerHTML = `<h2>${key.replace("sharp", "#")}</h2>`; // Display '#' nicely
+
+                    audioFiles.forEach(audioFile => {
+                        const controlElement = createVolumeControl(key, audioFile);
+                        keyGroup.appendChild(controlElement);
+                    });
+
+                    controlsContainer.appendChild(keyGroup);
+                } else {
+                     console.warn(`Skipping UI generation for key ${key} due to missing or empty manifest.`);
+                     // Optionally display a message for missing keys
+                     const errorMsg = document.createElement('p');
+                     errorMsg.textContent = `Could not load audio list for key ${key.replace("sharp", "#")}. Ensure manifest.json exists and is valid.`;
+                     errorMsg.style.color = '#ffcc80'; // Warning color
+                     controlsContainer.appendChild(errorMsg);
+                }
+            }
+
+            // Update loading message based on results
+            if (manifestsLoaded > 0) {
+                 loadingMessage.style.display = 'none'; // Hide loading message if successful
+                 saveAllButton.style.display = 'block'; // Show save button if controls were loaded
+            } else {
+                 loadingMessage.textContent = 'Failed to load any audio manifests. Please check console for errors.';
+                 loadingMessage.style.color = '#f44336'; // Error color
+                 saveAllButton.style.display = 'none'; // Hide save button if nothing loaded
+            }
+        }
+
+        // --- Event Listener for the Save All Button ---
+        saveAllButton.addEventListener('click', () => {
+            console.log("Saving all settings...");
+            // Select all sliders within the controls container
+            const allSliders = controlsContainer.querySelectorAll('input[type="range"]');
+            let savedCount = 0;
+
+            allSliders.forEach(slider => {
+                // Retrieve key and filename from data attributes
+                const key = slider.dataset.key;
+                const filename = slider.dataset.filename;
+
+                if (key && filename) {
+                    const storageKey = `volume_${key}_${filename}`;
+                    const currentVolume = parseFloat(slider.value);
+                    localStorage.setItem(storageKey, currentVolume);
+                    savedCount++;
+                } else {
+                    console.warn("Slider missing data attributes:", slider);
+                }
             });
 
-            controlsContainer.appendChild(keyGroup);
-        }
+            console.log(`Saved ${savedCount} volume settings.`);
 
-        // Function to get volume for a specific audio
-        function getVolumeForAudio(key, audio) {
-            return volumes[key]?.[audio] || 1;
-        }
+            // Show save confirmation briefly
+            saveConfirmation.textContent = `Saved ${savedCount} Settings!`; // Update text
+            saveConfirmation.classList.add('show');
+            clearTimeout(saveTimeout); // Clear previous timeout
+            saveTimeout = setTimeout(() => {
+                saveConfirmation.classList.remove('show');
+            }, 2000); // Hide after 2 seconds
+        });
+        // --- End Save All Button Listener ---
 
-        // Example usage: Get volume for "C1.mp3" in key "C"
-        console.log(getVolumeForAudio("C", "C1.mp3"));
+
+        // Initialize the UI build process when the DOM is ready
+        document.addEventListener('DOMContentLoaded', buildMixerUI);
+
     </script>
 </body>
 </html>
