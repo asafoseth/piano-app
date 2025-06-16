@@ -9,21 +9,42 @@
 body {
     padding: 0;
     margin: 0;
-    background-color: #303c48;
+    /* New musically inclined gradient */
+    background: linear-gradient(160deg, #1a1a2e 0%,  #3a204a 100%); /* Dark Blue/Purple to a deeper Purple/Magenta */
 }
 
 .main {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    min-height: 100vh; /* Use min-height to ensure it covers viewport even if content is short */
     text-align: center;
+    flex-direction: column; /* Stack elements vertically */
+    padding: 20px; /* Add some padding */
+    box-sizing: border-box; /* Include padding in height calculation */
+}
+
+/* Styles for the main content container */
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center children like h1, and the control blocks */
+    width: 100%;         /* It will try to be as wide as .main's content area */
+    max-width: 1000px;   /* Max width for the container, making it a centered block */
+                         /* .main's 'align-items: center' will center this block. */
+    padding-left: 10px;  /* Reduced left padding */
+    padding-right: 10px; /* Reduced right padding */
+    padding-top: 0;      /* Top/bottom padding can be adjusted if needed */
+    padding-bottom: 0;
+    background-color: rgba(255, 255, 255, 0.02); /* Very subtle background for the main container */
+    box-sizing: border-box;
 }
 
 .container > h1 {
     font-size: 60px;
-    color: #ddd9d9;
+    color: #e0e0e0; /* Slightly lighter color for better contrast */
     margin-bottom: 20px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); /* Add subtle text shadow */
 }
 
 .piano-container {
@@ -31,9 +52,10 @@ body {
     justify-content: center;
     padding: 4em 1em 1em 1em;
     border-radius: 0.62em;
-    background-color: #24272e;  
-    box-shadow: 0 2em 4em rgba(7, 0, 53, 0.25);
+    background-color: #24272e;
+    box-shadow: 0 2em 4em rgba(7, 0, 53, 0.35); /* Slightly stronger shadow */
     position: relative;
+    margin-top: 20px; /* Add space above the piano */
 }
 
 .white-key {
@@ -44,10 +66,11 @@ body {
     border: 2px solid #24272e;
     box-sizing: border-box;
     cursor: pointer;
+    transition: background-color 0.1s ease, transform 0.1s ease; /* Add transition */
 }
 
 .white-key:hover {
-    background-color: #ebebeb;
+    background-color: #f0f0f0; /* Slightly different hover */
 }
 .black-key {
     width: 2.5em;
@@ -57,119 +80,141 @@ body {
     position: absolute;
     background-color: #070a0f;
     cursor: pointer;
+    transition: background-color 0.1s ease, transform 0.1s ease; /* Add transition */
+    z-index: 1; /* Ensure black keys are above white keys */
 }
 .black-key:hover {
-    background-color: #24272e;
+    background-color: #2a2d34; /* Slightly different hover */
 }
+/* Replace the existing .black-key:nth-child rules with these: */
+
+/* Adjusted black key positions for better alignment */
 .black-key:nth-child(1) {
-    left: 4em;
+    left: 5.0em; /* Was 4em */
 }
 .black-key:nth-child(2) {
-    left: 8.37em;
+    left: 9.4em; /* Was 8.37em */
 }
+/* Skip white key E */
 .black-key:nth-child(3) {
-    left: 17.12em;
+    left: 18.1em; /* Was 17.12em */ /* After F (index 3) */
 }
 .black-key:nth-child(4) {
-    left: 21.5em;
+    left: 22.5em; /* Was 21.5em */ /* After G (index 4) */
 }
 .black-key:nth-child(5) {
-    left: 25.87em;
+    left: 26.9em; /* Was 25.87em */ /* After A (index 5) */
 }
+/* Skip white key B */
 .black-key:nth-child(6) {
-    left: 34.62em;
+    left: 35.6em; /* Was 34.62em */ /* After C (index 7) */
 }
 .black-key:nth-child(7) {
-    left: 39em;
+    left: 40.0em; /* Was 39em */ /* After D (index 8) */
 }
+/* Skip white key E */
 .black-key:nth-child(8) {
-    left: 47.75em;
+    left: 48.7em; /* Was 47.75em */ /* After F (index 10) */
 }
 .black-key:nth-child(9) {
-    left: 52.12em;
+    left: 53.1em; /* Was 52.12em */ /* After G (index 11) */
 }
 .black-key:nth-child(10) {
-    left: 56.5em;
+    left: 57.4em; /* Was 56.5em */ /* After A (index 12) */
 }
 
 .key.pressed {
-    background-color: rgb(208, 208, 198); /* Pressed key effect */
-    transform: scale(0.95); /* Slightly scale down */
+    background-color: #d0d0c6; /* Pressed key effect */
+    transform: scale(0.97); /* Slightly scale down - adjusted */
 }
 
 /* Style for the Chord Mode Toggle Button */
 #chord-mode-toggle {
-    background-color: #4CAF50; /* Green background */
+    background-color: #5c6bc0; /* Indigo color */
     color: white; /* White text */
     font-size: 16px; /* Font size */
     padding: 10px 20px; /* Padding inside the button */
     border: none; /* Remove border */
     border-radius: 5px; /* Rounded corners */
     cursor: pointer; /* Pointer cursor on hover */
-    transition: background-color 0.3s ease; /* Smooth background transition */
+    transition: background-color 0.3s ease, box-shadow 0.3s ease; /* Smooth transitions */
     margin: 10px 10px 10px 0; /* Margin to separate it from key switchers, keep right margin */
     display: inline-block; /* Inline display for alignment */
     width: auto; /* Adjust width to content */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Add subtle shadow */
 }
 
 /* Hover effect */
 #chord-mode-toggle:hover {
-    background-color: #45a049; /* Darker green on hover */
+    background-color: #3f51b5; /* Darker indigo on hover */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Enhance shadow on hover */
 }
 
 /* Active (pressed) button effect */
 #chord-mode-toggle:active {
-    background-color: #3e8e41; /* Even darker green when pressed */
+    background-color: #303f9f; /* Even darker indigo when pressed */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2); /* Reduce shadow when pressed */
 }
 
 /* Focus effect */
 #chord-mode-toggle:focus {
     outline: none; /* Remove default focus outline */
-    box-shadow: 0 0 5px 2px rgba(0, 128, 0, 0.6); /* Add green shadow on focus */
+    box-shadow: 0 0 0 3px rgba(92, 107, 192, 0.5); /* Add indigo shadow on focus */
 }
 
-/* Style for Key Switcher Buttons */
+/* Style for Key Switcher Dropdown */
 .key-switcher-container {
     display: flex;
-    justify-content: center;
-    align-items: center; /* Align buttons in the center vertically */
-    margin-bottom: 20px;
+    align-items: center; /* Vertically align label and select */
+    gap: 8px; /* Space between label and select */
+    /* margin-bottom is handled by .controls-container gap/margin */
 }
 
-.key-switch-button {
-    margin: 5px;
-    padding: 10px;
-    font-size: 16px;
-    background-color: #333;
-    color: #fff;
-    border: none;
+.key-switcher-container label[for="key-switcher-select"] {
+    font-size: 16px; /* Consistent with other labels */
+    color: #e0e0e0; /* Light color for text */
+}
+
+#key-switcher-select {
+    padding: 8px 12px;
+    font-size: 14px;
+    background-color: #424242; /* Dark grey background */
+    color: #ffffff; /* White text */
+    border: 1px solid #555555; /* Subtle border */
+    border-radius: 4px; /* Rounded corners */
     cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+    outline: none; /* Remove default browser outline */
 }
 
-.key-switch-button:hover {
-    background-color: #444;
+#key-switcher-select:hover {
+    background-color: #5a5a5a; /* Slightly lighter grey on hover */
+    border-color: #777777;
 }
 
-.key-switch-button:active {
-    background-color: #8f913d;
+#key-switcher-select:focus {
+    border-color: #5c6bc0; /* Highlight color matching theme */
+    box-shadow: 0 0 0 2px rgba(92, 107, 192, 0.4); /* Focus ring */
 }
 
 /* Container to align both elements (Chord Mode and Key Switchers) inline */
 .controls-container {
     display: flex;
-    justify-content: center;
+    justify-content: flex-end; /* Align content to the right */
     align-items: center; /* Ensure the buttons align vertically */
     flex-wrap: wrap; /* Allow wrapping in case the screen size is small */
+    gap: 15px; /* Add gap between control groups */
+    /* margin-bottom is handled by parent .other-controls-column gap or .controls-row margin */
 }
 
 /* Transpose Container */
 .transpose-container {
     display: flex;
     align-items: center;
-    justify-content: center;
-    margin: 10px;
+    justify-content: flex-end; /* Align content to the right */
+    /* margin: 10px; No need for margin if using gap in parent */
     gap: 10px; /* Space between elements */
-    color: #fff; /* White text for visibility */
+    color: #e0e0e0; /* White text for visibility */
 }
 
 .transpose-container label {
@@ -178,31 +223,47 @@ body {
 }
 
 .transpose-btn {
-    background-color: #555; /* Grey background */
+    background-color: #616161; /* Grey background */
     color: #fff; /* White text */
     border: none;
-    border-radius: 5px;
-    padding: 5px 10px;
+    border-radius: 50%; /* Make buttons circular */
+    width: 30px; /* Fixed width */
+    height: 30px; /* Fixed height */
     font-size: 18px;
+    line-height: 30px; /* Center text vertically */
+    text-align: center; /* Center text horizontally */
     cursor: pointer;
-    transition: background-color 0.3s ease;
+    transition: background-color 0.3s ease, transform 0.1s ease;
 }
 
 .transpose-btn:hover {
-    background-color: #777; /* Lighter grey on hover */
+    background-color: #757575; /* Lighter grey on hover */
 }
+
+.transpose-btn:active {
+    background-color: #424242; /* Darker grey when pressed */
+    transform: scale(0.9); /* Press effect */
+}
+
 
 #transpose-value {
     font-size: 18px;
     font-weight: bold;
-    color: #ddd;
-    margin: 0 5px;
+    color: #fff; /* Brighter white */
+    min-width: 25px; /* Ensure space for multi-digit numbers */
+    text-align: center;
+    background-color: rgba(0, 0, 0, 0.2); /* Subtle background */
+    padding: 2px 8px;
+    border-radius: 4px;
 }
 
 
 .key.locked {
     color: rgb(231, 20, 20);
     font-weight: bold;
+    /* Maybe add a visual indicator like a border or background */
+    /* background-color: rgba(255, 0, 0, 0.1); */
+    /* border: 1px solid red !important; */ /* Use !important carefully */
 }
 
 /* Sync Controls */
@@ -210,66 +271,330 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 5px;
+    gap: 8px; /* Adjusted gap */
     color: #ddd;
+    background-color: rgba(0, 0, 0, 0.15); /* Slight background */
+    padding: 10px 15px;
+    border-radius: 8px;
+}
+
+.sync-controls-container label {
+    display: flex; /* Align checkbox and text */
+    align-items: center;
+    cursor: pointer;
+    font-size: 14px;
 }
 
 .sync-volume-container {
     display: flex;
     align-items: center;
     gap: 10px;
+    width: 100%; /* Make volume container take full width */
+    justify-content: center;
+}
+
+.sync-volume-container label {
+    font-size: 14px;
+    white-space: nowrap; /* Prevent label text wrapping */
 }
 
 #syncKeyFinderToggle {
-    transform: scale(2);
-    margin-right: 10px; /* Add spacing between toggle and text */
+    transform: scale(1.2); /* Slightly larger checkbox */
+    margin-right: 8px; /* Add spacing between toggle and text */
     cursor: pointer;
+    accent-color: #5c6bc0; /* Match toggle color theme */
 }
 
 #syncKeyVolumeControl {
-    width: 100px;
+    width: 120px; /* Slightly wider */
     height: 8px;
-    background: #333;
+    background: #555; /* Darker track */
     border-radius: 5px;
     cursor: pointer;
+    appearance: none; /* Override default look */
+    outline: none;
 }
 
+/* Style the thumb (the draggable part) */
 #syncKeyVolumeControl::-webkit-slider-thumb {
-    width: 16px;
-    height: 16px;
+    appearance: none;
+    width: 18px; /* Larger thumb */
+    height: 18px;
     border-radius: 50%;
-    background: #4CAF50;
+    background: #5c6bc0; /* Match toggle color theme */
     cursor: pointer;
+    border: 2px solid #fff; /* Add a white border */
+    box-shadow: 0 0 3px rgba(0, 0, 0, 0.5);
 }
 
 #syncKeyVolumeControl::-moz-range-thumb {
-    width: 16px;
-    height: 16px;
+    width: 18px;
+    height: 18px;
     border-radius: 50%;
-    background: #4CAF50;
+    background: #5c6bc0;
     cursor: pointer;
+    border: 2px solid #fff;
+    box-shadow: 0 0 3px rgba(0, 0, 0, 0.5);
 }
 
+/* Container for the two control columns */
+.controls-row {
+    display: flex;
+    flex-wrap: wrap; /* Allow columns to stack on smaller screens */
+    justify-content: space-between; /* Space out the two columns */
+    width: 100%; /* Take full width of the .container */
+    gap: 20px; /* Add space between columns when in a row, and between stacked items in column */
+    margin-bottom: 20px; /* Space below the control row */
+}
+
+/* Styles for the left column (TAB Feature) */
+.tab-column {
+    display: flex; /* Use flex to align content within the column */
+    flex-direction: column;
+    align-items: flex-start; /* Align .tab-feature-container to the left */
+    width: calc(50% - 10px); /* Take roughly half the width, accounting for gap */
+    /* On small screens, this will become 100% */
+}
+
+/* Styles for the right column (Other Controls) */
+.other-controls-column {
+    display: flex; /* Use flex to align content within the column */
+    flex-direction: column;
+    align-items: flex-end; /* Align .transpose-container and .controls-container to the right */
+    width: calc(50% - 10px); /* Take roughly half the width, accounting for gap */
+    gap: 15px; /* Add gap between transpose and controls container */
+    /* On small screens, this will become 100% */
+}
+
+/* Ensure the individual control containers fill the width of their column */
+.transpose-container,
+.controls-container {
+    width: 100%;
+}
+
+/* TAB Feature Section Styles */
+.tab-feature-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px; /* Space between elements within the TAB feature */
+    /* margin-top and margin-bottom removed to rely on parent flex gaps */
+    padding: 15px;
+    background-color: rgba(30, 30, 40, 0.5); /* Slightly transparent dark background */
+    border-radius: 8px;
+    width: 90%; /* Max width to keep it contained */
+    max-width: 400px; /* Adjusted max-width to fit better in a column */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.tab-feature-container h2 {
+    font-size: 22px;
+    color: #c5cae9; /* Lighter indigo/lavender for title */
+    margin-bottom: 5px; /* Reduced margin as gap is used in parent */
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.tab-controls {
+    display: flex; /* Keep flex for internal layout */
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap; /* Allow wrapping for smaller screens */
+    gap: 15px; /* Space between toggle and beat track select */
+    width: 100%;
+}
+
+#tab-feature-toggle {
+    background-color: #7986cb; /* Lighter Indigo for TAB toggle */
+    color: white;
+    font-size: 15px;
+    padding: 9px 18px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+#tab-feature-toggle:hover {
+    background-color: #5c6bc0; /* Standard indigo on hover */
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25);
+}
+
+#tab-feature-toggle:active {
+    background-color: #3f51b5; /* Darker indigo when pressed */
+}
+
+#tab-feature-toggle:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(121, 134, 203, 0.6);
+}
+
+.beat-track-select-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.beat-track-select-container label {
+    font-size: 15px;
+    color: #e0e0e0;
+}
+
+#beat-track-select {
+    padding: 8px 10px;
+    font-size: 14px;
+    background-color: #4a4a5a; /* Slightly different dark grey */
+    color: #ffffff;
+    border: 1px solid #666666;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+    outline: none;
+}
+
+.tab-note-inputs {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px; /* Space between note input fields */
+    /* margin-top handled by parent gap */
+}
+
+.tab-note-input {
+    width: 70px; /* Control the width of the input fields */
+    padding: 8px;
+    font-size: 14px;
+    text-align: center;
+    background-color: #333; /* Dark background for inputs */
+    color: #e0e0e0; /* Light text */
+    border: 1px solid #555;
+    border-radius: 4px;
+    box-sizing: border-box;
+    -moz-appearance: textfield; /* Firefox - hide spinners */
+}
+
+.tab-note-input::-webkit-outer-spin-button,
+.tab-note-input::-webkit-inner-spin-button {
+    -webkit-appearance: none; /* Chrome, Safari, Edge, Opera - hide spinners */
+    margin: 0;
+}
+
+.tab-note-input::placeholder {
+    color: #888;
+    font-size: 12px;
+}
+
+.tab-note-input:focus {
+    outline: none;
+    border-color: #7986cb; /* Indigo highlight on focus */
+    box-shadow: 0 0 0 2px rgba(121, 134, 203, 0.5);
+}
 
 /* Responsive Design */
-@media screen and (max-width: 1000px) {
+@media screen and (max-width: 1200px) { /* Adjusted breakpoint */
     .piano-container {
-        font-size: 0.7em;
+        font-size: 0.8em; /* Adjusted size */
+    }
+    .container > h1 {
+        font-size: 50px;
     }
 }
 
-@media screen and (max-width: 1000px) {
+@media screen and (max-width: 992px) { /* Adjusted breakpoint */
     .piano-container {
         font-size: 0.7em;
     }
-}
-@media screen and (max-width: 700px) {
-    .piano-container {
-        font-size: 0.5em;
+     .container > h1 {
+        font-size: 45px;
+    }
+    /* Stack the two main columns */
+    .controls-row {
+        flex-direction: column; /* Stack controls vertically */
+        gap: 30px; /* Add more space between stacked sections */
+    }
+    .key-switcher-container {
+        margin-bottom: 0; /* Remove bottom margin when stacked */
+    }
+    .tab-feature-container {
+        width: 95%;
     }
 }
-@media screen and (max-width: 500px) {
-    .piano-container {
-        font-size: 0.3em;
+
+@media screen and (max-width: 992px) { /* Adjusted breakpoint for stacking */
+    .tab-column,
+    .other-controls-column {
+        width: 100%; /* Take full width when stacked */
+        align-items: center; /* Center the containers within the stacked column */
+    }
+    .other-controls-column {
+        gap: 20px; /* Adjust gap when stacked */
     }
 }
+
+@media screen and (max-width: 768px) { /* Adjusted breakpoint */
+    .piano-container {
+        font-size: 0.6em; /* Adjusted size */
+    }
+     .container > h1 {
+        font-size: 40px;
+    }
+
+    #chord-mode-toggle {
+        font-size: 14px;
+        padding: 8px 16px;
+    }
+    .tab-feature-container h2 {
+        font-size: 20px;
+    }
+    #tab-feature-toggle,
+    .beat-track-select-container label,
+    #beat-track-select {
+        font-size: 14px;
+    }
+    .tab-note-input {
+        width: 60px;
+        font-size: 13px;
+    }
+}
+
+@media screen and (max-width: 576px) { /* Adjusted breakpoint */
+    .piano-container {
+        font-size: 0.45em; /* Adjusted size */
+        padding: 3em 0.5em 0.5em 0.5em; /* Adjust padding */
+    }
+     .container > h1 {
+        font-size: 32px;
+    }
+    .main {
+        padding: 10px;
+    }
+    .transpose-btn {
+        width: 25px;
+        height: 25px;
+        font-size: 16px;
+        line-height: 25px;
+    }
+    #transpose-value {
+        font-size: 16px;
+    }
+    .tab-feature-container {
+        padding: 10px;
+        gap: 10px;
+    }
+    .tab-feature-container h2 {
+        font-size: 18px;
+    }
+    .tab-controls {
+        flex-direction: column; /* Stack toggle and beat select on very small screens */
+        gap: 10px;
+    }
+    .tab-note-inputs {
+        gap: 8px;
+    }
+    .tab-note-input {
+        width: 55px; /* Further reduce size */
+    }
+}
+
+/* Duplicate media query removed */
