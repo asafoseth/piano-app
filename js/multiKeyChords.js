@@ -20,6 +20,10 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
     let tabFeatureEnabled = false; 
     let currentBeatSourceNode = null; 
 
+    // TAB Feature State
+    let isTabPlaying = false;
+    let tabPlaybackTimeoutId = null;
+
     let transposeOffset = 0; // For CHORD MODE transposition (0-11)
     let singleNoteTransposeOffset = 0; // For SINGLE NOTE MODE transposition (0-11)
 
@@ -338,6 +342,27 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
             activeKeys.add(keyIndex);            
             addKeyVisual(keyIndex); // Visual for the physical key pressed
 
+            // TAB Feature: Capture note if a TAB input is focused
+            const focusedElement = document.activeElement;
+            if (focusedElement && focusedElement.classList.contains('tab-note-input')) {
+                let noteToStore;
+                if (chordMode) {
+                    const chordNotesToPlay = currentChordMapSlice[keyIndex];
+                    if (chordNotesToPlay && chordNotesToPlay.length > 0) {
+                        noteToStore = chordNotesToPlay.join(',');
+                    } else {
+                        noteToStore = keyIndex.toString(); // Fallback
+                    }
+                } else {
+                    const singleNoteMapping = currentSingleNoteMapSlice[keyIndex];
+                    if (singleNoteMapping && singleNoteMapping.length > 0) {
+                        noteToStore = singleNoteMapping[0].toString();
+                    } else {
+                        noteToStore = keyIndex.toString(); // Fallback
+                    }
+                }
+                focusedElement.value = noteToStore;
+            }
             if (chordMode) {
                 const chordNotesToPlay = currentChordMapSlice[keyIndex];
                 if (chordNotesToPlay && chordNotesToPlay.length > 0) {
@@ -433,6 +458,29 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
 
         activeKeys.add(keyMapped);
 
+        // TAB Feature: Capture note if a TAB input is focused (Keyboard)
+        const focusedElement = document.activeElement;
+        if (focusedElement && focusedElement.classList.contains('tab-note-input')) {
+            let noteToStore;
+            if (chordMode) {
+                const chordNotesToPlay = currentChordMapSlice[keyMapped];
+                if (chordNotesToPlay && chordNotesToPlay.length > 0) {
+                    noteToStore = chordNotesToPlay.join(',');
+                } else {
+                    noteToStore = keyMapped.toString(); // Fallback
+                }
+            } else {
+                const singleNoteMapping = currentSingleNoteMapSlice[keyMapped];
+                if (singleNoteMapping && singleNoteMapping.length > 0) {
+                    noteToStore = singleNoteMapping[0].toString();
+                } else {
+                    noteToStore = keyMapped.toString(); // Fallback
+                }
+            }
+            focusedElement.value = noteToStore;
+        }
+
+
         addKeyVisual(keyMapped); // Visual for the physical key pressed
 
         if (chordMode) {
@@ -509,6 +557,165 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
             }
         });
     }
+
+    // --- TAB Input Splitting/Merging Logic ---
+    function setupTabInputSplitters() {
+        const splitButtons = document.querySelectorAll('.tab-split-btn');
+        splitButtons.forEach((button, index) => {
+            button.addEventListener('click', () => {
+                toggleTabInputSplit(index, button);
+            });
+        });
+    }
+
+    function toggleTabInputSplit(entryIndex, buttonElement) {
+        const entryDiv = document.querySelector(`.tab-note-entry[data-entry-index="${entryIndex}"]`);
+        if (!entryDiv) return;
+        const inputWrapper = entryDiv.querySelector('.tab-input-wrapper');
+        const originalInput = inputWrapper.querySelector('.tab-note-input[data-original-input="true"]');
+
+        if (buttonElement.textContent === '/') { // Split action
+            const originalValue = originalInput.value;
+            originalInput.style.display = 'none'; // Hide original
+
+            const input1 = document.createElement('input');
+            input1.type = 'text';
+            input1.classList.add('tab-note-input', 'split');
+            input1.placeholder = `Note ${entryIndex + 1}.1`;
+            input1.dataset.splitPart = "1";
+            // input1.value = originalValue; // Optionally prefill, or clear
+
+            const input2 = document.createElement('input');
+            input2.type = 'text';
+            input2.classList.add('tab-note-input', 'split');
+            input2.placeholder = `Note ${entryIndex + 1}.2`;
+            input2.dataset.splitPart = "2";
+
+            inputWrapper.appendChild(input1);
+            inputWrapper.appendChild(input2);
+            buttonElement.textContent = '-';
+            entryDiv.dataset.isSplit = "true";
+        } else { // Merge action
+            const splitInputs = inputWrapper.querySelectorAll('.tab-note-input.split');
+            let combinedValue = "";
+            if (splitInputs.length === 2) {
+                // Example: combine values, or take first, or clear. For now, just clear.
+                // combinedValue = splitInputs[0].value + (splitInputs[1].value ? " / " + splitInputs[1].value : "");
+            }
+            splitInputs.forEach(el => el.remove());
+            
+            originalInput.style.display = 'block'; // Show original
+            // originalInput.value = combinedValue; // Restore or set combined value
+            buttonElement.textContent = '/';
+            entryDiv.dataset.isSplit = "false";
+        }
+    }
+
+    // --- TAB Playback Logic ---
+    async function playTabSequence() {
+        if (isTabPlaying) return;
+        isTabPlaying = true;
+        document.getElementById('play-tab-btn').textContent = 'Stop TAB';
+
+        // 4. Restart beat if it's on
+        if (tabFeatureEnabled && beatTrackSelect) {
+            console.log("Restarting beat for TAB playback sync.");
+            stopBeatAudio(); // Stop current beat
+            const selectedTrackId = beatTrackSelect.value;
+            await playBeatTrack(selectedTrackId); // Play and wait for it to potentially start
+        }
+
+        const notesToPlayFromDOM = [];
+        const tabEntries = document.querySelectorAll('.tab-note-entry');
+
+        tabEntries.forEach(entry => {
+            if (entry.dataset.isSplit === "true") {
+                const split1 = entry.querySelector('.tab-note-input[data-split-part="1"]');
+                const split2 = entry.querySelector('.tab-note-input[data-split-part="2"]');
+                if (split1 && split1.value.trim()) notesToPlayFromDOM.push(split1.value.trim());
+                if (split2 && split2.value.trim()) notesToPlayFromDOM.push(split2.value.trim());
+            } else {
+                const mainInput = entry.querySelector('.tab-note-input[data-original-input="true"]');
+                if (mainInput && mainInput.value.trim()) notesToPlayFromDOM.push(mainInput.value.trim());
+            }
+        });
+
+        // 2. Looping playback
+        while (isTabPlaying) {
+            for (const noteData of notesToPlayFromDOM) {
+                if (!isTabPlaying) break; // Check before playing each note
+
+                let delay = 500; // Default 500ms delay
+                if (tabFeatureEnabled && currentBeatSourceNode) {
+                    // Placeholder BPM - ideally, get this from beatTrackMap
+                    const selectedTrackId = beatTrackSelect?.value;
+                    const trackInfo = beatTrackMap[selectedTrackId]; // Assuming beatTrackMap stores BPM
+                    const assumedBPM = trackInfo?.bpm || 120; // Use actual BPM or fallback
+                    delay = (60 / assumedBPM) * 1000;
+                }
+
+                if (noteData.includes(',')) { // Explicitly stored chord
+                    const chordKeyIds = noteData.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n));
+                    if (chordKeyIds.length > 0) playChord(chordKeyIds);
+                } else { // Single note ID
+                    const noteKeyId = parseInt(noteData.trim());
+                    if (!isNaN(noteKeyId)) {
+                        // 1. If chord mode is ON, play the chord for this single note ID
+                        if (chordMode && currentChordMapSlice[noteKeyId]) {
+                            playChord(currentChordMapSlice[noteKeyId]);
+                        } else {
+                            playSoundForKey(noteKeyId); // Otherwise, play as single note
+                        }
+                    }
+                }
+                
+                await new Promise(resolve => { 
+                    if (!isTabPlaying) { // Check again before setting timeout
+                        resolve(); // Resolve immediately if stopped
+                        return;
+                    }
+                    tabPlaybackTimeoutId = setTimeout(resolve, delay); 
+                });
+            }
+            if (!isTabPlaying) break; // Break outer loop if stopped during inner loop
+            // If notesToPlayFromDOM is empty, prevent infinite loop if isTabPlaying is true
+            if (notesToPlayFromDOM.length === 0) {
+                console.log("TAB sequence is empty, stopping playback.");
+                stopTabPlayback(); // Stop if there's nothing to play
+            }
+        }
+        // stopTabPlayback(); // No longer auto-stop here, only when button is pressed or sequence is empty
+    }
+
+    function stopTabPlayback() {
+        isTabPlaying = false;
+        clearTimeout(tabPlaybackTimeoutId);
+        tabPlaybackTimeoutId = null;
+        document.getElementById('play-tab-btn').textContent = 'Play TAB';
+    }
+
+    // 3. Reset TAB Fields Logic
+    function resetTabFields() {
+        const tabEntries = document.querySelectorAll('.tab-note-entry');
+        tabEntries.forEach((entry, index) => {
+            const inputWrapper = entry.querySelector('.tab-input-wrapper');
+            const originalInput = inputWrapper.querySelector('.tab-note-input[data-original-input="true"]');
+            const splitButton = entry.querySelector('.tab-split-btn');
+
+            // If it's split, merge it first
+            if (entry.dataset.isSplit === "true" && splitButton) {
+                toggleTabInputSplit(index, splitButton); // This will remove split inputs and show original
+            }
+            
+            // Clear the original input (which is now the only one visible)
+            if (originalInput) {
+                originalInput.value = "";
+            }
+        });
+        console.log("TAB fields reset.");
+    }
+
+
 
     // --- Sync Key Finder Logic (Unchanged - Uses Audio Element) ---
     let syncKeyFinderEnabled = false;
@@ -628,6 +835,18 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
     if (tabFeatureToggle) {
         tabFeatureToggle.textContent = tabFeatureEnabled ? "Beat: ON" : "Beat: OFF";
     }
+
+    // Setup TAB split buttons
+    setupTabInputSplitters();
+
+    // Setup Play TAB button
+    document.getElementById('play-tab-btn')?.addEventListener('click', () => {
+        if (isTabPlaying) stopTabPlayback();
+        else playTabSequence();
+    });
+
+    // Setup Reset TAB button
+    document.getElementById('reset-tab-btn')?.addEventListener('click', resetTabFields);
 
 
 } // End enableChordPlaying
