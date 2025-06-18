@@ -13,6 +13,69 @@ body {
     background: linear-gradient(160deg, #1a1a2e 0%,  #3a204a 100%); /* Dark Blue/Purple to a deeper Purple/Magenta */
 }
 
+/* Styles for TAB feature - moved from incorrect nesting inside 'body' */
+.tab-note-entry {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px; /* Add some space between entries */
+}
+
+.tab-input-wrapper {
+    display: flex; /* Allows inputs to sit side-by-side when split */
+    flex-grow: 1; /* Takes up available space */
+    gap: 5px; /* Space between split inputs */
+}
+
+.tab-note-input { /* Note: This rule is also defined later, ensure consistency or merge */
+    flex-grow: 1; /* Allows input to expand */
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.tab-note-input.split {
+    /* Specific styles for split inputs if needed, e.g., width */
+    /* flex-basis: 0; /* Helps with flex-grow distribution */
+}
+
+.tab-split-btn {
+    padding: 8px 12px;
+    margin-left: 8px;
+    background-color: #e0e0e0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    min-width: 30px; /* Ensure button has some width */
+    text-align: center;
+}
+
+.tab-split-btn:hover {
+    background-color: #d0d0d0;
+}
+
+#play-tab-btn {
+    /* display: block; Removed to allow flex layout */
+    /* width: 100%; Removed to allow flex layout */
+    /* margin-top: 10px; /* Handled by .tab-action-buttons container */
+    padding: 10px; /* Retaining padding, can be moved to .tab-action-buttons > button */
+    background-color: #4CAF50; /* Green */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px; /* Retaining font-size, can be moved to .tab-action-buttons > button */
+}
+
+#play-tab-btn:hover {
+    background-color: #45a049;
+}
+
+/* Hide original input when split inputs are shown */
+.tab-note-input[data-original-input="true"][style*="display: none"] + .tab-note-input.split {
+    /* Styles if needed when original is hidden and splits are visible */
+}
+
 .main {
     display: flex;
     justify-content: center;
@@ -387,6 +450,23 @@ body {
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 
+/* Container for Play and Reset TAB buttons */
+.tab-action-buttons {
+    display: flex;
+    gap: 10px; /* Space between play and reset buttons */
+    margin-top: 10px; /* Space above the button group */
+    width: 100%; /* Container takes full width */
+}
+
+/* Common styles for buttons within .tab-action-buttons */
+.tab-action-buttons > button {
+    flex-grow: 1; /* Allow buttons to share space equally */
+    /* Common padding and font-size can be defined here if desired,
+       overriding/complementing #play-tab-btn and #reset-tab-btn specific styles.
+       For example:
+       padding: 10px;
+       font-size: 16px; */
+}
 .tab-feature-container h2 {
     font-size: 22px;
     color: #c5cae9; /* Lighter indigo/lavender for title */
@@ -452,6 +532,19 @@ body {
     outline: none;
 }
 
+/* Styles for Reset TAB button (assuming it might not have full styles yet) */
+#reset-tab-btn {
+    padding: 10px; /* Consistent padding */
+    background-color: #f44336; /* Red */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px; /* Consistent font size */
+}
+    outline: none;
+}
+
 .tab-note-inputs {
     display: flex;
     justify-content: center;
@@ -460,7 +553,7 @@ body {
     gap: 10px; /* Space between note input fields */
     /* margin-top handled by parent gap */
 }
-
+/* This .tab-note-input rule might be a duplicate or refinement of the one moved from body nesting */
 .tab-note-input {
     width: 70px; /* Control the width of the input fields */
     padding: 8px;
@@ -598,3 +691,141 @@ body {
 }
 
 /* Duplicate media query removed */
+
+/* Header Styles */
+header {
+    background-color: #333; /* Dark background for the header */
+    padding: 10px 20px;      /* Padding around the navigation */
+    text-align: center;      /* Center the navigation buttons */
+    border-bottom: 2px solid #555; /* Subtle border at the bottom */
+    width: 100%;             /* Make header take full width */
+    box-sizing: border-box;  /* Include padding and border in the element's total width and height */
+}
+
+nav a.nav-button {
+    color: white;            /* White text for buttons */
+    margin: 0 15px;          /* Space between buttons */
+    text-decoration: none;   /* Remove underline from links */
+    padding: 8px 15px;       /* Padding inside buttons */
+    border: 1px solid white; /* White border for buttons */
+    border-radius: 4px;      /* Rounded corners for buttons */
+    transition: background-color 0.3s, color 0.3s; /* Smooth transition for hover effect */
+}
+
+nav a.nav-button:hover {
+    background-color: white; /* White background on hover */
+    color: #333;             /* Dark text on hover */
+}
+
+/* Additional Responsive adjustments for mobile devices */
+@media (max-width: 768px) {
+    /* Adjust main padding if header is fixed or takes up space */
+    /* .main { padding-top: 70px; } /* Example if header height is around 50px + margin */
+
+    h1 {
+        font-size: 1.8em; /* Adjust heading size for mobile */
+    }
+
+    h2 {
+        font-size: 1.3em; /* Adjust subheading size for mobile */
+    }
+
+    /* Ensure controls stack and take full width */
+    .controls-row {
+        flex-direction: column;
+        align-items: stretch; /* Make columns take full width */
+    }
+
+    .tab-column, .other-controls-column {
+        width: 100%; /* Ensure columns take full width when stacked */
+        align-items: center; /* Center content within columns */
+        margin-bottom: 20px; /* Add space between stacked columns */
+    }
+
+    .tab-feature-container,
+    .transpose-container,
+    .controls-container,
+    .sync-controls-container {
+        width: 100%; /* Make control groups take full width */
+        max-width: none; /* Override any max-width that might constrain them */
+        box-sizing: border-box;
+    }
+
+    .tab-note-inputs {
+        flex-direction: column; /* Stack note entries vertically */
+        align-items: stretch; /* Make entries take full width */
+        gap: 10px;
+    }
+
+    .tab-note-entry {
+        width: 100%; /* Make each note entry take full width */
+        justify-content: space-between; /* Space out input and split button */
+    }
+
+    .tab-input-wrapper {
+        flex-grow: 1;
+    }
+
+    .tab-note-input {
+        width: 100%; /* Make input field take available width in its wrapper */
+        box-sizing: border-box;
+    }
+
+    button,
+    select,
+    input[type="text"],
+    input[type="range"] {
+        padding: 12px; /* Increase padding for better tap targets */
+        font-size: 1em; /* Ensure readability */
+        width: 100%; /* Make form elements generally full-width */
+        box-sizing: border-box;
+        margin-bottom: 10px; /* Add some space below form elements */
+    }
+
+    /* Allow specific buttons to not be full width */
+    .tab-controls button, .transpose-btn, #play-tab-btn, #reset-tab-btn, #chord-mode-toggle, .tab-split-btn {
+        width: auto;
+    }
+
+    .piano-container {
+        width: 100%;
+        overflow-x: auto; /* Allow horizontal scrolling for piano keys */
+        padding-bottom: 10px; /* Space for scrollbar if it appears */
+        font-size: 0.55em; /* Further adjust piano size for small screens */
+    }
+
+    .sync-volume-container {
+        flex-direction: column; /* Stack label and range input */
+        align-items: flex-start;
+    }
+
+    label {
+        display: block; /* Make labels take full width for better layout */
+        margin-bottom: 5px;
+    }
+
+    /* Ensure checkbox label content aligns well */
+    label[for="syncKeyFinderToggle"] {
+        display: flex;
+        align-items: center;
+        width: auto; /* Don't make the checkbox label full width if not desired */
+    }
+    label[for="syncKeyFinderToggle"] input[type="checkbox"] {
+        width: auto; /* Checkbox itself shouldn't be full width */
+        margin-right: 8px;
+        margin-bottom: 0; /* Remove bottom margin from checkbox */
+    }
+}
+
+@media (max-width: 480px) {
+    .piano-container {
+        font-size: 0.4em; /* Even smaller for very small devices */
+    }
+     nav a.nav-button {
+        margin: 0 5px; /* Reduce margin for nav buttons */
+        padding: 6px 10px; /* Reduce padding for nav buttons */
+    }
+    .container > h1 {
+        font-size: 28px; /* Smaller H1 for very small screens */
+    }
+}
