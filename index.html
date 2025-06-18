@@ -8,6 +8,12 @@
     <link rel="stylesheet" href="css/style.css">
   </head>
   <body>
+    <header>
+      <nav>
+        <a href="#" class="nav-button">Home</a>
+        <a href="#" class="nav-button">About</a>
+      </nav>
+    </header>
     <div class="main">
         <div class="container">
 
@@ -33,11 +39,36 @@
                             </select>
                         </div>
                     </div>
+                    <!-- TAB Note Inputs -->
                     <div class="tab-note-inputs">
-                        <input type="number" class="tab-note-input" placeholder="Note 1 ID" min="1">
-                        <input type="number" class="tab-note-input" placeholder="Note 2 ID" min="1">
-                        <input type="number" class="tab-note-input" placeholder="Note 3 ID" min="1">
-                        <input type="number" class="tab-note-input" placeholder="Note 4 ID" min="1">
+                        <div class="tab-note-entry" data-entry-index="0">
+                            <div class="tab-input-wrapper">
+                                <input type="text" class="tab-note-input" data-original-input="true" placeholder="Note 1 ID">
+                            </div>
+                            <button class="tab-split-btn">/</button>
+                        </div>
+                        <div class="tab-note-entry" data-entry-index="1">
+                            <div class="tab-input-wrapper">
+                                <input type="text" class="tab-note-input" data-original-input="true" placeholder="Note 2 ID">
+                            </div>
+                            <button class="tab-split-btn">/</button>
+                        </div>
+                        <div class="tab-note-entry" data-entry-index="2">
+                            <div class="tab-input-wrapper">
+                                <input type="text" class="tab-note-input" data-original-input="true" placeholder="Note 3 ID">
+                            </div>
+                            <button class="tab-split-btn">/</button>
+                        </div>
+                        <div class="tab-note-entry" data-entry-index="3">
+                            <div class="tab-input-wrapper">
+                                <input type="text" class="tab-note-input" data-original-input="true" placeholder="Note 4 ID">
+                            </div>
+                            <button class="tab-split-btn">/</button>
+                        </div>
+                    </div>
+                    <div class="tab-action-buttons">
+                        <button id="play-tab-btn">Play TAB</button>
+                        <button id="reset-tab-btn">Reset TAB</button>
                     </div>
                 </div>
             </div>
