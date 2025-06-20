@@ -24,27 +24,29 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
     let isTabPlaying = false;
     let tabPlaybackTimeoutId = null;
 
+    let currentBeatBPM = 0; // To store the BPM of the currently playing beat track
+
     let transposeOffset = 0; // For CHORD MODE transposition (0-11)
     let singleNoteTransposeOffset = 0; // For SINGLE NOTE MODE transposition (0-11)
 
     // These will hold the specific slice of the map for the current key and current offset
     let currentChordMapSlice = chordMaps[currentKey]?.[transposeOffset] || {};
     let currentSingleNoteMapSlice = SingleNoteMaps[currentKey]?.[singleNoteTransposeOffset] || {};
-
     const allKeys = Object.keys(chordMaps); // List of all available keys
 
     // Log initial state
     console.log(`Initial Key: ${currentKey}`);
     console.log(`Initial Chord Transpose Offset: ${transposeOffset}, Single Note Transpose Offset: ${singleNoteTransposeOffset}`);
     console.log("Preloaded audio buffers received:", preloadedAudioBuffers); // Log received buffers
-
-    // Map beat track IDs to file paths
+    
+    // Map beat track IDs to file paths and their BPM
+    // ** THIS IS WHERE YOU SET THE BPM FOR EACH TRACK **
     const beatTrackMap = {
-        'track1': 'audio/beats/Track-1-104-trap.mp3',
-        'track2': 'audio/beats/Track-2-113-amapiano.mp3',
-        'track3': 'audio/beats/Track-3-funk.mp3',
-        'track4': 'audio/beats/Track-4-fuji.mp3',
-        'track5': 'audio/beats/Track-5-highlife.mp3',
+        'track1': { path: 'audio/beats/Track-1-104-trap.mp3', bpm: 104 },
+        'track2': { path: 'audio/beats/Track-2-113-amapiano.mp3', bpm: 113 },
+        'track3': { path: 'audio/beats/Track-3-funk.mp3', bpm: 100 }, // Example BPM, adjust as needed
+        'track4': { path: 'audio/beats/Track-4-fuji.mp3', bpm: 120 }, // Example BPM, adjust as needed
+        'track5': { path: 'audio/beats/Track-5-highlife.mp3', bpm: 115 }  // Example BPM, adjust as needed
     };
 
     function updateInternalMapSlices() {
@@ -228,6 +230,7 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
                 console.warn("Error stopping beat source node:", e.message);
             }
             currentBeatSourceNode = null;
+            currentBeatBPM = 0; // Reset BPM when beat stops
         }
     }
 
@@ -238,14 +241,16 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
             return;
         }
 
-        const filePath = beatTrackMap[trackId];
-        if (!filePath) {
-            console.warn(`No audio file mapped for beat track ID: ${trackId}`);
+        const trackInfo = beatTrackMap[trackId];
+        if (!trackInfo || !trackInfo.path) {
+            console.warn(`No track info or audio file path mapped for beat track ID: ${trackId}`);
             stopBeatAudio();
             return;
         }
-
+        const filePath = trackInfo.path;
+        
         console.log(`Preparing to play beat track (Web Audio): ${filePath}`);
+        currentBeatBPM = trackInfo.bpm || 0; // Set BPM for the track
         stopBeatAudio(); // Stop any existing beat before starting a new one
 
         try {
@@ -273,10 +278,12 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
                 source.connect(audioContext.destination);
                 source.start(0);
 
+                currentBeatBPM = trackInfo.bpm || 0; // Re-affirm BPM as beat starts
                 currentBeatSourceNode = source; // Assign the new source
-                console.log(`Successfully started playing beat track (Web Audio): ${filePath}`);
+                console.log(`Successfully started playing beat track (Web Audio): ${filePath} at ${currentBeatBPM} BPM`);
 
             }, (decodeError) => {
+                currentBeatBPM = 0; // Reset BPM on decode error
                 console.error(`Error decoding audio data for ${filePath}:`, decodeError);
             });
 
@@ -616,13 +623,15 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
         if (isTabPlaying) return;
         isTabPlaying = true;
         document.getElementById('play-tab-btn').textContent = 'Stop TAB';
+        let localTabBeatBPM = 0; // BPM for this specific TAB playback session
 
-        // 4. Restart beat if it's on
+        // Restart beat if TAB feature is ON to ensure synchronization
         if (tabFeatureEnabled && beatTrackSelect) {
             console.log("Restarting beat for TAB playback sync.");
             stopBeatAudio(); // Stop current beat
             const selectedTrackId = beatTrackSelect.value;
             await playBeatTrack(selectedTrackId); // Play and wait for it to potentially start
+            localTabBeatBPM = currentBeatBPM; // Capture the BPM at the start of TAB playback
         }
 
         const notesToPlayFromDOM = [];
@@ -645,13 +654,14 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
             for (const noteData of notesToPlayFromDOM) {
                 if (!isTabPlaying) break; // Check before playing each note
 
-                let delay = 500; // Default 500ms delay
-                if (tabFeatureEnabled && currentBeatSourceNode) {
-                    // Placeholder BPM - ideally, get this from beatTrackMap
-                    const selectedTrackId = beatTrackSelect?.value;
-                    const trackInfo = beatTrackMap[selectedTrackId]; // Assuming beatTrackMap stores BPM
-                    const assumedBPM = trackInfo?.bpm || 120; // Use actual BPM or fallback
-                    delay = (60 / assumedBPM) * 1000;
+                let delay = 500; // Default delay (e.g., 120 BPM if beat is off)
+                // Use the BPM captured at the start of TAB playback if beat was enabled then
+                // Or, if beat was toggled on/off mid-sequence, use the current live BPM
+                const effectiveBPM = tabFeatureEnabled ? (localTabBeatBPM > 0 ? localTabBeatBPM : currentBeatBPM) : 0;
+
+                if (tabFeatureEnabled && effectiveBPM > 0) {
+                    delay = (60 / effectiveBPM) * 1000; // Milliseconds per beat
+                    console.log(`TAB note delay: ${delay}ms (BPM: ${effectiveBPM})`);
                 }
 
                 if (noteData.includes(',')) { // Explicitly stored chord
@@ -691,6 +701,11 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
         isTabPlaying = false;
         clearTimeout(tabPlaybackTimeoutId);
         tabPlaybackTimeoutId = null;
+        // If the TAB feature (which implies beat sync) was enabled, stop the beat.
+        if (tabFeatureEnabled) {
+            console.log("TAB playback stopped, stopping associated beat.");
+            stopBeatAudio(); // This will also reset currentBeatBPM
+        }
         document.getElementById('play-tab-btn').textContent = 'Play TAB';
     }
 
@@ -746,7 +761,14 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
 
         fetch(manifestUrl)
             .then(response => {
-                if (!response.ok) {
+                if (!response.ok) {    const beatTrackMap = {
+                        'track1': { path: 'audio/beats/Track-1-104-trap.mp3', bpm: 104 },
+                        'track2': { path: 'audio/beats/Track-2-113-amapiano.mp3', bpm: 113 },
+                        'track3': { path: 'audio/beats/Track-3-funk.mp3', bpm: 100 }, // ADJUST BPM HERE
+                        'track4': { path: 'audio/beats/Track-4-fuji.mp3', bpm: 120 }, // ADJUST BPM HERE
+                        'track5': { path: 'audio/beats/Track-5-highlife.mp3', bpm: 115 }  // ADJUST BPM HERE
+                    };
+                
                     throw new Error(`Manifest not found or invalid: ${response.statusText} for ${manifestUrl}`);
                 }
                 return response.json();
