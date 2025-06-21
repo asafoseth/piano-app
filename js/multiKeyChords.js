@@ -21,10 +21,11 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
     let currentBeatSourceNode = null; 
 
     // TAB Feature State
-    let isTabPlaying = false;
-    let tabPlaybackTimeoutId = null;
+    let isTabPlaying = false; // To track if the TAB sequence is currently playing
+    let tabPlaybackTimeoutIds = []; // To store all timeout IDs for the playing TAB sequence
 
     let currentBeatBPM = 0; // To store the BPM of the currently playing beat track
+    const beatTrackBuffers = {}; // Cache for decoded beat track AudioBuffers
 
     let transposeOffset = 0; // For CHORD MODE transposition (0-11)
     let singleNoteTransposeOffset = 0; // For SINGLE NOTE MODE transposition (0-11)
@@ -41,12 +42,85 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
     
     // Map beat track IDs to file paths and their BPM
     // ** THIS IS WHERE YOU SET THE BPM FOR EACH TRACK **
+    // ** NEW: This is also where you set the precise TIMINGS for TAB playback **
+    // The 'timings' object maps a TAB field identifier (e.g., '1.0', '1.5') to a time in seconds.
     const beatTrackMap = {
-        'track1': { path: 'audio/beats/Track-1-104-trap.mp3', bpm: 104 },
-        'track2': { path: 'audio/beats/Track-2-113-amapiano.mp3', bpm: 113 },
-        'track3': { path: 'audio/beats/Track-3-funk.mp3', bpm: 100 }, // Example BPM, adjust as needed
-        'track4': { path: 'audio/beats/Track-4-fuji.mp3', bpm: 120 }, // Example BPM, adjust as needed
-        'track5': { path: 'audio/beats/Track-5-highlife.mp3', bpm: 115 }  // Example BPM, adjust as needed
+        'track1': {
+            path: 'audio/beats/Track-1-104-trap.mp3',
+            bpm: 104,
+            duration: 9.21, // The duration of the audio file in seconds
+            timings: { // Timings in seconds from the start of the beat
+                '1.0': 0.000, '1.5': 1.187,
+                '2.0': 2.343, '2.5': 3.500,
+                '3.0': 4.625, '3.5': 5.781,
+                '4.0': 6.968, '4.5': 8.093,
+                // NOTE: The timings below extend beyond the track duration of 9.21s.
+                '5.0': 9.281, '5.5': 10.468,
+                '6.0': 11.656, '6.5': 12.843,
+                '7.0': 14.031, '7.5': 15.218,
+                '8.0': 16.406, '8.5': 17.593
+            }
+        },
+        'track2': {
+            path: 'audio/beats/Track-2-113-amapiano.mp3',
+            bpm: 113,
+            duration: 16.9, // TODO: Replace with actual duration
+            timings: { // Timings in seconds from the start of the beat
+                '1.0': 0.000, '1.5': 1.062,
+                '2.0': 2.125, '2.5': 3.187,
+                '3.0': 4.250, '3.5': 5.312,
+                '4.0': 6.375, '4.5': 7.437,
+                '5.0': 8.500, '5.5': 9.562,
+                '6.0': 10.625, '6.5': 11.687,
+                '7.0': 12.750, '7.5': 13.812,
+                '8.0': 14.875, '8.5': 15.937
+            }
+        },
+        'track3': {
+            path: 'audio/beats/Track-3-funk.mp3',
+            bpm: 100,
+            duration: 19.2, // TODO: Replace with actual duration
+            timings: {
+                '1.0': 0.000, '1.5': 1.218,
+                '2.0': 2.437, '2.5': 3.625,
+                '3.0': 4.812, '3.5': 6.031,
+                '4.0': 7.250, '4.5': 8.406,
+                '5.0': 9.593, '5.5': 10.812,
+                '6.0': 12.750, '6.5': 13.218,
+                '7.0': 14.406, '7.5': 15.625,
+                '8.0': 16.843, '8.5': 18.000
+            } // TODO: Add timings for Track 3
+        },
+        'track4': {
+            path: 'audio/beats/Track-4-fuji.mp3',
+            bpm: 120,
+            duration: 16.0, // TODO: Replace with actual duration
+            timings: { // Timings for Fuji beat
+                '1.0': 0.000, '1.5': 1.093,
+                '2.0': 2.156, '2.5': 3.218,
+                '3.0': 4.281, '3.5': 5.343,
+                '4.0': 6.406, '4.5': 7.468,
+                '5.0': 8.531, '5.5': 9.593,
+                '6.0': 10.656, '6.5': 11.718,
+                '7.0': 12.781, '7.5': 13.843,
+                '8.0': 14.906, '8.5': 15.968
+            }
+        },
+        'track5': {
+            path: 'audio/beats/Track-5-highlife.mp3',
+            bpm: 115,
+            duration: 16.7, // TODO: Replace with actual duration
+            timings: { // Timings for Highlife beat
+                '1.0': 0.000, '1.5': 1.187,
+                '2.0': 2.375, '2.5': 3.562,
+                '3.0': 4.750, '3.5': 5.906,
+                '4.0': 7.093, '4.5': 8.250,
+                '5.0': 9.437, '5.5': 10.625,
+                '6.0': 11.781, '6.5': 12.968,
+                '7.0': 14.156, '7.5': 15.312,
+                '8.0': 16.500, '8.5': 17.656
+            }
+        }
     };
 
     function updateInternalMapSlices() {
@@ -234,62 +308,93 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
         }
     }
 
+    // This function is now fully asynchronous, returning a Promise that resolves when the beat starts.
+    // It also caches decoded audio buffers to make looping instantaneous.
     async function playBeatTrack(trackId) {
-        if (!tabFeatureEnabled) {
-            console.log("TAB feature is OFF, not playing beat.");
-            stopBeatAudio();
-            return;
-        }
-
-        const trackInfo = beatTrackMap[trackId];
-        if (!trackInfo || !trackInfo.path) {
-            console.warn(`No track info or audio file path mapped for beat track ID: ${trackId}`);
-            stopBeatAudio();
-            return;
-        }
-        const filePath = trackInfo.path;
-        
-        console.log(`Preparing to play beat track (Web Audio): ${filePath}`);
-        currentBeatBPM = trackInfo.bpm || 0; // Set BPM for the track
-        stopBeatAudio(); // Stop any existing beat before starting a new one
-
-        try {
-            const response = await fetch(filePath);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status} for ${filePath}`);
-            }
-            const arrayBuffer = await response.arrayBuffer();
-
-            // Ensure audioContext is running
-            if (audioContext.state === "suspended") {
-                await audioContext.resume();
+        return new Promise(async (resolve, reject) => {
+            if (!tabFeatureEnabled) {
+                console.log("TAB feature is OFF, not playing beat.");
+                stopBeatAudio();
+                resolve(); // Resolve silently
+                return;
             }
 
-            audioContext.decodeAudioData(arrayBuffer, (decodedBuffer) => {
-                if (!tabFeatureEnabled) {
-                    console.log("Beat feature was disabled during audio decoding. Not playing.");
-                    return; // Don't start if the feature was turned off
+            const trackInfo = beatTrackMap[trackId];
+            if (!trackInfo || !trackInfo.path) {
+                const errorMsg = `No track info or audio file path mapped for beat track ID: ${trackId}`;
+                console.warn(errorMsg);
+                stopBeatAudio();
+                reject(new Error(errorMsg));
+                return;
+            }
+            
+            stopBeatAudio(); // Stop any existing beat before starting a new one
+
+            // --- Caching Logic: Play from cache if available ---
+            if (beatTrackBuffers[trackId]) {
+                console.log(`Playing beat track from cache: ${trackId}`);
+                try {
+                    if (audioContext.state === "suspended") await audioContext.resume();
+                    
+                    const source = audioContext.createBufferSource();
+                    source.buffer = beatTrackBuffers[trackId];
+                    source.loop = false; // Looping is handled by the TAB sequencer
+                    source.connect(audioContext.destination);
+                    source.start(0);
+
+                    currentBeatBPM = trackInfo.bpm || 0;
+                    currentBeatSourceNode = source;
+                    console.log(`Successfully started playing cached beat track: ${trackId}`);
+                    resolve(); // Resolve once playback has started
+                } catch (e) {
+                    console.error("Error playing cached beat track:", e);
+                    reject(e);
                 }
-                // If another beat request came in and stopped this one, currentBeatSourceNode might have been cleared
-                // or replaced. This new source will become the current one.
-                const source = audioContext.createBufferSource();
-                source.buffer = decodedBuffer;
-                source.loop = true;
-                source.connect(audioContext.destination);
-                source.start(0);
+                return; // Exit after playing from cache
+            }
 
-                currentBeatBPM = trackInfo.bpm || 0; // Re-affirm BPM as beat starts
-                currentBeatSourceNode = source; // Assign the new source
-                console.log(`Successfully started playing beat track (Web Audio): ${filePath} at ${currentBeatBPM} BPM`);
+            // --- Fetch, Decode, and Cache Logic (if not in cache) ---
+            try {
+                const filePath = trackInfo.path;
+                console.log(`Fetching and decoding beat track for caching: ${filePath}`);
+                const response = await fetch(filePath);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status} for ${filePath}`);
+                
+                const arrayBuffer = await response.arrayBuffer();
+                if (audioContext.state === "suspended") await audioContext.resume();
 
-            }, (decodeError) => {
-                currentBeatBPM = 0; // Reset BPM on decode error
-                console.error(`Error decoding audio data for ${filePath}:`, decodeError);
-            });
+                audioContext.decodeAudioData(arrayBuffer, (decodedBuffer) => {
+                    beatTrackBuffers[trackId] = decodedBuffer; // Cache the buffer for next time
 
-        } catch (error) {
-            console.error(`Error fetching or processing beat track ${filePath}:`, error);
-        }
+                    if (!tabFeatureEnabled) {
+                        console.log("Beat feature was disabled during audio decoding. Not playing.");
+                        resolve();
+                        return;
+                    }
+                    
+                    const source = audioContext.createBufferSource();
+                    source.buffer = decodedBuffer;
+                    source.loop = false;
+                    source.connect(audioContext.destination);
+                    source.start(0);
+
+                    currentBeatBPM = trackInfo.bpm || 0;
+                    currentBeatSourceNode = source;
+                    console.log(`Successfully started playing beat track (Web Audio): ${filePath} at ${currentBeatBPM} BPM`);
+                    resolve(); // Resolve once playback has started
+
+                }, (decodeError) => {
+                    currentBeatBPM = 0;
+                    console.error(`Error decoding audio data for ${filePath}:`, decodeError);
+                    reject(decodeError);
+                });
+
+            } catch (error) {
+                console.error(`Error fetching or processing beat track:`, error);
+                currentBeatBPM = 0;
+                reject(error);
+            }
+        });
     }
 
     // Transpose function (affects either chord or single note offset based on mode)
@@ -619,58 +724,100 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
     }
 
     // --- TAB Playback Logic ---
+    // This new approach uses a predefined timing map for each beat track instead of BPM calculations.
+    // It now supports looping by restarting the sequence and the beat track together to maintain sync.
     async function playTabSequence() {
-        if (isTabPlaying) return;
-        isTabPlaying = true;
-        document.getElementById('play-tab-btn').textContent = 'Stop TAB';
-        let localTabBeatBPM = 0; // BPM for this specific TAB playback session
+        // Clear any timeouts from a previous cycle before scheduling new ones.
+        tabPlaybackTimeoutIds.forEach(id => clearTimeout(id));
+        tabPlaybackTimeoutIds = [];
 
-        // Restart beat if TAB feature is ON to ensure synchronization
-        if (tabFeatureEnabled && beatTrackSelect) {
-            console.log("Restarting beat for TAB playback sync.");
-            stopBeatAudio(); // Stop current beat
-            const selectedTrackId = beatTrackSelect.value;
-            await playBeatTrack(selectedTrackId); // Play and wait for it to potentially start
-            localTabBeatBPM = currentBeatBPM; // Capture the BPM at the start of TAB playback
+        // This logic runs only on the first "play" click, not on subsequent loops.
+        if (!isTabPlaying) {
+            isTabPlaying = true;
+            document.getElementById('play-tab-btn').textContent = 'Stop TAB';
+            console.log("Starting TAB sequence (first cycle).");
+        } else {
+            // This log will appear for each subsequent loop.
+            console.log("Looping TAB sequence.");
         }
 
-        const notesToPlayFromDOM = [];
+        // 1. Get current track info and its timing map
+        const selectedTrackId = beatTrackSelect?.value || 'track1';
+        const trackInfo = beatTrackMap[selectedTrackId];
+        if (!trackInfo || !trackInfo.timings || Object.keys(trackInfo.timings).length === 0) {
+            console.error(`Selected track "${selectedTrackId}" has no timing map defined. Stopping playback.`);
+            alert(`Playback failed: No timing map for ${selectedTrackId}.`);
+            stopTabPlayback(); // This will reset the button and state
+            return;
+        }
+        const timingMap = trackInfo.timings;
+
+        // 2. Collect all notes from the DOM, associating them with a timing key ('1.0', '1.5', etc.)
+        const notesToSchedule = [];
         const tabEntries = document.querySelectorAll('.tab-note-entry');
 
-        tabEntries.forEach(entry => {
+        tabEntries.forEach((entry, index) => {
+            const entryNumber = index + 1;
             if (entry.dataset.isSplit === "true") {
                 const split1 = entry.querySelector('.tab-note-input[data-split-part="1"]');
                 const split2 = entry.querySelector('.tab-note-input[data-split-part="2"]');
-                if (split1 && split1.value.trim()) notesToPlayFromDOM.push(split1.value.trim());
-                if (split2 && split2.value.trim()) notesToPlayFromDOM.push(split2.value.trim());
+                // The first split input maps to '.0', the second to '.5'
+                if (split1 && split1.value.trim()) {
+                    notesToSchedule.push({ timingKey: `${entryNumber}.0`, noteData: split1.value.trim() });
+                }
+                if (split2 && split2.value.trim()) {
+                    notesToSchedule.push({ timingKey: `${entryNumber}.5`, noteData: split2.value.trim() });
+                }
             } else {
+                // A non-split input maps to '.0'
                 const mainInput = entry.querySelector('.tab-note-input[data-original-input="true"]');
-                if (mainInput && mainInput.value.trim()) notesToPlayFromDOM.push(mainInput.value.trim());
+                if (mainInput && mainInput.value.trim()) {
+                    notesToSchedule.push({ timingKey: `${entryNumber}.0`, noteData: mainInput.value.trim() });
+                }
             }
         });
 
-        // 2. Looping playback
-        while (isTabPlaying) {
-            for (const noteData of notesToPlayFromDOM) {
-                if (!isTabPlaying) break; // Check before playing each note
+        if (notesToSchedule.length === 0) {
+            console.log("TAB sequence is empty, stopping playback.");
+            stopTabPlayback();
+            return;
+        }
 
-                let delay = 500; // Default delay (e.g., 120 BPM if beat is off)
-                // Use the BPM captured at the start of TAB playback if beat was enabled then
-                // Or, if beat was toggled on/off mid-sequence, use the current live BPM
-                const effectiveBPM = tabFeatureEnabled ? (localTabBeatBPM > 0 ? localTabBeatBPM : currentBeatBPM) : 0;
+        // 3. Start the beat track IF the "Beat" toggle is ON
+        // The beat is restarted on every loop to ensure it stays perfectly in sync with the TAB notes.
+        if (tabFeatureEnabled) {
+            console.log("Restarting beat for TAB playback sync.");
+            // Await the promise from playBeatTrack to ensure the beat has started before scheduling notes.
+            try {
+                await playBeatTrack(selectedTrackId);
+            } catch (error) {
+                console.error("Failed to play beat track, stopping TAB sequence.", error);
+                stopTabPlayback();
+                return;
+            }
+        }
 
-                if (tabFeatureEnabled && effectiveBPM > 0) {
-                    delay = (60 / effectiveBPM) * 1000; // Milliseconds per beat
-                    console.log(`TAB note delay: ${delay}ms (BPM: ${effectiveBPM})`);
-                }
+        // 4. Schedule all notes to play at their specified times using setTimeout
+        notesToSchedule.forEach(({ timingKey, noteData }) => {
+            const playbackTimeInSeconds = timingMap[timingKey];
 
+            if (playbackTimeInSeconds === undefined) {
+                console.warn(`No timing defined for key ${timingKey} in the current beat track. Skipping note.`);
+                return;
+            }
+
+            const delayInMs = playbackTimeInSeconds * 1000;
+
+            const timeoutId = setTimeout(() => {
+                if (!isTabPlaying) return; // Don't play if stop was called
+
+                // The actual note/chord playing logic
                 if (noteData.includes(',')) { // Explicitly stored chord
                     const chordKeyIds = noteData.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n));
                     if (chordKeyIds.length > 0) playChord(chordKeyIds);
                 } else { // Single note ID
                     const noteKeyId = parseInt(noteData.trim());
                     if (!isNaN(noteKeyId)) {
-                        // 1. If chord mode is ON, play the chord for this single note ID
                         if (chordMode && currentChordMapSlice[noteKeyId]) {
                             playChord(currentChordMapSlice[noteKeyId]);
                         } else {
@@ -678,29 +825,38 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
                         }
                     }
                 }
-                
-                await new Promise(resolve => { 
-                    if (!isTabPlaying) { // Check again before setting timeout
-                        resolve(); // Resolve immediately if stopped
-                        return;
-                    }
-                    tabPlaybackTimeoutId = setTimeout(resolve, delay); 
-                });
+            }, delayInMs);
+
+            tabPlaybackTimeoutIds.push(timeoutId); // Store ID to enable cancellation
+        });
+
+        // 5. Calculate loop timing
+        const lastNoteTimeMs = notesToSchedule.reduce((max, { timingKey }) => {
+            const time = timingMap[timingKey] || 0;
+            return Math.max(max, time);
+        }, 0) * 1000;
+
+        // Get the beat track's duration in milliseconds. Default to 0 if not specified.
+        const trackDurationMs = (trackInfo.duration || 0) * 1000;
+
+        // The loop should wait for the longer of the two: the last note or the full beat track.
+        const loopWaitTimeMs = Math.max(lastNoteTimeMs, trackDurationMs);
+
+        // 6. Schedule the next action: either loop or stop.
+        const loopTimeoutId = setTimeout(() => {
+            if (isTabPlaying) { // If the user hasn't clicked "Stop TAB"
+                playTabSequence(); // Recursively call to start the next loop.
             }
-            if (!isTabPlaying) break; // Break outer loop if stopped during inner loop
-            // If notesToPlayFromDOM is empty, prevent infinite loop if isTabPlaying is true
-            if (notesToPlayFromDOM.length === 0) {
-                console.log("TAB sequence is empty, stopping playback.");
-                stopTabPlayback(); // Stop if there's nothing to play
-            }
-        }
-        // stopTabPlayback(); // No longer auto-stop here, only when button is pressed or sequence is empty
+        }, loopWaitTimeMs + 20); // Add a small buffer for safety
+        tabPlaybackTimeoutIds.push(loopTimeoutId);
     }
 
     function stopTabPlayback() {
         isTabPlaying = false;
-        clearTimeout(tabPlaybackTimeoutId);
-        tabPlaybackTimeoutId = null;
+        // Clear all scheduled timeouts for the sequence
+        tabPlaybackTimeoutIds.forEach(id => clearTimeout(id));
+        tabPlaybackTimeoutIds = []; // Reset the array
+
         // If the TAB feature (which implies beat sync) was enabled, stop the beat.
         if (tabFeatureEnabled) {
             console.log("TAB playback stopped, stopping associated beat.");
@@ -761,14 +917,7 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
 
         fetch(manifestUrl)
             .then(response => {
-                if (!response.ok) {    const beatTrackMap = {
-                        'track1': { path: 'audio/beats/Track-1-104-trap.mp3', bpm: 104 },
-                        'track2': { path: 'audio/beats/Track-2-113-amapiano.mp3', bpm: 113 },
-                        'track3': { path: 'audio/beats/Track-3-funk.mp3', bpm: 100 }, // ADJUST BPM HERE
-                        'track4': { path: 'audio/beats/Track-4-fuji.mp3', bpm: 120 }, // ADJUST BPM HERE
-                        'track5': { path: 'audio/beats/Track-5-highlife.mp3', bpm: 115 }  // ADJUST BPM HERE
-                    };
-                
+                if (!response.ok) {
                     throw new Error(`Manifest not found or invalid: ${response.statusText} for ${manifestUrl}`);
                 }
                 return response.json();
