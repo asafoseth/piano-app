@@ -777,7 +777,31 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
             }
         });
 
-        if (notesToSchedule.length === 0) {
+        // --- NEW: Conditionally duplicate notes for tracks other than 'track1' ---
+        let allNotesToSchedule = [...notesToSchedule]; // Start with the original notes from the UI.
+
+        // The duplication logic is skipped for 'track1' because its duration is shorter.
+        if (selectedTrackId !== 'track1') {
+            console.log(`Repeating notes for track: ${selectedTrackId}`);
+            const repeatedNotes = notesToSchedule.map(note => {
+                const [beat, subBeat] = note.timingKey.split('.');
+                const originalBeatNumber = parseInt(beat);
+
+                // Only repeat notes from the first 4 beat entries (which cover 8 timing points)
+                if (originalBeatNumber <= 4) {
+                    const newBeatNumber = originalBeatNumber + 4;
+                    const newTimingKey = `${newBeatNumber}.${subBeat}`;
+                    return { timingKey: newTimingKey, noteData: note.noteData };
+                }
+                return null;
+            }).filter(note => note !== null);
+
+            allNotesToSchedule.push(...repeatedNotes); // Add the repeated notes to the schedule.
+        } else {
+            console.log("Skipping note repetition for 'track1' due to its shorter length.");
+        }
+
+        if (allNotesToSchedule.length === 0) {
             console.log("TAB sequence is empty, stopping playback.");
             stopTabPlayback();
             return;
@@ -798,7 +822,7 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
         }
 
         // 4. Schedule all notes to play at their specified times using setTimeout
-        notesToSchedule.forEach(({ timingKey, noteData }) => {
+        allNotesToSchedule.forEach(({ timingKey, noteData }) => {
             const playbackTimeInSeconds = timingMap[timingKey];
 
             if (playbackTimeInSeconds === undefined) {
@@ -831,7 +855,7 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
         });
 
         // 5. Calculate loop timing
-        const lastNoteTimeMs = notesToSchedule.reduce((max, { timingKey }) => {
+        const lastNoteTimeMs = allNotesToSchedule.reduce((max, { timingKey }) => {
             const time = timingMap[timingKey] || 0;
             return Math.max(max, time);
         }, 0) * 1000;
