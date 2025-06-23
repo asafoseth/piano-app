@@ -931,36 +931,26 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
             console.error("Invalid key provided for sync key finder:", syncKey);
             return;
         }
-
         console.log(`Playing sync audio for key: ${syncKey}`);
-        const folderPath = `./audio/sync-key-finder/${syncKey}/`; // Use relative path
-        const manifestUrl = `${folderPath}manifest.json`;
+        // NEW: Construct the direct audio file path (assuming .mp3 extension)
+        const audioFilePath = `./audio/sing-key-audio/${syncKey}.mp3`;
 
         // Stop any currently playing sync sounds before starting new ones
         stopAllAudio();
 
-        fetch(manifestUrl)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`Manifest not found or invalid: ${response.statusText} for ${manifestUrl}`);
-                }
-                return response.json();
-            })
-            .then(fileList => {
-                if (!Array.isArray(fileList)) {
-                     throw new Error(`Invalid manifest format for ${syncKey}. Expected an array.`);
-                }
-                const volume = document.getElementById("syncKeyVolumeControl")?.value || 1.0; // Get current volume
-                fileList.forEach(file => {
-                    const audio = new Audio(`${folderPath}${file}`);
-                    audio.loop = true;
-                    audio.volume = volume; // Set initial volume
-                    currentlyPlayingAudios.push(audio); // Store reference
-                    audio.play().catch(err => console.error(`Error playing sync audio ${file}:`, err)); // Play and catch errors
-                });
-                console.log(`Started playing ${currentlyPlayingAudios.length} sync files for ${syncKey}`);
-            })
-            .catch(err => console.error(`Error fetching or processing sync audio manifest for key ${syncKey}:`, err));
+        // Retrieve the saved volume for this specific key from localStorage.
+        // The key `volume_sing_key_${syncKey}` is set by sync-key-vol.html.
+        const savedVolume = parseFloat(localStorage.getItem(`volume_sing_key_${syncKey}`)) || 1.0;
+        console.log(`Applying saved volume for ${syncKey}: ${savedVolume}`);
+
+        // Directly create and play the single audio file with its saved volume.
+        const audio = new Audio(audioFilePath);
+        audio.loop = true;
+        audio.volume = savedVolume; // Set volume from localStorage
+        currentlyPlayingAudios.push(audio); // Store reference
+        audio.play().catch(err => console.error(`Error playing sync audio ${audioFilePath}:`, err)); // Play and catch errors
+
+        console.log(`Started playing single sync file for ${syncKey}: ${audioFilePath}`);
     }
 
     function stopAllAudio() {
@@ -983,16 +973,15 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
         playSyncKeyAudios(musicalKey);
     }
 
-    // Volume control for sync key audio
+    // The global volume control for sync key audio is now effectively deprecated.
+    // Volume is controlled on a per-key basis from sync-key-vol.html.
+    // This listener will no longer affect the volume of sync key audio.
     const volumeControl = document.getElementById("syncKeyVolumeControl");
     if (volumeControl) {
         volumeControl.addEventListener("input", (event) => {
-            const volume = event.target.value;
-            currentlyPlayingAudios.forEach(audio => {
-                audio.volume = volume; // Update volume for each currently playing audio
-            });
-            // Optionally save volume setting
-            // updateVolumeForKey(currentKey, volume); // If you want persistent volume per key
+            // This no longer controls the volume of sync audio, as it's loaded from localStorage.
+            // To avoid confusion, this logic is now inert for sync audio.
+            console.warn("The global syncKeyVolumeControl no longer adjusts per-key sync audio volume.");
         });
     }
 
