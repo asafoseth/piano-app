@@ -110,6 +110,13 @@ body {
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); /* Add subtle text shadow */
 }
 
+.piano-title {
+    position: relative; /* Allow z-index to work */
+    margin-bottom: -70px;
+    z-index: 2; /* Bring it on top of the piano container */
+    color: #e0e0e0; /* Ensure text is visible against the dark piano */
+}
+
 .piano-container {
     display: flex;
     justify-content: center;
@@ -629,6 +636,11 @@ body {
     }
      .container > h1 {
         font-size: 40px;
+    }
+
+    .piano-title {
+        /* Adjust margin on mobile to prevent excessive overlap as piano scales down */
+        margin-bottom: -20px;
     }
 
     #chord-mode-toggle {
