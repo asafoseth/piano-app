@@ -153,37 +153,36 @@ body {
 
 /* Adjusted black key positions for better alignment */
 .black-key:nth-child(1) {
-    left: 5.0em; /* Was 4em */
+    left: 4.0em;
 }
 .black-key:nth-child(2) {
-    left: 9.4em; /* Was 8.37em */
+    left: 8.37em;
 }
-/* Skip white key E */
 .black-key:nth-child(3) {
-    left: 18.1em; /* Was 17.12em */ /* After F (index 3) */
+    left: 17.12em;
 }
 .black-key:nth-child(4) {
-    left: 22.5em; /* Was 21.5em */ /* After G (index 4) */
+    left: 21.5em;
 }
 .black-key:nth-child(5) {
-    left: 26.9em; /* Was 25.87em */ /* After A (index 5) */
+    left: 25.87em;
 }
 /* Skip white key B */
 .black-key:nth-child(6) {
-    left: 35.6em; /* Was 34.62em */ /* After C (index 7) */
+    left: 34.62em;
 }
 .black-key:nth-child(7) {
-    left: 40.0em; /* Was 39em */ /* After D (index 8) */
+    left: 39em;
 }
 /* Skip white key E */
 .black-key:nth-child(8) {
-    left: 48.7em; /* Was 47.75em */ /* After F (index 10) */
+    left: 47.75em;
 }
 .black-key:nth-child(9) {
-    left: 53.1em; /* Was 52.12em */ /* After G (index 11) */
+    left: 52.12em;
 }
 .black-key:nth-child(10) {
-    left: 57.4em; /* Was 56.5em */ /* After A (index 12) */
+    left: 56.5em;
 }
 
 .key.pressed {
@@ -541,7 +540,6 @@ body {
     border-radius: 4px;
     cursor: pointer;
     font-size: 16px; /* Consistent font size */
-}
     outline: none;
 }
 
