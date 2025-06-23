@@ -155,7 +155,7 @@
     <script>
         // Define the keys you have sync audio folders for
         const keys = ["A", "Asharp", "B", "C", "Csharp", "D", "Dsharp", "E", "F", "Fsharp", "G", "Gsharp"];
-        const baseAudioPath = './audio/sync-key-finder/'; // Relative path to sync audio
+        const baseAudioPath = './audio/sing-key-audio/'; // Relative path to sing key audio
 
         const controlsContainer = document.getElementById("controlsContainer");
         const loadingMessage = document.getElementById("loading-message");
@@ -163,30 +163,18 @@
         const saveAllButton = document.getElementById("save-all-button"); // Get the save button
         let saveTimeout;
         let currentTestAudio = null; // Variable to hold the currently playing test audio
-
-        // Function to fetch manifest for a single key
-        async function fetchManifest(key) {
-            const manifestUrl = `${baseAudioPath}${key}/manifest.json`;
-            try {
-                const response = await fetch(manifestUrl);
-                if (!response.ok) {
-                    throw new Error(`Manifest not found for key ${key}: ${response.statusText}`);
-                }
-                const fileList = await response.json();
-                 if (!Array.isArray(fileList)) {
-                     throw new Error(`Invalid manifest format for ${key}. Expected an array.`);
-                }
-                return fileList;
-            } catch (error) {
-                console.error(`Error fetching or parsing manifest for ${key}:`, error);
-                return null; // Return null if fetching fails for this key
-            }
-        }
+        let currentPlayButton = null; // Variable to hold the button that is currently in 'stop' mode
 
         // --- Updated Function to create UI for a single audio file ---
-        function createVolumeControl(key, audioFile) {
-            const controlId = `volume_${key}_${audioFile}`;
+        // Now takes only the key, as each key has a single merged audio file.
+        function createVolumeControl(key) {
+            // The audio file for this key is now assumed to be key.mp3
+            const audioFileName = `${key}.mp3`;
+
+            // Use a consistent storage key for per-key volume
+            const controlId = `volume_sing_key_${key}`;
             const storageKey = controlId; // Use the same ID for localStorage key
+
 
             // Load saved volume or default to 1.0
             const savedVolume = parseFloat(localStorage.getItem(storageKey)) || 1.0;
@@ -195,16 +183,16 @@
             control.className = "audio-control";
 
             const label = document.createElement("label");
-            label.htmlFor = controlId;
-            label.textContent = audioFile;
+            label.htmlFor = controlId; // Associate label with slider
+            label.textContent = key.replace("sharp", "#"); // Display the musical key name
 
             // --- Create Play Button ---
             const playButton = document.createElement("button");
             playButton.textContent = "▶"; // Play symbol
             playButton.className = "play-button";
-            playButton.title = `Play ${audioFile}`; // Tooltip
+            playButton.title = `Play/Stop ${audioFileName}`; // Tooltip
 
-            const slider = document.createElement("input");
+            const slider = document.createElement("input"); // Volume slider
             slider.type = "range";
             slider.id = controlId;
             slider.min = "0";
@@ -212,39 +200,62 @@
             slider.step = "0.05"; // Finer control
             slider.value = savedVolume.toFixed(2); // Set initial value
             // --- Add data attributes to slider for saving ---
-            slider.dataset.key = key;
-            slider.dataset.filename = audioFile;
+            slider.dataset.key = key; // Store the key for saving
             // --- End data attributes ---
 
             const valueDisplay = document.createElement("span");
             valueDisplay.className = "volume-value";
             valueDisplay.textContent = savedVolume.toFixed(2);
 
-            // --- Play Button Event Listener (Keep as is) ---
+            // --- Play Button Event Listener (NEW TOGGLE LOGIC) ---
             playButton.addEventListener("click", () => {
-                // Stop any previously playing test audio
-                if (currentTestAudio && !currentTestAudio.paused) {
+                // If this button is already the active one, stop the audio
+                if (currentPlayButton === playButton) {
+                    if (currentTestAudio) {
+                        currentTestAudio.pause();
+                        currentTestAudio.currentTime = 0;
+                        currentTestAudio = null;
+                    }
+                    playButton.textContent = "▶";
+                    currentPlayButton = null;
+                    return; // Exit
+                }
+
+                // If another audio is playing, stop it and reset its button
+                if (currentTestAudio) {
                     currentTestAudio.pause();
                     currentTestAudio.currentTime = 0;
                 }
+                if (currentPlayButton) {
+                    currentPlayButton.textContent = "▶";
+                }
 
-                const audioPath = `${baseAudioPath}${key}/${audioFile}`;
-                const currentVolume = parseFloat(slider.value); // Get volume from slider
+                // Now, play the new audio
+                const audioPath = `${baseAudioPath}${audioFileName}`;
+                const currentVolume = parseFloat(slider.value);
 
-                console.log(`Playing test audio: ${audioPath} at volume ${currentVolume}`);
+                console.log(`Playing test audio for key ${key}: ${audioPath} at volume ${currentVolume}`);
 
-                currentTestAudio = new Audio(audioPath); // Create new Audio object
+                currentTestAudio = new Audio(audioPath);
                 currentTestAudio.volume = currentVolume;
+                currentPlayButton = playButton; // Set this button as the active one
+                playButton.textContent = "■"; // Change to stop symbol
 
                 currentTestAudio.play().catch(err => {
                     console.error("Error playing test audio:", err);
-                    alert(`Error playing sound: ${err.message}`); // Notify user
+                    alert(`Error playing sound: ${err.message}`);
+                    // Reset on error
+                    playButton.textContent = "▶";
+                    currentPlayButton = null;
+                    currentTestAudio = null;
                 });
 
-                // Optional: Reset currentTestAudio when playback finishes
+                // When playback finishes naturally, reset the button
                 currentTestAudio.addEventListener('ended', () => {
-                    if (currentTestAudio && currentTestAudio.src.endsWith(audioPath)) { // Check if it's still the same audio
-                       currentTestAudio = null;
+                    if (currentPlayButton === playButton) { // Only reset if it's still the active one
+                        playButton.textContent = "▶";
+                        currentPlayButton = null;
+                        currentTestAudio = null;
                     }
                 });
             });
@@ -274,34 +285,24 @@
         // Main function to build the UI (no changes needed here)
         async function buildMixerUI() {
             // ... (keep existing manifest fetching and UI building loop) ...
-             let manifestsLoaded = 0;
+             let keysProcessed = 0;
             for (const key of keys) {
-                const audioFiles = await fetchManifest(key);
+                // Assume each key has a single audio file directly in the sing-key-audio folder
+                // We don't need to fetch a manifest anymore.
+                keysProcessed++;
+                const keyGroup = document.createElement("div");
+                keyGroup.className = "key-group";
+                keyGroup.innerHTML = `<h2>${key.replace("sharp", "#")}</h2>`; // Display '#' nicely
 
-                if (audioFiles && audioFiles.length > 0) {
-                    manifestsLoaded++;
-                    const keyGroup = document.createElement("div");
-                    keyGroup.className = "key-group";
-                    keyGroup.innerHTML = `<h2>${key.replace("sharp", "#")}</h2>`; // Display '#' nicely
+                // Create a single volume control for the merged audio file for this key
+                const controlElement = createVolumeControl(key);
+                keyGroup.appendChild(controlElement);
 
-                    audioFiles.forEach(audioFile => {
-                        const controlElement = createVolumeControl(key, audioFile);
-                        keyGroup.appendChild(controlElement);
-                    });
-
-                    controlsContainer.appendChild(keyGroup);
-                } else {
-                     console.warn(`Skipping UI generation for key ${key} due to missing or empty manifest.`);
-                     // Optionally display a message for missing keys
-                     const errorMsg = document.createElement('p');
-                     errorMsg.textContent = `Could not load audio list for key ${key.replace("sharp", "#")}. Ensure manifest.json exists and is valid.`;
-                     errorMsg.style.color = '#ffcc80'; // Warning color
-                     controlsContainer.appendChild(errorMsg);
-                }
+                controlsContainer.appendChild(keyGroup);
             }
 
-            // Update loading message based on results
-            if (manifestsLoaded > 0) {
+            // Update loading message based on keys processed
+            if (keysProcessed > 0) {
                  loadingMessage.style.display = 'none'; // Hide loading message if successful
                  saveAllButton.style.display = 'block'; // Show save button if controls were loaded
             } else {
@@ -321,15 +322,14 @@
             allSliders.forEach(slider => {
                 // Retrieve key and filename from data attributes
                 const key = slider.dataset.key;
-                const filename = slider.dataset.filename;
 
-                if (key && filename) {
-                    const storageKey = `volume_${key}_${filename}`;
+                if (key) {
+                    const storageKey = `volume_sing_key_${key}`; // Consistent storage key
                     const currentVolume = parseFloat(slider.value);
                     localStorage.setItem(storageKey, currentVolume);
                     savedCount++;
                 } else {
-                    console.warn("Slider missing data attributes:", slider);
+                    console.warn("Slider missing 'data-key' attribute:", slider);
                 }
             });
 
