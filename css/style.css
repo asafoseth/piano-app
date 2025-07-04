@@ -119,7 +119,7 @@ body {
 
 .piano-container {
     display: flex;
-    justify-content: center;
+    justify-content: flex-start; /* Align keys to the start for proper scrolling layout */
     padding: 4em 1em 1em 1em;
     border-radius: 0.62em;
     background-color: #24272e;
@@ -136,6 +136,7 @@ body {
     border: 2px solid #24272e;
     box-sizing: border-box;
     cursor: pointer;
+    flex-shrink: 0; /* Prevent white keys from shrinking to fit the container */
     transition: background-color 0.1s ease, transform 0.1s ease; /* Add transition */
 }
 
@@ -280,7 +281,7 @@ body {
 .transpose-container {
     display: flex;
     align-items: center;
-    justify-content: flex-end; /* Align content to the right */
+    justify-content: center; /* Align content to the center */
     /* margin: 10px; No need for margin if using gap in parent */
     gap: 10px; /* Space between elements */
     color: #e0e0e0; /* White text for visibility */
@@ -299,10 +300,13 @@ body {
     width: 30px; /* Fixed width */
     height: 30px; /* Fixed height */
     font-size: 18px;
-    line-height: 30px; /* Center text vertically */
-    text-align: center; /* Center text horizontally */
     cursor: pointer;
     transition: background-color 0.3s ease, transform 0.1s ease;
+    /* Use flexbox for robust centering of the icon/text */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0;
 }
 
 .transpose-btn:hover {
@@ -589,11 +593,14 @@ body {
     box-shadow: 0 0 0 2px rgba(121, 134, 203, 0.5);
 }
 
+/* Style for read-only TAB inputs to prevent text cursor and indicate state */
+.tab-note-input[readonly] {
+    cursor: pointer; /* Indicates it's clickable for selection, but not for typing */
+}
+
 /* Responsive Design */
 @media screen and (max-width: 1200px) { /* Adjusted breakpoint */
-    .piano-container {
-        font-size: 0.8em; /* Adjusted size */
-    }
+    /* Piano size is now handled in the 992px breakpoint and below */
     .container > h1 {
         font-size: 50px;
     }
@@ -601,7 +608,8 @@ body {
 
 @media screen and (max-width: 992px) { /* Adjusted breakpoint */
     .piano-container {
-        font-size: 0.7em;
+        /* On tablets, scale down the piano slightly */
+        font-size: 0.8em;
     }
      .container > h1 {
         font-size: 45px;
@@ -631,9 +639,7 @@ body {
 }
 
 @media screen and (max-width: 768px) { /* Adjusted breakpoint */
-    .piano-container {
-        font-size: 0.6em; /* Adjusted size */
-    }
+    /* Piano container styles for mobile are handled in the more specific rule block below */
      .container > h1 {
         font-size: 40px;
     }
@@ -662,10 +668,7 @@ body {
 }
 
 @media screen and (max-width: 576px) { /* Adjusted breakpoint */
-    .piano-container {
-        font-size: 0.45em; /* Adjusted size */
-        padding: 3em 0.5em 0.5em 0.5em; /* Adjust padding */
-    }
+    /* Piano container styles are consolidated in the 768px media query block below */
      .container > h1 {
         font-size: 32px;
     }
@@ -673,13 +676,14 @@ body {
         padding: 10px;
     }
     .transpose-btn {
-        width: 25px;
-        height: 25px;
-        font-size: 16px;
-        line-height: 25px;
+        width: 35px; /* Increased size for better touch interaction */
+        height: 35px; /* Increased size for better touch interaction */
+        font-size: 20px; /* Larger font for visibility */
+        border-radius: 8px; /* Make it a rounded square instead of a circle */
+        padding: 0; /* Explicitly reset padding to fix content alignment */
     }
     #transpose-value {
-        font-size: 16px;
+        font-size: 18px; /* Slightly larger value text */
     }
     .tab-feature-container {
         padding: 10px;
@@ -752,6 +756,10 @@ nav a.nav-button:hover {
         margin-bottom: 20px; /* Add space between stacked columns */
     }
 
+    .controls-container {
+        justify-content: center; /* Center chord mode and key select on mobile */
+    }
+
     .tab-feature-container,
     .transpose-container,
     .controls-container,
@@ -793,15 +801,17 @@ nav a.nav-button:hover {
     }
 
     /* Allow specific buttons to not be full width */
-    .tab-controls button, .transpose-btn, #play-tab-btn, #reset-tab-btn, #chord-mode-toggle, .tab-split-btn {
+    .tab-controls button, #play-tab-btn, #reset-tab-btn, #chord-mode-toggle, .tab-split-btn {
         width: auto;
     }
 
     .piano-container {
         width: 100%;
         overflow-x: auto; /* Allow horizontal scrolling for piano keys */
+        -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
         padding-bottom: 10px; /* Space for scrollbar if it appears */
-        font-size: 0.55em; /* Further adjust piano size for small screens */
+        padding-top: 3em; /* Adjust vertical padding for mobile */
+        font-size: 0.9em; /* Make keys larger on mobile and enable scrolling */
     }
 
     .sync-volume-container {
@@ -829,7 +839,8 @@ nav a.nav-button:hover {
 
 @media (max-width: 480px) {
     .piano-container {
-        font-size: 0.4em; /* Even smaller for very small devices */
+        /* Keep keys large and tappable on all mobile phones, relying on horizontal scroll */
+        font-size: 0.85em; 
     }
      nav a.nav-button {
         margin: 0 5px; /* Reduce margin for nav buttons */
