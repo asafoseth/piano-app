@@ -2,6 +2,7 @@ import { chordMaps, SingleNoteMaps } from './maps/chordMapping.js'; // Import ch
 import { keyMap } from './maps/keyMapping.js';
 import { lockedKeysMap } from './maps/chordMapping.js';
 import { keyValueMaps } from './maps/chordMapping.js';
+import { applyInputRestrictions } from './uiRestrictions.js';
 
 /**
  * Main function to enable chord playing functionality.
@@ -11,6 +12,9 @@ import { keyValueMaps } from './maps/chordMapping.js';
  */
 
 export default function enableChordPlaying(audioContext, passedAudioBuffers) {
+    // Apply UI restrictions to prevent mobile keyboard on TAB inputs
+    applyInputRestrictions();
+
     // Store the preloaded buffers in a variable accessible within this module's scope
     const preloadedAudioBuffers = passedAudioBuffers;
 
@@ -695,6 +699,7 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
             input1.classList.add('tab-note-input', 'split');
             input1.placeholder = `Note ${entryIndex + 1}.1`;
             input1.dataset.splitPart = "1";
+            input1.readOnly = true; // Prevent keyboard popup
             // input1.value = originalValue; // Optionally prefill, or clear
 
             const input2 = document.createElement('input');
@@ -702,6 +707,7 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
             input2.classList.add('tab-note-input', 'split');
             input2.placeholder = `Note ${entryIndex + 1}.2`;
             input2.dataset.splitPart = "2";
+            input2.readOnly = true; // Prevent keyboard popup
 
             inputWrapper.appendChild(input1);
             inputWrapper.appendChild(input2);
