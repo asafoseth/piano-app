@@ -2,6 +2,7 @@ import { chordMaps, SingleNoteMaps } from './maps/chordMapping.js'; // Import ch
 import { keyMap } from './maps/keyMapping.js';
 import { lockedKeysMap } from './maps/chordMapping.js';
 import { keyValueMaps } from './maps/chordMapping.js';
+import { syncKeyMaps } from './maps/chordMapping.js';
 import { applyInputRestrictions } from './uiRestrictions.js';
 
 /**
@@ -20,7 +21,7 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
 
     const activeKeys = new Set();
     let chordMode = false; // State to track if chord mode is enabled
-    let currentKey = "A"; // Default key
+    let currentKey = "C"; // Default key
     let tabFeatureEnabled = false; 
     let currentBeatSourceNode = null; 
 
@@ -424,6 +425,8 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
         }
         updateInternalMapSlices(); // Update the internal map slices to reflect new offset
         updateTransposeDisplay(); // Update the displayed transpose value
+
+        updateSyncKey(); // Update Sync Key playback on transpose
     }
 
      // --- Event Listeners ---
@@ -1010,6 +1013,19 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
             stopAllAudio(); // Stop all audio immediately when unchecked
         }
     }
+
+    function updateSyncKey() {
+        if (syncKeyFinderEnabled) {
+            stopAllAudio();
+            let newSyncKey = syncKeyMaps[currentKey]?.[chordMode ? transposeOffset : singleNoteTransposeOffset] || currentKey;
+
+            // Ensure that handleKeyPress is called with the musicalKey
+            handleKeyPress(newSyncKey);
+        } else {
+            stopAllAudio();
+        }
+    }
+
 
     // --- Initialization ---
     updateInternalMapSlices(); // Initialize map slices based on default key and offsets
