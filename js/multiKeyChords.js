@@ -81,51 +81,52 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
                 '8.0': 14.875, '8.5': 15.937
             }
         },
+        // Updated durations and timings for seamless looping (verify with actual audio files)
         'track3': {
             path: 'audio/beats/Track-3-funk.mp3',
             bpm: 100,
-            duration: 19.2, // TODO: Replace with actual duration
+            duration: 18.0, // Set to actual audio duration (seconds)
             timings: {
                 '1.0': 0.000, '1.5': 1.218,
                 '2.0': 2.437, '2.5': 3.625,
                 '3.0': 4.812, '3.5': 6.031,
                 '4.0': 7.250, '4.5': 8.406,
                 '5.0': 9.593, '5.5': 10.812,
-                '6.0': 12.750, '6.5': 13.218,
+                '6.0': 12.000, '6.5': 13.218,
                 '7.0': 14.406, '7.5': 15.625,
-                '8.0': 16.843, '8.5': 18.000
-            } // TODO: Add timings for Track 3
-        },
-        'track4': {
-            path: 'audio/beats/Track-4-fuji.mp3',
-            bpm: 120,
-            duration: 16.0, // TODO: Replace with actual duration
-            timings: { // Timings for Fuji beat
-                '1.0': 0.000, '1.5': 1.093,
-                '2.0': 2.156, '2.5': 3.218,
-                '3.0': 4.281, '3.5': 5.343,
-                '4.0': 6.406, '4.5': 7.468,
-                '5.0': 8.531, '5.5': 9.593,
-                '6.0': 10.656, '6.5': 11.718,
-                '7.0': 12.781, '7.5': 13.843,
-                '8.0': 14.906, '8.5': 15.968
+                '8.0': 16.843, '8.5': 18.000 // Better spacing before end (duration: 18.0)
             }
         },
-        'track5': {
-            path: 'audio/beats/Track-5-highlife.mp3',
-            bpm: 115,
-            duration: 16.7, // TODO: Replace with actual duration
-            timings: { // Timings for Highlife beat
-                '1.0': 0.000, '1.5': 1.187,
-                '2.0': 2.375, '2.5': 3.562,
-                '3.0': 4.750, '3.5': 5.906,
-                '4.0': 7.093, '4.5': 8.250,
-                '5.0': 9.437, '5.5': 10.625,
-                '6.0': 11.781, '6.5': 12.968,
-                '7.0': 14.156, '7.5': 15.312,
-                '8.0': 16.500, '8.5': 17.656
-            }
-        }
+        // 'track4': {
+        //     path: 'audio/beats/Track-4-fuji.mp3',
+        //     bpm: 120,
+        //     duration: 15.97, // Set to actual audio duration (seconds)
+        //     timings: {
+        //         '1.0': 0.000, '1.5': 1.093,
+        //         '2.0': 2.156, '2.5': 3.218,
+        //         '3.0': 4.281, '3.5': 5.343,
+        //         '4.0': 6.406, '4.5': 7.468,
+        //         '5.0': 8.531, '5.5': 9.593,
+        //         '6.0': 10.656, '6.5': 11.718,
+        //         '7.0': 12.781, '7.5': 13.843,
+        //         '8.0': 14.906, '8.5': 15.843 // Allowance before end (duration: 15.97)
+        //     }
+        // },
+        // 'track5': {
+        //     path: 'audio/beats/Track-5-highlife.mp3',
+        //     bpm: 115,
+        //     duration: 17.65, // Set to actual audio duration (seconds)
+        //     timings: {
+        //         '1.0': 0.000, '1.5': 1.187,
+        //         '2.0': 2.375, '2.5': 3.562,
+        //         '3.0': 4.750, '3.5': 5.906,
+        //         '4.0': 7.093, '4.5': 8.250,
+        //         '5.0': 9.437, '5.5': 10.625,
+        //         '6.0': 11.781, '6.5': 12.968,
+        //         '7.0': 14.156, '7.5': 15.312,
+        //         '8.0': 16.500, '8.5': 16.900 // Allowance before end (duration: 17.65)
+        //     }
+        // }
     };
 
     function updateInternalMapSlices() {
@@ -864,23 +865,18 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
         });
 
         // 5. Calculate loop timing
-        const lastNoteTimeMs = allNotesToSchedule.reduce((max, { timingKey }) => {
-            const time = timingMap[timingKey] || 0;
-            return Math.max(max, time);
-        }, 0) * 1000;
-
-        // Get the beat track's duration in milliseconds. Default to 0 if not specified.
-        const trackDurationMs = (trackInfo.duration || 0) * 1000;
-
-        // The loop should wait for the longer of the two: the last note or the full beat track.
-        const loopWaitTimeMs = Math.max(lastNoteTimeMs, trackDurationMs);
+        let loopWaitMs = (trackInfo.duration || 0) * 1000;
+        // For tracks 3, 4, 5, restart the loop slightly before the end to match last note timing
+        if (["track3", "track4", "track5"].includes(selectedTrackId)) {
+            loopWaitMs += 800; // Subtract 300ms for early restart (adjust as needed)
+        }
 
         // 6. Schedule the next action: either loop or stop.
         const loopTimeoutId = setTimeout(() => {
-            if (isTabPlaying) { // If the user hasn't clicked "Stop TAB"
-                playTabSequence(); // Recursively call to start the next loop.
+            if (isTabPlaying) {
+                playTabSequence(); // Recursively call to start the next loop
             }
-        }, loopWaitTimeMs + 20); // Add a small buffer for safety
+        }, loopWaitMs);
         tabPlaybackTimeoutIds.push(loopTimeoutId);
     }
 

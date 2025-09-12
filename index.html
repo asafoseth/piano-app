@@ -12,6 +12,10 @@
       <nav>
         <a href="#" class="nav-button">Home</a>
         <a href="#" class="nav-button">About</a>
+        <span id="user-info" style="display:none; color:#fff; font-weight:500; margin-left:10px;"></span>
+        <button id="save-tab-btn" style="display:none;">Save TAB</button>
+        <button id="import-tab-btn" style="display:none;">Import TAB</button>
+        <button id="show-login-modal">Login</button>
       </nav>
     </header>
     <div class="main">
@@ -34,36 +38,92 @@
                                 <option value="track1">Track 1</option>
                                 <option value="track2">Track 2</option>
                                 <option value="track3">Track 3</option>
-                                <option value="track4">Track 4</option>
-                                <option value="track5">Track 5</option>
                             </select>
                         </div>
                     </div>
                     <!-- TAB Note Inputs -->
                     <div class="tab-note-inputs">
+                        <!-- Generate 16 fields -->
+                        <!-- You can use a loop in JS, but for static HTML, just copy 16 times -->
                         <div class="tab-note-entry" data-entry-index="0">
                             <div class="tab-input-wrapper">
                                 <input type="text" class="tab-note-input" data-original-input="true" placeholder="Note 1 ID">
                             </div>
-                            <button class="tab-split-btn">/</button>
                         </div>
                         <div class="tab-note-entry" data-entry-index="1">
                             <div class="tab-input-wrapper">
                                 <input type="text" class="tab-note-input" data-original-input="true" placeholder="Note 2 ID">
                             </div>
-                            <button class="tab-split-btn">/</button>
                         </div>
                         <div class="tab-note-entry" data-entry-index="2">
                             <div class="tab-input-wrapper">
                                 <input type="text" class="tab-note-input" data-original-input="true" placeholder="Note 3 ID">
                             </div>
-                            <button class="tab-split-btn">/</button>
                         </div>
                         <div class="tab-note-entry" data-entry-index="3">
                             <div class="tab-input-wrapper">
                                 <input type="text" class="tab-note-input" data-original-input="true" placeholder="Note 4 ID">
                             </div>
-                            <button class="tab-split-btn">/</button>
+                        </div>
+                        <div class="tab-note-entry" data-entry-index="4">
+                            <div class="tab-input-wrapper">
+                                <input type="text" class="tab-note-input" data-original-input="true" placeholder="Note 5 ID">
+                            </div>
+                        </div>
+                        <div class="tab-note-entry" data-entry-index="5">
+                            <div class="tab-input-wrapper">
+                                <input type="text" class="tab-note-input" data-original-input="true" placeholder="Note 6 ID">
+                            </div>
+                        </div>
+                        <div class="tab-note-entry" data-entry-index="6">
+                            <div class="tab-input-wrapper">
+                                <input type="text" class="tab-note-input" data-original-input="true" placeholder="Note 7 ID">
+                            </div>
+                        </div>
+                        <div class="tab-note-entry" data-entry-index="7">
+                            <div class="tab-input-wrapper">
+                                <input type="text" class="tab-note-input" data-original-input="true" placeholder="Note 8 ID">
+                            </div>
+                        </div>
+                        <div class="tab-note-entry" data-entry-index="8">
+                            <div class="tab-input-wrapper">
+                                <input type="text" class="tab-note-input" data-original-input="true" placeholder="Note 9 ID">
+                            </div>
+                        </div>
+                        <div class="tab-note-entry" data-entry-index="9">
+                            <div class="tab-input-wrapper">
+                                <input type="text" class="tab-note-input" data-original-input="true" placeholder="Note 10 ID">
+                            </div>
+                        </div>
+                        <div class="tab-note-entry" data-entry-index="10">
+                            <div class="tab-input-wrapper">
+                                <input type="text" class="tab-note-input" data-original-input="true" placeholder="Note 11 ID">
+                            </div>
+                        </div>
+                        <div class="tab-note-entry" data-entry-index="11">
+                            <div class="tab-input-wrapper">
+                                <input type="text" class="tab-note-input" data-original-input="true" placeholder="Note 12 ID">
+                            </div>
+                        </div>
+                        <div class="tab-note-entry" data-entry-index="12">
+                            <div class="tab-input-wrapper">
+                                <input type="text" class="tab-note-input" data-original-input="true" placeholder="Note 13 ID">
+                            </div>
+                        </div>
+                        <div class="tab-note-entry" data-entry-index="13">
+                            <div class="tab-input-wrapper">
+                                <input type="text" class="tab-note-input" data-original-input="true" placeholder="Note 14 ID">
+                            </div>
+                        </div>
+                        <div class="tab-note-entry" data-entry-index="14">
+                            <div class="tab-input-wrapper">
+                                <input type="text" class="tab-note-input" data-original-input="true" placeholder="Note 15 ID">
+                            </div>
+                        </div>
+                        <div class="tab-note-entry" data-entry-index="15">
+                            <div class="tab-input-wrapper">
+                                <input type="text" class="tab-note-input" data-original-input="true" placeholder="Note 16 ID">
+                            </div>
                         </div>
                     </div>
                     <div class="tab-action-buttons">
@@ -109,6 +169,40 @@
         <div class="piano-container" id="keyboard-container"></div>
     </div>
     
+    <div id="login-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.7); z-index:100;">
+      <div style="background:#fff; margin:10vh auto; padding:2em; border-radius:8px; width:320px; position:relative;">
+        <h2>Login / Signup</h2>
+        <button id="google-login-btn" style="width:100%; margin-bottom:10px;">Login with Google</button>
+        <input type="email" id="email-input" placeholder="Email" style="width:100%; margin-bottom:8px;">
+        <input type="password" id="password-input" placeholder="Password" style="width:100%; margin-bottom:8px;">
+        <button id="email-login-btn" style="width:100%; margin-bottom:10px;">Login / Signup with Email</button>
+        <button id="close-login-modal" title="Close" style="position:absolute; top:8px; right:8px;">&times;</button>
+        <div id="login-error" style="color:red; margin-top:8px;"></div>
+      </div>
+    </div>
+    <button id="show-login-modal" style="position:fixed; top:10px; right:10px; z-index:101;">Login</button>
+
+    <!-- Save TAB Modal -->
+<div id="save-tab-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.7); z-index:1001;">
+  <div style="background:#fff; margin:10vh auto; padding:2em; border-radius:8px; width:320px; position:relative;">
+    <h2 style="font-size:1.2em; color:#222;">Save TAB Data</h2>
+    <input type="text" id="tab-save-name" placeholder="Enter a name..." style="width:100%; margin-bottom:12px;">
+    <button id="confirm-save-tab" style="width:100%;">Save</button>
+    <button id="close-save-tab-modal" style="position:absolute; top:12px; left:12px; background:#f44336; color:#fff; border-radius:50%; width:32px; height:32px; border:none;">&times;</button>
+    <div id="save-tab-error" style="color:red; margin-top:8px;"></div>
+  </div>
+</div>
+
+<!-- Import TAB Modal -->
+<div id="import-tab-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.7); z-index:1001;">
+  <div style="background:#fff; margin:10vh auto; padding:2em; border-radius:8px; width:340px; position:relative;">
+    <h2 style="font-size:1.2em; color:#222;">Import TAB Data</h2>
+    <ul id="tab-import-list" style="list-style:none; padding:0; margin-bottom:12px;"></ul>
+    <button id="close-import-tab-modal" style="position:absolute; top:12px; left:12px; background:#f44336; color:#fff; border-radius:50%; width:32px; height:32px; border:none;">&times;</button>
+    <div id="import-tab-error" style="color:red; margin-top:8px;"></div>
+  </div>
+</div>
+
     <script type="module" src="/js/main.js"></script>
   </body>
 </html>

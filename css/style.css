@@ -13,6 +13,66 @@ body {
     background: linear-gradient(160deg, #1a1a2e 0%,  #3a204a 100%); /* Dark Blue/Purple to a deeper Purple/Magenta */
 }
 
+/* Header and Navigation */
+header {
+    width: 100%;
+    background: linear-gradient(90deg, #2d2d44 0%, #3a204a 100%);
+    box-shadow: 0 2px 8px rgba(30,30,40,0.12);
+    padding: 0;
+    position: sticky;
+    top: 0;
+    z-index: 1100;
+}
+
+nav {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 18px;
+    padding: 0.7em 2em;
+}
+
+.nav-button {
+    color: #fff;
+    background: transparent;
+    border: none;
+    font-size: 1.08em;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    padding: 7px 18px;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: background 0.2s, color 0.2s;
+    cursor: pointer;
+    position: relative;
+}
+
+.nav-button:hover, .nav-button:focus {
+    background: #5c6bc0;
+    color: #fff;
+    text-decoration: none;
+}
+
+#show-login-modal {
+    background: #f44336;
+    color: #fff;
+    font-weight: 500;
+    border: none;
+    border-radius: 6px;
+    padding: 7px 18px;
+    margin-left: auto;
+    font-size: 1.08em;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(244,67,54,0.08);
+    transition: background 0.2s;
+    position: relative;
+    z-index: 101;
+}
+
+#show-login-modal:hover {
+    background: #d32f2f;
+}
+
 /* Styles for TAB feature - moved from incorrect nesting inside 'body' */
 .tab-note-entry {
     display: flex;
@@ -554,26 +614,38 @@ body {
     outline: none;
 }
 
+#save-tab-btn, #import-tab-btn {
+    background: #5c6bc0;
+    color: #fff;
+    font-weight: 500;
+    border: none;
+    border-radius: 6px;
+    padding: 7px 18px;
+    font-size: 1.08em;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(92,107,192,0.08);
+    transition: background 0.2s, box-shadow 0.2s;
+    margin-left: 8px;
+}
+
+#save-tab-btn:hover, #import-tab-btn:hover {
+    background: #3f51b5;
+    box-shadow: 0 4px 12px rgba(92,107,192,0.15);
+}
+
 .tab-note-inputs {
     display: flex;
     justify-content: center;
     align-items: center;
     flex-wrap: wrap;
-    gap: 10px; /* Space between note input fields */
+    gap: 6px; /* Reduce gap between fields */
     /* margin-top handled by parent gap */
 }
 /* This .tab-note-input rule might be a duplicate or refinement of the one moved from body nesting */
 .tab-note-input {
-    width: 70px; /* Control the width of the input fields */
-    padding: 8px;
-    font-size: 14px;
-    text-align: center;
-    background-color: #333; /* Dark background for inputs */
-    color: #e0e0e0; /* Light text */
-    border: 1px solid #555;
-    border-radius: 4px;
-    box-sizing: border-box;
-    -moz-appearance: textfield; /* Firefox - hide spinners */
+    width: 45px; /* Reduced from 70px */
+    padding: 6px;
+    font-size: 12px;
 }
 
 .tab-note-input::-webkit-outer-spin-button,
@@ -598,255 +670,256 @@ body {
     cursor: pointer; /* Indicates it's clickable for selection, but not for typing */
 }
 
+/* Login Modal Overlay */
+#login-modal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(30, 30, 40, 0.85);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+    transition: background 0.3s;
+}
+
+/* Center modal content using flex */
+#login-modal.show {
+    display: flex;
+}
+
+/* Login Modal Content */
+#login-modal > div {
+    background: linear-gradient(135deg, #2d2d44 0%, #3a204a 100%);
+    margin: 0 auto;
+    padding: 2.5em 2em 2em 2em;
+    border-radius: 16px;
+    width: 340px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    animation: modalFadeIn 0.4s;
+}
+
+/* Login / Signup Heading */
+#login-modal h2 {
+    color: #222;
+    font-size: 1.3em;
+    margin-bottom: 16px;
+    text-align: center;
+    letter-spacing: 0.5px;
+    text-shadow: none;
+    font-weight: 600;
+}
+
+/* Email Button */
+#email-login-btn {
+    background: #5c6bc0;
+    color: #fff;
+    font-weight: 500;
+    width: auto;
+    min-width: 180px;
+    padding: 10px 18px;
+    margin: 0 auto 10px auto;
+    display: block;
+    border-radius: 6px;
+    font-size: 15px;
+    text-align: center;
+}
+
+/* Google Button (keep full width for visibility) */
+#google-login-btn {
+    background: #4285F4;
+    color: #fff;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+/* Close Button */
+#close-login-modal {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: #f44336;
+    color: #fff;
+    font-size: 1.1em;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    transition: background 0.2s, color 0.2s;
+}
+
+#close-login-modal:hover {
+    background: #d32f2f;
+    color: #fff;
+}
+
+#login-error {
+    color: #f44336;
+    margin-top: 6px;
+    font-size: 14px;
+    text-align: center;
+    min-height: 18px;
+}
+
+/* Common modal overlay style */
+#save-tab-modal, #import-tab-modal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(30, 30, 40, 0.85);
+    z-index: 1001;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Center modal content using flex */
+#save-tab-modal.show, #import-tab-modal.show {
+    display: flex;
+}
+
+/* Modal content box */
+#save-tab-modal > div, #import-tab-modal > div {
+    background: linear-gradient(135deg, #2d2d44 0%, #3a204a 100%);
+    margin: 0 auto;
+    padding: 2em 2em 2em 2em;
+    border-radius: 16px;
+    width: 340px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    animation: modalFadeIn 0.4s;
+}
+
+#save-tab-modal h2, #import-tab-modal h2 {
+    color: #222;
+    font-size: 1.2em;
+    margin-bottom: 16px;
+    text-align: center;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    background: #fff;
+    border-radius: 6px;
+    padding: 6px 0;
+    width: 100%;
+}
+
+#tab-save-name, #save-tab-modal input[type="text"] {
+    width: 100%;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+    border-radius: 6px;
+    border: 1px solid #7986cb;
+    background: #23233a;
+    color: #e0e0e0;
+    font-size: 15px;
+    transition: border-color 0.2s;
+}
+
+#tab-save-name:focus {
+    border-color: #c5cae9;
+    outline: none;
+}
+
+#confirm-save-tab {
+    background: #5c6bc0;
+    color: #fff;
+    font-weight: 500;
+    width: 100%;
+    padding: 10px 0;
+    border-radius: 6px;
+    font-size: 15px;
+    border: none;
+    cursor: pointer;
+    margin-bottom: 10px;
+    transition: background 0.2s;
+}
+
+#confirm-save-tab:hover {
+    background: #3f51b5;
+}
+
+#close-save-tab-modal, #close-import-tab-modal {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: #f44336;
+    color: #fff;
+    font-size: 1.1em;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    transition: background 0.2s, color 0.2s;
+}
+
+#close-save-tab-modal:hover, #close-import-tab-modal:hover {
+    background: #d32f2f;
+    color: #fff;
+}
+
+#save-tab-error, #import-tab-error {
+    color: #f44336;
+    margin-top: 6px;
+    font-size: 14px;
+    text-align: center;
+    min-height: 18px;
+}
+
+/* Import list styling */
+#tab-import-list {
+    list-style: none;
+    padding: 0;
+    margin-bottom: 12px;
+    width: 100%;
+}
+
+#tab-import-list li {
+    background: #23233a;
+    color: #e0e0e0;
+    padding: 10px 12px;
+    margin-bottom: 6px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-size: 15px;
+    text-align: left;
+}
+
+#tab-import-list li:hover {
+    background: #5c6bc0;
+    color: #fff;
+}
+
 /* Responsive Design */
-@media screen and (max-width: 1200px) { /* Adjusted breakpoint */
-    /* Piano size is now handled in the 992px breakpoint and below */
-    .container > h1 {
-        font-size: 50px;
-    }
-}
-
-@media screen and (max-width: 992px) { /* Adjusted breakpoint */
-    .piano-container {
-        /* On tablets, scale down the piano slightly */
-        font-size: 0.8em;
-    }
-     .container > h1 {
-        font-size: 45px;
-    }
-    /* Stack the two main columns */
-    .controls-row {
-        flex-direction: column; /* Stack controls vertically */
-        gap: 30px; /* Add more space between stacked sections */
-    }
-    .key-switcher-container {
-        margin-bottom: 0; /* Remove bottom margin when stacked */
-    }
-    .tab-feature-container {
-        width: 95%;
-    }
-}
-
-@media screen and (max-width: 992px) { /* Adjusted breakpoint for stacking */
-    .tab-column,
-    .other-controls-column {
-        width: 100%; /* Take full width when stacked */
-        align-items: center; /* Center the containers within the stacked column */
-    }
-    .other-controls-column {
-        gap: 20px; /* Adjust gap when stacked */
-    }
-}
-
-@media screen and (max-width: 768px) { /* Adjusted breakpoint */
-    /* Piano container styles for mobile are handled in the more specific rule block below */
-     .container > h1 {
-        font-size: 40px;
-    }
-
-    .piano-title {
-        /* Adjust margin on mobile to prevent excessive overlap as piano scales down */
-        margin-bottom: -20px;
-    }
-
-    #chord-mode-toggle {
-        font-size: 14px;
-        padding: 8px 16px;
-    }
-    .tab-feature-container h2 {
-        font-size: 20px;
-    }
-    #tab-feature-toggle,
-    .beat-track-select-container label,
-    #beat-track-select {
-        font-size: 14px;
-    }
-    .tab-note-input {
-        width: 60px;
-        font-size: 13px;
-    }
-}
-
-@media screen and (max-width: 576px) { /* Adjusted breakpoint */
-    /* Piano container styles are consolidated in the 768px media query block below */
-     .container > h1 {
-        font-size: 32px;
-    }
-    .main {
-        padding: 10px;
-    }
-    .transpose-btn {
-        width: 35px; /* Increased size for better touch interaction */
-        height: 35px; /* Increased size for better touch interaction */
-        font-size: 20px; /* Larger font for visibility */
-        border-radius: 8px; /* Make it a rounded square instead of a circle */
-        padding: 0; /* Explicitly reset padding to fix content alignment */
-    }
-    #transpose-value {
-        font-size: 18px; /* Slightly larger value text */
-    }
-    .tab-feature-container {
-        padding: 10px;
-        gap: 10px;
-    }
-    .tab-feature-container h2 {
-        font-size: 18px;
-    }
-    .tab-controls {
-        flex-direction: column; /* Stack toggle and beat select on very small screens */
-        gap: 10px;
-    }
-    .tab-note-inputs {
-        gap: 8px;
-    }
-    .tab-note-input {
-        width: 55px; /* Further reduce size */
-    }
-}
-
-/* Duplicate media query removed */
-
-/* Header Styles */
-header {
-    background-color: #333; /* Dark background for the header */
-    padding: 10px 20px;      /* Padding around the navigation */
-    text-align: center;      /* Center the navigation buttons */
-    border-bottom: 2px solid #555; /* Subtle border at the bottom */
-    width: 100%;             /* Make header take full width */
-    box-sizing: border-box;  /* Include padding and border in the element's total width and height */
-}
-
-nav a.nav-button {
-    color: white;            /* White text for buttons */
-    margin: 0 15px;          /* Space between buttons */
-    text-decoration: none;   /* Remove underline from links */
-    padding: 8px 15px;       /* Padding inside buttons */
-    border: 1px solid white; /* White border for buttons */
-    border-radius: 4px;      /* Rounded corners for buttons */
-    transition: background-color 0.3s, color 0.3s; /* Smooth transition for hover effect */
-}
-
-nav a.nav-button:hover {
-    background-color: white; /* White background on hover */
-    color: #333;             /* Dark text on hover */
-}
-
-/* Additional Responsive adjustments for mobile devices */
-@media (max-width: 768px) {
-    /* Adjust main padding if header is fixed or takes up space */
-    /* .main { padding-top: 70px; } /* Example if header height is around 50px + margin */
-
-    h1 {
-        font-size: 1.8em; /* Adjust heading size for mobile */
-    }
-
-    h2 {
-        font-size: 1.3em; /* Adjust subheading size for mobile */
-    }
-
-    /* Ensure controls stack and take full width */
-    .controls-row {
-        flex-direction: column;
-        align-items: stretch; /* Make columns take full width */
-    }
-
-    .tab-column, .other-controls-column {
-        width: 100%; /* Ensure columns take full width when stacked */
-        align-items: center; /* Center content within columns */
-        margin-bottom: 20px; /* Add space between stacked columns */
-    }
-
-    .controls-container {
-        justify-content: center; /* Center chord mode and key select on mobile */
-    }
-
-    .tab-feature-container,
-    .transpose-container,
-    .controls-container,
-    .sync-controls-container {
-        width: 100%; /* Make control groups take full width */
-        max-width: none; /* Override any max-width that might constrain them */
-        box-sizing: border-box;
-    }
-
-    .tab-note-inputs {
-        flex-direction: column; /* Stack note entries vertically */
-        align-items: stretch; /* Make entries take full width */
-        gap: 10px;
-    }
-
-    .tab-note-entry {
-        width: 100%; /* Make each note entry take full width */
-        justify-content: space-between; /* Space out input and split button */
-    }
-
-    .tab-input-wrapper {
-        flex-grow: 1;
-    }
-
-    .tab-note-input {
-        width: 100%; /* Make input field take available width in its wrapper */
-        box-sizing: border-box;
-    }
-
-    button,
-    select,
-    input[type="text"],
-    input[type="range"] {
-        padding: 12px; /* Increase padding for better tap targets */
-        font-size: 1em; /* Ensure readability */
-        width: 100%; /* Make form elements generally full-width */
-        box-sizing: border-box;
-        margin-bottom: 10px; /* Add some space below form elements */
-    }
-
-    /* Allow specific buttons to not be full width */
-    .tab-controls button, #play-tab-btn, #reset-tab-btn, #chord-mode-toggle, .tab-split-btn {
-        width: auto;
-    }
-
-    .piano-container {
-        width: 100%;
-        overflow-x: auto; /* Allow horizontal scrolling for piano keys */
-        -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
-        padding-bottom: 10px; /* Space for scrollbar if it appears */
-        padding-top: 3em; /* Adjust vertical padding for mobile */
-        font-size: 0.9em; /* Make keys larger on mobile and enable scrolling */
-    }
-
-    .sync-volume-container {
-        flex-direction: column; /* Stack label and range input */
-        align-items: flex-start;
-    }
-
-    label {
-        display: block; /* Make labels take full width for better layout */
-        margin-bottom: 5px;
-    }
-
-    /* Ensure checkbox label content aligns well */
-    label[for="syncKeyFinderToggle"] {
-        display: flex;
-        align-items: center;
-        width: auto; /* Don't make the checkbox label full width if not desired */
-    }
-    label[for="syncKeyFinderToggle"] input[type="checkbox"] {
-        width: auto; /* Checkbox itself shouldn't be full width */
-        margin-right: 8px;
-        margin-bottom: 0; /* Remove bottom margin from checkbox */
-    }
-}
-
-@media (max-width: 480px) {
-    .piano-container {
-        /* Keep keys large and tappable on all mobile phones, relying on horizontal scroll */
-        font-size: 0.85em; 
-    }
-     nav a.nav-button {
-        margin: 0 5px; /* Reduce margin for nav buttons */
-        padding: 6px 10px; /* Reduce padding for nav buttons */
-    }
-    .container > h1 {
-        font-size: 28px; /* Smaller H1 for very small screens */
+/* Comment out or remove all @media queries for mobile responsiveness */
+/* Or add this at the end to override: */
+@media screen and (max-width: 1200px), 
+       screen and (max-width: 992px), 
+       screen and (max-width: 768px), 
+       screen and (max-width: 576px), 
+       (max-width: 480px) {
+    .container, .main, .tab-feature-container, .tab-note-inputs, .tab-note-entry, .tab-note-input {
+        all: unset;
     }
 }

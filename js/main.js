@@ -1,4 +1,23 @@
 import enableChordPlaying from './multiKeyChords.js';
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+import { getAuth, signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDocs, collection, query, where } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+// Your Firebase config here:
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyDITrrDnAKRWjgQnpwfcyGKdUgjkI4ogA8",
+  authDomain: "ali-piano.firebaseapp.com",
+  projectId: "ali-piano",
+  storageBucket: "ali-piano.firebasestorage.app",
+  messagingSenderId: "806442476961",
+  appId: "1:806442476961:web:365f1a133a33f0ed69d7e0",
+  measurementId: "G-6NG4N6WK95"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
 document.addEventListener("DOMContentLoaded", () => {
     const pianoContainer = document.querySelector(".piano-container"); // Use querySelector for single element
@@ -167,7 +186,7 @@ document.addEventListener("DOMContentLoaded", () => {
             // const handleInteractionStart = (event) => {
             //     event.preventDefault(); // Prevent default actions like scrolling on touch
             //     // Visual feedback is now handled within multiKeyChords.js via addKeyVisual/removeKeyVisual
-            //     // We might not even need these listeners here anymore if multiKeyChords handles visuals for both modes.
+            //     // We might not even need these listeners here anymore if multiKeyChords doesn't cover *all* visual states.
             //     // Let's keep them for now in case multiKeyChords doesn't cover *all* visual states.
             //     // addKeyVisual(index); // Potentially redundant if handled in multiKeyChords
             // };
@@ -207,3 +226,170 @@ document.addEventListener("DOMContentLoaded", () => {
     // }
 
 }); // End DOMContentLoaded
+
+const loginBtn = document.getElementById('show-login-modal');
+const userInfoSpan = document.getElementById('user-info');
+
+// Listen for auth state changes
+onAuthStateChanged(auth, user => {
+  if (user) {
+    // User is logged in
+    loginBtn.textContent = "Logout";
+    userInfoSpan.textContent = user.displayName || user.email;
+    userInfoSpan.style.display = "inline";
+    loginBtn.onclick = () => {
+      signOut(auth);
+    };
+  } else {
+    // User is logged out
+    loginBtn.textContent = "Login";
+    userInfoSpan.textContent = "";
+    userInfoSpan.style.display = "none";
+    loginBtn.onclick = () => {
+      document.getElementById('login-modal').style.display = 'block';
+    };
+  }
+
+  // Show/hide TAB buttons based on login state
+  if (user) {
+    document.getElementById('save-tab-btn').style.display = "inline-block";
+    document.getElementById('import-tab-btn').style.display = "inline-block";
+  } else {
+    document.getElementById('save-tab-btn').style.display = "none";
+    document.getElementById('import-tab-btn').style.display = "none";
+  }
+});
+
+// Login modal logic
+document.getElementById('show-login-modal').onclick = () => {
+  document.getElementById('login-modal').style.display = 'block';
+};
+document.getElementById('close-login-modal').onclick = () => {
+  document.getElementById('login-modal').style.display = 'none';
+};
+document.getElementById('google-login-btn').onclick = async () => {
+  try {
+    await signInWithPopup(auth, new GoogleAuthProvider());
+    document.getElementById('login-modal').style.display = 'none';
+  } catch (e) {
+    document.getElementById('login-error').textContent = e.message;
+  }
+};
+document.getElementById('email-login-btn').onclick = async () => {
+  const email = document.getElementById('email-input').value;
+  const password = document.getElementById('password-input').value;
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+    document.getElementById('login-modal').style.display = 'none';
+  } catch (e) {
+    // If user not found, try signup
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
+      document.getElementById('login-modal').style.display = 'none';
+    } catch (err) {
+      document.getElementById('login-error').textContent = err.message;
+    }
+  }
+};
+
+// Save TAB Modal logic
+document.getElementById('save-tab-btn').onclick = () => {
+  document.getElementById('save-tab-modal').style.display = 'block';
+};
+document.getElementById('close-save-tab-modal').onclick = () => {
+  document.getElementById('save-tab-modal').style.display = 'none';
+  document.getElementById('save-tab-error').textContent = '';
+};
+document.getElementById('confirm-save-tab').onclick = async () => {
+  const name = document.getElementById('tab-save-name').value.trim();
+  if (!name) {
+    document.getElementById('save-tab-error').textContent = "Please enter a name.";
+    return;
+  }
+  const user = auth.currentUser;
+  if (!user) return;
+  // Collect TAB data from fields
+  const tabEntries = Array.from(document.querySelectorAll('.tab-note-entry')).map(entry => {
+    if (entry.dataset.isSplit === "true") {
+      const split1 = entry.querySelector('.tab-note-input[data-split-part="1"]')?.value || "";
+      const split2 = entry.querySelector('.tab-note-input[data-split-part="2"]')?.value || "";
+      return { split: true, values: [split1, split2] };
+    } else {
+      const mainInput = entry.querySelector('.tab-note-input[data-original-input="true"]')?.value || "";
+      return { split: false, values: [mainInput] };
+    }
+  });
+  // Save to Firestore under user's UID
+  try {
+    await setDoc(doc(db, "tabData", `${user.uid}_${name}`), {
+      owner: user.uid,
+      name,
+      tabEntries,
+      savedAt: Date.now()
+    });
+    document.getElementById('save-tab-modal').style.display = 'none';
+    document.getElementById('tab-save-name').value = '';
+    document.getElementById('save-tab-error').textContent = '';
+    alert("TAB data saved!");
+  } catch (e) {
+    document.getElementById('save-tab-error').textContent = e.message;
+  }
+};
+
+// Import TAB Modal logic
+document.getElementById('import-tab-btn').onclick = async () => {
+  const user = auth.currentUser;
+  if (!user) return;
+  document.getElementById('import-tab-modal').style.display = 'block';
+  const list = document.getElementById('tab-import-list');
+  list.innerHTML = "<li>Loading...</li>";
+  try {
+    const q = query(collection(db, "tabData"), where("owner", "==", user.uid));
+    const snapshot = await getDocs(q);
+    list.innerHTML = "";
+    snapshot.forEach(docSnap => {
+      const data = docSnap.data();
+      const li = document.createElement('li');
+      li.textContent = data.name;
+      li.style.cursor = "pointer";
+      li.style.padding = "8px";
+      li.onclick = () => {
+        // Populate TAB fields
+        const tabEntries = document.querySelectorAll('.tab-note-entry');
+        data.tabEntries.forEach((entry, idx) => {
+          const tabEntry = tabEntries[idx];
+          if (!tabEntry) return;
+          const inputWrapper = tabEntry.querySelector('.tab-input-wrapper');
+          const splitButton = tabEntry.querySelector('.tab-split-btn');
+          // Merge if split but not needed
+          if (tabEntry.dataset.isSplit === "true" && !entry.split && splitButton) {
+            splitButton.click();
+          }
+          // Split if needed
+          if (entry.split && tabEntry.dataset.isSplit !== "true" && splitButton) {
+            splitButton.click();
+          }
+          if (entry.split) {
+            const splitInputs = inputWrapper.querySelectorAll('.tab-note-input.split');
+            if (splitInputs[0]) splitInputs[0].value = entry.values[0] || "";
+            if (splitInputs[1]) splitInputs[1].value = entry.values[1] || "";
+          } else {
+            const mainInput = inputWrapper.querySelector('.tab-note-input[data-original-input="true"]');
+            if (mainInput) mainInput.value = entry.values[0] || "";
+          }
+        });
+        document.getElementById('import-tab-modal').style.display = 'none';
+      };
+      list.appendChild(li);
+    });
+    if (!list.hasChildNodes()) {
+      list.innerHTML = "<li>No saved TAB data found.</li>";
+    }
+  } catch (e) {
+    document.getElementById('import-tab-error').textContent = e.message;
+  }
+};
+document.getElementById('close-import-tab-modal').onclick = () => {
+  document.getElementById('import-tab-modal').style.display = 'none';
+  document.getElementById('import-tab-error').textContent = '';
+};
