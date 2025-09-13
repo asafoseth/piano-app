@@ -55,15 +55,15 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
             bpm: 104,
             duration: 9.21, // The duration of the audio file in seconds
             timings: { // Timings in seconds from the start of the beat
-                '1.0': 0.000, '1.5': 1.187,
-                '2.0': 2.343, '2.5': 3.500,
-                '3.0': 4.625, '3.5': 5.781,
-                '4.0': 6.968, '4.5': 8.093,
+                '1.0': 0.000, '1.2': 0.593, '1.5': 1.187, '1.7': 1.750, 
+                '2.0': 2.343, '2.2': 2.937, '2.5': 3.500, '2.7': 4.062, 
+                '3.0': 4.625, '3.2': 5.218, '3.5': 5.781, '3.7': 6.375, 
+                '4.0': 6.968, '4.2': 7.531, '4.5': 8.093, '4.7': 8.687, 
                 // NOTE: The timings below extend beyond the track duration of 9.21s.
-                '5.0': 9.281, '5.5': 10.468,
-                '6.0': 11.656, '6.5': 12.843,
-                '7.0': 14.031, '7.5': 15.218,
-                '8.0': 16.406, '8.5': 17.593
+                '5.0': 9.281, '5.2': 10.000, '5.5': 10.468, '5.7': 11.000, 
+                '6.0': 11.656, '6.2': 12.000, '6.5': 12.843, '6.7': 13.000, 
+                '7.0': 14.031, '7.2': 15.000, '7.5': 15.218, '7.7': 16.000, 
+                '8.0': 16.406, '8.2': 17.000, '8.5': 17.593, '8.7': 18.000 
             }
         },
         'track2': {
@@ -71,31 +71,30 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
             bpm: 113,
             duration: 16.9, // TODO: Replace with actual duration
             timings: { // Timings in seconds from the start of the beat
-                '1.0': 0.000, '1.5': 1.062,
-                '2.0': 2.125, '2.5': 3.187,
-                '3.0': 4.250, '3.5': 5.312,
-                '4.0': 6.375, '4.5': 7.437,
-                '5.0': 8.500, '5.5': 9.562,
-                '6.0': 10.625, '6.5': 11.687,
-                '7.0': 12.750, '7.5': 13.812,
-                '8.0': 14.875, '8.5': 15.937
+                '1.0': 0.000, '1.2': 0.562, '1.5': 1.062, '1.7': 1.593, 
+                '2.0': 2.125, '2.2': 2.656, '2.5': 3.187, '2.7': 3.718, 
+                '3.0': 4.250, '3.2': 4.781, '3.5': 5.312, '3.7': 5.843, 
+                '4.0': 6.375, '4.2': 6.906, '4.5': 7.437, '4.7': 7.968, 
+                '5.0': 8.500, '5.2': 9.031, '5.5': 9.562, '5.7': 10.093, 
+                '6.0': 10.625, '6.2': 11.156, '6.5': 11.687, '6.7': 12.218, 
+                '7.0': 12.750, '7.2': 13.281, '7.5': 13.812, '7.7': 14.343, 
+                '8.0': 14.875, '8.2': 15.406, '8.5': 15.937, '8.7': 16.468 
             }
         },
-        // Updated durations and timings for seamless looping (verify with actual audio files)
         'track3': {
             path: 'audio/beats/Track-3-funk.mp3',
             bpm: 100,
-            duration: 18.0, // Set to actual audio duration (seconds)
+            duration: 19.2, // TODO: Replace with actual duration
             timings: {
-                '1.0': 0.000, '1.5': 1.218,
-                '2.0': 2.437, '2.5': 3.625,
-                '3.0': 4.812, '3.5': 6.031,
-                '4.0': 7.250, '4.5': 8.406,
-                '5.0': 9.593, '5.5': 10.812,
-                '6.0': 12.000, '6.5': 13.218,
-                '7.0': 14.406, '7.5': 15.625,
-                '8.0': 16.843, '8.5': 18.000 // Better spacing before end (duration: 18.0)
-            }
+                '1.0': 0.000, '1.2': 0.625, '1.5': 1.218, '1.7': 1.812, 
+                '2.0': 2.437, '2.2': 3.031, '2.5': 3.625, '2.7': 4.218, 
+                '3.0': 4.812, '3.2': 5.406, '3.5': 6.031, '3.7': 6.625, 
+                '4.0': 7.250, '4.2': 7.843, '4.5': 8.406, '4.7': 9.000, 
+                '5.0': 9.593, '5.2': 10.218, '5.5': 10.812, '5.7': 11.406, 
+                '6.0': 12.750, '6.2': 12.625, '6.5': 13.218, '6.7': 13.812, 
+                '7.0': 14.406, '7.2': 15.000, '7.5': 15.625, '7.7': 16.218, 
+                '8.0': 16.843, '8.2': 17.437, '8.5': 18.000, '8.7': 18.593 
+            } // TODO: Add timings for Track 3
         },
         // 'track4': {
         //     path: 'audio/beats/Track-4-fuji.mp3',
@@ -737,147 +736,96 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
     // This new approach uses a predefined timing map for each beat track instead of BPM calculations.
     // It now supports looping by restarting the sequence and the beat track together to maintain sync.
     async function playTabSequence() {
-        // Clear any timeouts from a previous cycle before scheduling new ones.
         tabPlaybackTimeoutIds.forEach(id => clearTimeout(id));
         tabPlaybackTimeoutIds = [];
 
-        // This logic runs only on the first "play" click, not on subsequent loops.
         if (!isTabPlaying) {
             isTabPlaying = true;
             document.getElementById('play-tab-btn').textContent = 'Stop TAB';
             console.log("Starting TAB sequence (first cycle).");
         } else {
-            // This log will appear for each subsequent loop.
             console.log("Looping TAB sequence.");
         }
 
-        // 1. Get current track info and its timing map
         const selectedTrackId = beatTrackSelect?.value || 'track1';
         const trackInfo = beatTrackMap[selectedTrackId];
         if (!trackInfo || !trackInfo.timings || Object.keys(trackInfo.timings).length === 0) {
             console.error(`Selected track "${selectedTrackId}" has no timing map defined. Stopping playback.`);
             alert(`Playback failed: No timing map for ${selectedTrackId}.`);
-            stopTabPlayback(); // This will reset the button and state
-            return;
-        }
-        const timingMap = trackInfo.timings;
-
-        // 2. Collect all notes from the DOM, associating them with a timing key ('1.0', '1.5', etc.)
-        const notesToSchedule = [];
-        const tabEntries = document.querySelectorAll('.tab-note-entry');
-
-        tabEntries.forEach((entry, index) => {
-            const entryNumber = index + 1;
-            if (entry.dataset.isSplit === "true") {
-                const split1 = entry.querySelector('.tab-note-input[data-split-part="1"]');
-                const split2 = entry.querySelector('.tab-note-input[data-split-part="2"]');
-                // The first split input maps to '.0', the second to '.5'
-                if (split1 && split1.value.trim()) {
-                    notesToSchedule.push({ timingKey: `${entryNumber}.0`, noteData: split1.value.trim() });
-                }
-                if (split2 && split2.value.trim()) {
-                    notesToSchedule.push({ timingKey: `${entryNumber}.5`, noteData: split2.value.trim() });
-                }
-            } else {
-                // A non-split input maps to '.0'
-                const mainInput = entry.querySelector('.tab-note-input[data-original-input="true"]');
-                if (mainInput && mainInput.value.trim()) {
-                    notesToSchedule.push({ timingKey: `${entryNumber}.0`, noteData: mainInput.value.trim() });
-                }
-            }
-        });
-
-        // --- NEW: Conditionally duplicate notes for tracks other than 'track1' ---
-        let allNotesToSchedule = [...notesToSchedule]; // Start with the original notes from the UI.
-
-        // The duplication logic is skipped for 'track1' because its duration is shorter.
-        if (selectedTrackId !== 'track1') {
-            console.log(`Repeating notes for track: ${selectedTrackId}`);
-            const repeatedNotes = notesToSchedule.map(note => {
-                const [beat, subBeat] = note.timingKey.split('.');
-                const originalBeatNumber = parseInt(beat);
-
-                // Only repeat notes from the first 4 beat entries (which cover 8 timing points)
-                if (originalBeatNumber <= 4) {
-                    const newBeatNumber = originalBeatNumber + 4;
-                    const newTimingKey = `${newBeatNumber}.${subBeat}`;
-                    return { timingKey: newTimingKey, noteData: note.noteData };
-                }
-                return null;
-            }).filter(note => note !== null);
-
-            allNotesToSchedule.push(...repeatedNotes); // Add the repeated notes to the schedule.
-        } else {
-            console.log("Skipping note repetition for 'track1' due to its shorter length.");
-        }
-
-        if (allNotesToSchedule.length === 0) {
-            console.log("TAB sequence is empty, stopping playback.");
             stopTabPlayback();
             return;
         }
+        const timingKeys = Object.keys(trackInfo.timings);
+        const timingMap = trackInfo.timings;
 
-        // 3. Start the beat track IF the "Beat" toggle is ON
-        // The beat is restarted on every loop to ensure it stays perfectly in sync with the TAB notes.
+        // --- NEW: Start the beat track in sync ---
         if (tabFeatureEnabled) {
-            console.log("Restarting beat for TAB playback sync.");
-            // Await the promise from playBeatTrack to ensure the beat has started before scheduling notes.
-            try {
-                await playBeatTrack(selectedTrackId);
-            } catch (error) {
-                console.error("Failed to play beat track, stopping TAB sequence.", error);
-                stopTabPlayback();
-                return;
-            }
+            await playBeatTrack(selectedTrackId);
         }
 
-        // 4. Schedule all notes to play at their specified times using setTimeout
-        allNotesToSchedule.forEach(({ timingKey, noteData }) => {
-            const playbackTimeInSeconds = timingMap[timingKey];
-
-            if (playbackTimeInSeconds === undefined) {
-                console.warn(`No timing defined for key ${timingKey} in the current beat track. Skipping note.`);
-                return;
-            }
-
-            const delayInMs = playbackTimeInSeconds * 1000;
-
-            const timeoutId = setTimeout(() => {
-                if (!isTabPlaying) return; // Don't play if stop was called
-
-                // The actual note/chord playing logic
-                if (noteData.includes(',')) { // Explicitly stored chord
-                    const chordKeyIds = noteData.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n));
-                    if (chordKeyIds.length > 0) playChord(chordKeyIds);
-                } else { // Single note ID
-                    const noteKeyId = parseInt(noteData.trim());
-                    if (!isNaN(noteKeyId)) {
-                        if (chordMode && currentChordMapSlice[noteKeyId]) {
-                            playChord(currentChordMapSlice[noteKeyId]);
-                        } else {
-                            playSoundForKey(noteKeyId); // Otherwise, play as single note
-                        }
-                    }
-                }
-            }, delayInMs);
-
-            tabPlaybackTimeoutIds.push(timeoutId); // Store ID to enable cancellation
+        // Get TAB field values
+        const tabEntries = document.querySelectorAll('.tab-note-entry');
+        const tabValues = Array.from(tabEntries).map(entry => {
+            const input = entry.querySelector('.tab-note-input');
+            return input ? input.value.trim() : "";
         });
 
-        // 5. Calculate loop timing
-        let loopWaitMs = (trackInfo.duration || 0) * 1000;
-        // For tracks 3, 4, 5, restart the loop slightly before the end to match last note timing
-        if (["track3", "track4", "track5"].includes(selectedTrackId)) {
-            loopWaitMs += 800; // Subtract 300ms for early restart (adjust as needed)
+        // Schedule notes for first 16 timings
+        for (let i = 0; i < 16; i++) {
+            const noteValue = tabValues[i];
+            const timingKey = timingKeys[i];
+            if (noteValue && timingMap[timingKey] !== undefined) {
+                const delayMs = timingMap[timingKey] * 1000;
+                tabPlaybackTimeoutIds.push(setTimeout(() => {
+                    playTabNote(noteValue);
+                }, delayMs));
+            }
+        }
+        // Schedule notes for second 16 timings (repeat TAB values)
+        for (let i = 0; i < 16; i++) {
+            const noteValue = tabValues[i];
+            const timingKey = timingKeys[i + 16];
+            if (noteValue && timingMap[timingKey] !== undefined) {
+                const delayMs = timingMap[timingKey] * 1000;
+                tabPlaybackTimeoutIds.push(setTimeout(() => {
+                    playTabNote(noteValue);
+                }, delayMs));
+            }
         }
 
-        // 6. Schedule the next action: either loop or stop.
-        const loopTimeoutId = setTimeout(() => {
+        // --- Loop logic: restart both TAB and beat for sync ---
+        let loopWaitMs = (trackInfo.duration || 0) * 1000;
+        if (["track3", "track4", "track5"].includes(selectedTrackId)) {
+            loopWaitMs += 800;
+        }
+        const loopTimeoutId = setTimeout(async () => {
             if (isTabPlaying) {
-                playTabSequence(); // Recursively call to start the next loop
+                // Restart beat for perfect sync
+                if (tabFeatureEnabled) {
+                    await playBeatTrack(selectedTrackId);
+                }
+                playTabSequence();
             }
         }, loopWaitMs);
         tabPlaybackTimeoutIds.push(loopTimeoutId);
+    }
+
+    // Helper to play a note or chord
+    function playTabNote(noteValue) {
+        if (!isTabPlaying) return;
+        if (noteValue.includes(',')) {
+            const chordKeyIds = noteValue.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n));
+            if (chordKeyIds.length > 0) playChord(chordKeyIds);
+        } else {
+            const noteKeyId = parseInt(noteValue.trim());
+            if (!isNaN(noteKeyId)) {
+                if (chordMode && currentChordMapSlice[noteKeyId]) {
+                    playChord(currentChordMapSlice[noteKeyId]);
+                } else {
+                    playSoundForKey(noteKeyId);
+                }
+            }
+        }
     }
 
     function stopTabPlayback() {
@@ -913,6 +861,12 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
             }
         });
         console.log("TAB fields reset.");
+    }
+
+    function getTabFieldTimingKeys(entryIndex) {
+        const beatNum = Math.floor(entryIndex / 2) + 1; // 1 to 8
+        const suffixes = (entryIndex % 2 === 0) ? ['.0', '.2'] : ['.5', '.7'];
+        return suffixes.map(suffix => `${beatNum}${suffix}`);
     }
 
 
@@ -1050,5 +1004,19 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
     // Setup Reset TAB button
     document.getElementById('reset-tab-btn')?.addEventListener('click', resetTabFields);
 
-
+    document.getElementById('delete-tab-btn')?.addEventListener('click', () => {
+        // Find the currently focused TAB input
+        const focused = document.activeElement;
+        if (focused && focused.classList.contains('tab-note-input')) {
+            // Find the parent tab-note-entry
+            const entryDiv = focused.closest('.tab-note-entry');
+            if (entryDiv) {
+                // Clear all inputs in this entry (handles split and non-split)
+                entryDiv.querySelectorAll('.tab-note-input').forEach(input => {
+                    input.value = "";
+                    input.dispatchEvent(new Event('input', { bubbles: true }));
+                });
+            }
+        }
+    });
 } // End enableChordPlaying

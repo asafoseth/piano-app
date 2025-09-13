@@ -179,13 +179,25 @@ nav {
 
 .piano-container {
     display: flex;
-    justify-content: flex-start; /* Align keys to the start for proper scrolling layout */
+    flex-direction: row;
+    overflow-x: auto; /* Allow horizontal scroll on mobile */
     padding: 4em 1em 1em 1em;
     border-radius: 0.62em;
     background-color: #24272e;
     box-shadow: 0 2em 4em rgba(7, 0, 53, 0.35); /* Slightly stronger shadow */
     position: relative;
     margin-top: 20px; /* Add space above the piano */
+    width: 100%;
+    min-width: 320px;
+}
+
+.piano-keys {
+    display: flex;
+    flex-direction: row;
+    gap: 0;
+    flex-wrap: nowrap; /* Prevent wrapping */
+    width: auto;
+    min-width: 320px;
 }
 
 .white-key {
@@ -520,154 +532,142 @@ nav {
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 
+/* --- TAB Heading --- */
+.tab-feature-container h2,
+.tab-heading {
+    font-size: 1.5em;
+    color: #e0e0e0;
+    font-weight: 600;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+    text-shadow: 1px 1px 6px #3a204a;
+    background: linear-gradient(90deg, #2d2d44 0%, #3a204a 100%);
+    border-radius: 6px;
+    padding: 8px 0;
+    width: 100%;
+    text-align: center;
+}
+
 /* Container for Play and Reset TAB buttons */
 .tab-action-buttons {
     display: flex;
-    gap: 10px; /* Space between play and reset buttons */
-    margin-top: 10px; /* Space above the button group */
-    width: 100%; /* Container takes full width */
-}
-
-/* Common styles for buttons within .tab-action-buttons */
-.tab-action-buttons > button {
-    flex-grow: 1; /* Allow buttons to share space equally */
-    /* Common padding and font-size can be defined here if desired,
-       overriding/complementing #play-tab-btn and #reset-tab-btn specific styles.
-       For example:
-       padding: 10px;
-       font-size: 16px; */
-}
-.tab-feature-container h2 {
-    font-size: 22px;
-    color: #c5cae9; /* Lighter indigo/lavender for title */
-    margin-bottom: 5px; /* Reduced margin as gap is used in parent */
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
-}
-
-.tab-controls {
-    display: flex; /* Keep flex for internal layout */
+    flex-direction: row;
+    gap: 10px;
+    width: 100%;
     justify-content: center;
     align-items: center;
-    flex-wrap: wrap; /* Allow wrapping for smaller screens */
-    gap: 15px; /* Space between toggle and beat track select */
+    margin-top: 10px;
+}
+
+.tab-action-buttons > button,
+.tab-actions > button {
+    flex: 1 1 0;
+    min-width: 90px;
+    padding: 10px;
+    font-size: 16px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+}
+
+/* --- Options Panel --- */
+.options-panel,
+.controls-container,
+.transpose-container,
+.key-switcher-container,
+.sync-controls-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 250px;
+    margin: 0 auto;
+    align-items: stretch;
     width: 100%;
 }
 
-#tab-feature-toggle {
-    background-color: #7986cb; /* Lighter Indigo for TAB toggle */
-    color: white;
-    font-size: 15px;
-    padding: 9px 18px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s ease, box-shadow 0.3s ease;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-#tab-feature-toggle:hover {
-    background-color: #5c6bc0; /* Standard indigo on hover */
-    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25);
-}
-
-#tab-feature-toggle:active {
-    background-color: #3f51b5; /* Darker indigo when pressed */
-}
-
-#tab-feature-toggle:focus {
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(121, 134, 203, 0.6);
-}
-
-.beat-track-select-container {
+/* --- Piano Keyboard --- */
+.piano-container {
     display: flex;
-    align-items: center;
-    gap: 8px;
+    flex-direction: row;
+    overflow-x: auto; /* Allow horizontal scroll on mobile */
+    padding: 4em 1em 1em 1em;
+    border-radius: 0.62em;
+    background-color: #24272e;
+    box-shadow: 0 2em 4em rgba(7, 0, 53, 0.35); /* Slightly stronger shadow */
+    position: relative;
+    margin-top: 20px; /* Add space above the piano */
+    width: 100%;
+    min-width: 320px;
 }
 
-.beat-track-select-container label {
-    font-size: 15px;
-    color: #e0e0e0;
+.piano-keys {
+    display: flex;
+    flex-direction: row;
+    gap: 0;
+    flex-wrap: nowrap; /* Prevent wrapping */
+    width: auto;
+    min-width: 320px;
 }
 
-#beat-track-select {
-    padding: 8px 10px;
-    font-size: 14px;
-    background-color: #4a4a5a; /* Slightly different dark grey */
-    color: #ffffff;
-    border: 1px solid #666666;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.2s ease, border-color 0.2s ease;
-    outline: none;
+.white-key,
+.black-key {
+    flex-shrink: 0; /* Prevent keys from shrinking */
 }
 
-/* Styles for Reset TAB button (assuming it might not have full styles yet) */
-#reset-tab-btn {
-    padding: 10px; /* Consistent padding */
-    background-color: #f44336; /* Red */
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 16px; /* Consistent font size */
-    outline: none;
+/* --- Responsive Rules: Force Desktop Layout on Mobile --- */
+@media screen and (max-width: 1200px),
+       screen and (max-width: 992px),
+       screen and (max-width: 768px),
+       screen and (max-width: 576px),
+       (max-width: 480px) {
+    .tab-note-inputs,
+    .tab-grid {
+        grid-template-columns: repeat(4, 1fr) !important;
+        grid-template-rows: repeat(4, auto) !important;
+        gap: 10px !important;
+    }
+    .tab-action-buttons,
+    .tab-actions {
+        flex-direction: row !important;
+        gap: 10px !important;
+    }
+    .options-panel,
+    .controls-container,
+    .transpose-container,
+    .key-switcher-container,
+    .sync-controls-container {
+        flex-direction: column !important;
+        gap: 12px !important;
+        max-width: 250px !important;
+        align-items: stretch !important;
+    }
+    .piano-container {
+        flex-direction: row !important;
+        overflow-x: auto !important;
+        min-width: 320px !important;
+    }
+    .piano-keys {
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        min-width: 320px !important;
+    }
 }
 
-#save-tab-btn, #import-tab-btn {
-    background: #5c6bc0;
+/* Remove any rules that collapse grids or stack buttons vertically on mobile */
+
+#delete-tab-btn {
+    background-color: #806409;
     color: #fff;
-    font-weight: 500;
     border: none;
-    border-radius: 6px;
-    padding: 7px 18px;
-    font-size: 1.08em;
+    border-radius: 4px;
+    padding: 10px;
+    font-size: 16px;
     cursor: pointer;
-    box-shadow: 0 2px 8px rgba(92,107,192,0.08);
-    transition: background 0.2s, box-shadow 0.2s;
-    margin-left: 8px;
+    margin: 0 8px;
+    transition: background 0.2s;
 }
-
-#save-tab-btn:hover, #import-tab-btn:hover {
-    background: #3f51b5;
-    box-shadow: 0 4px 12px rgba(92,107,192,0.15);
-}
-
-.tab-note-inputs {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 6px; /* Reduce gap between fields */
-    /* margin-top handled by parent gap */
-}
-/* This .tab-note-input rule might be a duplicate or refinement of the one moved from body nesting */
-.tab-note-input {
-    width: 45px; /* Reduced from 70px */
-    padding: 6px;
-    font-size: 12px;
-}
-
-.tab-note-input::-webkit-outer-spin-button,
-.tab-note-input::-webkit-inner-spin-button {
-    -webkit-appearance: none; /* Chrome, Safari, Edge, Opera - hide spinners */
-    margin: 0;
-}
-
-.tab-note-input::placeholder {
-    color: #888;
-    font-size: 12px;
-}
-
-.tab-note-input:focus {
-    outline: none;
-    border-color: #7986cb; /* Indigo highlight on focus */
-    box-shadow: 0 0 0 2px rgba(121, 134, 203, 0.5);
-}
-
-/* Style for read-only TAB inputs to prevent text cursor and indicate state */
-.tab-note-input[readonly] {
-    cursor: pointer; /* Indicates it's clickable for selection, but not for typing */
+#delete-tab-btn:hover {
+    background-color: #e78f0a;
 }
 
 /* Login Modal Overlay */
@@ -911,15 +911,120 @@ nav {
     color: #fff;
 }
 
-/* Responsive Design */
-/* Comment out or remove all @media queries for mobile responsiveness */
-/* Or add this at the end to override: */
-@media screen and (max-width: 1200px), 
-       screen and (max-width: 992px), 
-       screen and (max-width: 768px), 
-       screen and (max-width: 576px), 
-       (max-width: 480px) {
-    .container, .main, .tab-feature-container, .tab-note-inputs, .tab-note-entry, .tab-note-input {
-        all: unset;
-    }
+/* --- TAB Input Grid --- */
+.tab-note-inputs,
+.tab-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); /* Always 4 columns */
+    grid-template-rows: repeat(4, auto);   /* 4 rows */
+    gap: 10px;
+    justify-items: center;
+    align-items: center;
+    margin-top: 10px;
+    width: 100%;
+    padding: 10px 0;
+}
+
+/* TAB Inputs */
+.tab-note-input {
+    width: 60px;
+    padding: 10px;
+    font-size: 15px;
+    text-align: center;
+    border-radius: 6px;
+    border: 1.5px solid #5c6bc0;
+    background: #23233a;
+    color: #e0e0e0;
+    box-shadow: 0 2px 8px rgba(92,107,192,0.08);
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.tab-note-input:focus {
+    border-color: #43a047;
+    box-shadow: 0 0 0 2px rgba(67,160,71,0.2);
+    outline: none;
+}
+
+/* --- Transpose Buttons --- */
+.transpose-btn {
+    background-color: #5c6bc0;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    width: 48px;
+    height: 38px;
+    font-size: 22px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    box-shadow: 0 2px 8px rgba(92,107,192,0.08);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 4px;
+    font-weight: 600;
+}
+.transpose-btn:hover {
+    background-color: #3f51b5;
+    transform: scale(1.05);
+}
+.transpose-btn:active {
+    background-color: #43a047;
+    transform: scale(0.97);
+}
+
+/* --- Transpose Value --- */
+#transpose-value {
+    font-size: 18px;
+    font-weight: bold;
+    color: #fff;
+    min-width: 32px;
+    text-align: center;
+    background-color: #23233a;
+    padding: 4px 12px;
+    border-radius: 6px;
+    border: 1.5px solid #5c6bc0;
+    margin: 0 4px;
+}
+
+/* --- Beat On/Off Button --- */
+#beat-toggle-btn {
+    background: #5c6bc0;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 24px;
+    font-size: 1em;
+    font-weight: 500;
+    cursor: pointer;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 8px rgba(92,107,192,0.08);
+    transition: background 0.2s, box-shadow 0.2s;
+    letter-spacing: 0.5px;
+}
+#beat-toggle-btn.active {
+    background: #43a047;
+}
+#beat-toggle-btn:hover {
+    background: #3f51b5;
+}
+
+/* --- Beat Track Selection --- */
+#beat-track-select {
+    background: #23233a;
+    color: #e0e0e0;
+    border: 1.5px solid #5c6bc0;
+    border-radius: 6px;
+    padding: 10px 16px;
+    font-size: 1em;
+    margin-bottom: 10px;
+    width: 100%;
+    max-width: 220px;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+}
+#beat-track-select:focus {
+    border-color: #43a047;
+    outline: none;
+}
+#beat-track-select:hover {
+    background: #35355a;
 }

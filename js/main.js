@@ -310,15 +310,16 @@ document.getElementById('confirm-save-tab').onclick = async () => {
   if (!user) return;
   // Collect TAB data from fields
   const tabEntries = Array.from(document.querySelectorAll('.tab-note-entry')).map(entry => {
-    if (entry.dataset.isSplit === "true") {
-      const split1 = entry.querySelector('.tab-note-input[data-split-part="1"]')?.value || "";
-      const split2 = entry.querySelector('.tab-note-input[data-split-part="2"]')?.value || "";
-      return { split: true, values: [split1, split2] };
-    } else {
-      const mainInput = entry.querySelector('.tab-note-input[data-original-input="true"]')?.value || "";
-      return { split: false, values: [mainInput] };
-    }
-  });
+    const inputWrapper = entry.querySelector('.tab-input-wrapper');
+    // If you support split inputs, adjust here; for now, just get two values per field
+    const inputs = inputWrapper.querySelectorAll('.tab-note-input');
+    return {
+        values: [
+            inputs[0]?.value || "",
+            inputs[1]?.value || ""
+        ]
+    };
+});
   // Save to Firestore under user's UID
   try {
     await setDoc(doc(db, "tabData", `${user.uid}_${name}`), {
@@ -357,26 +358,12 @@ document.getElementById('import-tab-btn').onclick = async () => {
         // Populate TAB fields
         const tabEntries = document.querySelectorAll('.tab-note-entry');
         data.tabEntries.forEach((entry, idx) => {
-          const tabEntry = tabEntries[idx];
+          const tabEntry = document.querySelector(`.tab-note-entry[data-entry-index="${idx}"]`);
           if (!tabEntry) return;
           const inputWrapper = tabEntry.querySelector('.tab-input-wrapper');
-          const splitButton = tabEntry.querySelector('.tab-split-btn');
-          // Merge if split but not needed
-          if (tabEntry.dataset.isSplit === "true" && !entry.split && splitButton) {
-            splitButton.click();
-          }
-          // Split if needed
-          if (entry.split && tabEntry.dataset.isSplit !== "true" && splitButton) {
-            splitButton.click();
-          }
-          if (entry.split) {
-            const splitInputs = inputWrapper.querySelectorAll('.tab-note-input.split');
-            if (splitInputs[0]) splitInputs[0].value = entry.values[0] || "";
-            if (splitInputs[1]) splitInputs[1].value = entry.values[1] || "";
-          } else {
-            const mainInput = inputWrapper.querySelector('.tab-note-input[data-original-input="true"]');
-            if (mainInput) mainInput.value = entry.values[0] || "";
-          }
+          const inputs = inputWrapper.querySelectorAll('.tab-note-input');
+          if (inputs[0]) inputs[0].value = entry.values[0] || "";
+          if (inputs[1]) inputs[1].value = entry.values[1] || "";
         });
         document.getElementById('import-tab-modal').style.display = 'none';
       };
@@ -393,3 +380,33 @@ document.getElementById('close-import-tab-modal').onclick = () => {
   document.getElementById('import-tab-modal').style.display = 'none';
   document.getElementById('import-tab-error').textContent = '';
 };
+
+function getTabFieldTimingKeys(entryIndex) {
+    // Each field covers two timings: e.g. field 0 -> ['1.0', '1.2'], field 1 -> ['1.5', '1.7'], etc.
+    const beatNum = Math.floor(entryIndex / 2) + 1; // 1 to 8
+    const suffixes = (entryIndex % 2 === 0) ? ['.0', '.2'] : ['.5', '.7'];
+    return suffixes.map(suffix => `${beatNum}${suffix}`);
+}
+
+// Example: mapping all 16 fields
+// for (let i = 0; i < 16; i++) {
+//     console.log(`Field ${i}:`, getTabFieldTimingKeys(i));
+// }
+
+function playTabSequence(tabEntries, beatTrackTimings, playNoteCallback) {
+    tabEntries.forEach((entry, idx) => {
+        const timingKeys = getTabFieldTimingKeys(idx);
+        timingKeys.forEach((timingKey, splitIdx) => {
+            const timing = beatTrackTimings[timingKey];
+            const noteId = entry.values[splitIdx] || "";
+            if (timing !== undefined && noteId) {
+                setTimeout(() => {
+                    playNoteCallback(noteId);
+                }, timing * 1000); // Convert seconds to ms
+            }
+        });
+    });
+}
+
+// Usage example:
+// playTabSequence(tabEntries, beatTrackMap[selectedTrack].timings, playNote);
