@@ -292,6 +292,33 @@ document.getElementById('email-login-btn').onclick = async () => {
   }
 };
 
+// --- LOGIN/SIGNUP MODAL TAB TOGGLING ---
+document.addEventListener("DOMContentLoaded", () => {
+    // Tab switching logic
+    const loginTabBtn = document.getElementById('login-tab-btn');
+    const signupTabBtn = document.getElementById('signup-tab-btn');
+    const loginForm = document.getElementById('login-form');
+    const signupForm = document.getElementById('signup-form');
+    const loginError = document.getElementById('login-error');
+
+    if (loginTabBtn && signupTabBtn && loginForm && signupForm) {
+        loginTabBtn.onclick = () => {
+            loginTabBtn.classList.add('active');
+            signupTabBtn.classList.remove('active');
+            loginForm.style.display = '';
+            signupForm.style.display = 'none';
+            loginError.textContent = '';
+        };
+        signupTabBtn.onclick = () => {
+            signupTabBtn.classList.add('active');
+            loginTabBtn.classList.remove('active');
+            signupForm.style.display = '';
+            loginForm.style.display = 'none';
+            loginError.textContent = '';
+        };
+    }
+});
+
 // Save TAB Modal logic
 document.getElementById('save-tab-btn').onclick = () => {
   document.getElementById('save-tab-modal').style.display = 'block';
