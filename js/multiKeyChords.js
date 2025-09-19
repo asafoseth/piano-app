@@ -20,6 +20,7 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
     const preloadedAudioBuffers = passedAudioBuffers;
 
     const activeKeys = new Set();
+    const notePressCounts = {}; // <-- already at the top, good!
     let chordMode = false; // State to track if chord mode is enabled
     let currentKey = "C"; // Default key
     let tabFeatureEnabled = false; 
@@ -209,30 +210,31 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
 
     // --- Updated Visual Feedback Functions (using data-key) ---
     function addKeyVisual(keyIndex) {
-        // Use data-key selector for consistency with how keys are created in main.js
-        const keyElement = document.querySelector(`.key[data-key="${keyIndex}"]`);
-        if (keyElement) {
-            keyElement.classList.add("pressed");
-        } else {
-            // console.warn(`Could not find key element with data-key="${keyIndex}" to add visual`);
+        notePressCounts[keyIndex] = (notePressCounts[keyIndex] || 0) + 1;
+        if (notePressCounts[keyIndex] === 1) {
+            const keyElement = document.querySelector(`.key[data-key="${keyIndex}"]`);
+            if (keyElement) keyElement.classList.add("pressed");
         }
     }
 
     function removeKeyVisual(keyIndex) {
-        const keyElement = document.querySelector(`.key[data-key="${keyIndex}"]`);
-        if (keyElement) {
-            keyElement.classList.remove("pressed");
-        } else {
-            // console.warn(`Could not find key element with data-key="${keyIndex}" to remove visual`);
+        if (notePressCounts[keyIndex]) {
+            notePressCounts[keyIndex]--;
+            if (notePressCounts[keyIndex] === 0) {
+                const keyElement = document.querySelector(`.key[data-key="${keyIndex}"]`);
+                if (keyElement) keyElement.classList.remove("pressed");
+            }
         }
     }
     // --- End of Updated Visual Feedback Functions ---
-    
-    function updateTransposeDisplay() {
-        const transposeValueElement = document.getElementById("transpose-value");
-        if (transposeValueElement) {
-            transposeValueElement.textContent = chordMode ? transposeOffset : singleNoteTransposeOffset;
-        }
+
+    // --- Utility: Clear all pressed visuals and logical state ---
+    function clearAllPressedVisualsAndState() {
+        document.querySelectorAll('.key.pressed').forEach(key => {
+            key.classList.remove('pressed');
+        });
+        Object.keys(notePressCounts).forEach(k => notePressCounts[k] = 0);
+        activeKeys.clear();
     }
 
     function toggleChordMode() {
@@ -244,15 +246,10 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
         console.log(`Chord Mode: ${chordMode ? "ON" : "OFF"}`);
         updateTransposeDisplay(); // Display reflects the active mode's transpose
 
-        // If chord mode was turned OFF, remove all pressed visuals
+        // If chord mode was turned OFF, remove all pressed visuals and clear state
         if (!chordMode) {
             console.log("Chord mode OFF, removing all pressed visuals and clearing active keys.");
-            document.querySelectorAll('.key.pressed').forEach(key => {
-                key.classList.remove('pressed');
-            });
-            // Optionally clear activeKeys if you want to stop sounds too,
-            // but the request was only about visuals.
-            // activeKeys.clear();
+            clearAllPressedVisualsAndState();
         }
         // No need to call stopAllAudio() here unless specifically desired to stop sync key audio
     }
@@ -270,6 +267,9 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
                 console.log(`Musical key changed. Both transpose offsets reset to 0.`);
             }
 
+            // --- Remove all pressed visuals and clear state when switching key ---
+            clearAllPressedVisualsAndState();
+
             currentKey = formattedKey;
             updateInternalMapSlices(); // Update the map slices based on new key and current offsets
 
@@ -279,9 +279,6 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
 
             // Trigger sync key finder playback if it's enabled
             if (syncKeyFinderEnabled) {
-                // stopAllAudio(); // This stops sync key audio
-                // handleKeyPress(currentKey); // This starts sync key audio
-                // Let toggleSyncKeyFinder handle this if it's already enabled
                 if (syncToggle && syncToggle.checked) {
                     stopAllAudio(); // Stop previous
                     handleKeyPress(currentKey); // Start new
@@ -402,8 +399,10 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
         });
     }
 
-    // Transpose function (affects either chord or single note offset based on mode)
     function transpose(semitones) {
+        // --- Remove all pressed visuals and clear state when transposing ---
+        clearAllPressedVisualsAndState();
+
         if (chordMode) {
             const newChordOffset = (transposeOffset + semitones + 12) % 12;
             if (chordMaps[currentKey]?.[newChordOffset]) {
@@ -1019,4 +1018,5 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
             }
         }
     });
+
 } // End enableChordPlaying
