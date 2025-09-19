@@ -20,6 +20,58 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 document.addEventListener("DOMContentLoaded", () => {
+  // --- Delete TAB Button Color Feedback ---
+  const deleteTabBtn = document.getElementById('delete-tab-btn');
+  if (deleteTabBtn) {
+    const originalBg = deleteTabBtn.style.background || '#d32f2f';
+    const originalColor = deleteTabBtn.style.color || '#fff';
+    deleteTabBtn.addEventListener('mousedown', () => {
+      deleteTabBtn.style.background = '#bdbdbd';
+      deleteTabBtn.style.color = '#222';
+    });
+    deleteTabBtn.addEventListener('mouseup', () => {
+      deleteTabBtn.style.background = originalBg;
+      deleteTabBtn.style.color = originalColor;
+    });
+    deleteTabBtn.addEventListener('mouseleave', () => {
+      deleteTabBtn.style.background = originalBg;
+      deleteTabBtn.style.color = originalColor;
+    });
+    deleteTabBtn.addEventListener('touchstart', () => {
+      deleteTabBtn.style.background = '#bdbdbd';
+      deleteTabBtn.style.color = '#222';
+    }, { passive: true });
+    deleteTabBtn.addEventListener('touchend', () => {
+      deleteTabBtn.style.background = originalBg;
+      deleteTabBtn.style.color = originalColor;
+    });
+  }
+  // --- Reset TAB Button Color Feedback ---
+  const resetTabBtn = document.getElementById('reset-tab-btn');
+  if (resetTabBtn) {
+    const originalBg = resetTabBtn.style.background || '#ffe600';
+    const originalColor = resetTabBtn.style.color || '#222';
+    resetTabBtn.addEventListener('mousedown', () => {
+      resetTabBtn.style.background = '#bdbdbd';
+      resetTabBtn.style.color = '#222';
+    });
+    resetTabBtn.addEventListener('mouseup', () => {
+      resetTabBtn.style.background = originalBg;
+      resetTabBtn.style.color = originalColor;
+    });
+    resetTabBtn.addEventListener('mouseleave', () => {
+      resetTabBtn.style.background = originalBg;
+      resetTabBtn.style.color = originalColor;
+    });
+    resetTabBtn.addEventListener('touchstart', () => {
+      resetTabBtn.style.background = '#bdbdbd';
+      resetTabBtn.style.color = '#222';
+    }, { passive: true });
+    resetTabBtn.addEventListener('touchend', () => {
+      resetTabBtn.style.background = originalBg;
+      resetTabBtn.style.color = originalColor;
+    });
+  }
     const pianoContainer = document.querySelector(".piano-container"); // Use querySelector for single element
     const loadingIndicator = document.createElement('div'); // Create a loading indicator element
 
@@ -291,33 +343,6 @@ document.getElementById('email-login-btn').onclick = async () => {
     }
   }
 };
-
-// --- LOGIN/SIGNUP MODAL TAB TOGGLING ---
-document.addEventListener("DOMContentLoaded", () => {
-    // Tab switching logic
-    const loginTabBtn = document.getElementById('login-tab-btn');
-    const signupTabBtn = document.getElementById('signup-tab-btn');
-    const loginForm = document.getElementById('login-form');
-    const signupForm = document.getElementById('signup-form');
-    const loginError = document.getElementById('login-error');
-
-    if (loginTabBtn && signupTabBtn && loginForm && signupForm) {
-        loginTabBtn.onclick = () => {
-            loginTabBtn.classList.add('active');
-            signupTabBtn.classList.remove('active');
-            loginForm.style.display = '';
-            signupForm.style.display = 'none';
-            loginError.textContent = '';
-        };
-        signupTabBtn.onclick = () => {
-            signupTabBtn.classList.add('active');
-            loginTabBtn.classList.remove('active');
-            signupForm.style.display = '';
-            loginForm.style.display = 'none';
-            loginError.textContent = '';
-        };
-    }
-});
 
 // Save TAB Modal logic
 document.getElementById('save-tab-btn').onclick = () => {

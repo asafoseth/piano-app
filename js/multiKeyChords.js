@@ -13,6 +13,15 @@ import { applyInputRestrictions } from './uiRestrictions.js';
  */
 
 export default function enableChordPlaying(audioContext, passedAudioBuffers) {
+    // Track the last selected TAB input
+    let lastSelectedTabInput = null;
+
+    // Listen for focus on all tab-note-input fields to update lastSelectedTabInput
+    document.addEventListener('focusin', (e) => {
+        if (e.target && e.target.classList && e.target.classList.contains('tab-note-input')) {
+            lastSelectedTabInput = e.target;
+        }
+    });
     // Apply UI restrictions to prevent mobile keyboard on TAB inputs
     applyInputRestrictions();
 
@@ -20,10 +29,9 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
     const preloadedAudioBuffers = passedAudioBuffers;
 
     const activeKeys = new Set();
-    const notePressCounts = {}; // <-- already at the top, good!
     let chordMode = false; // State to track if chord mode is enabled
     let currentKey = "C"; // Default key
-    let tabFeatureEnabled = false; 
+    let tabFeatureEnabled = true; // Default to Beat: ON
     let currentBeatSourceNode = null; 
 
     // TAB Feature State
@@ -85,17 +93,17 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
         'track3': {
             path: 'audio/beats/Track-3-funk.mp3',
             bpm: 100,
-            duration: 19.2, // TODO: Replace with actual duration
+            duration: 18.4, // TODO: Replace with actual duration
             timings: {
-                '1.0': 0.000, '1.2': 0.625, '1.5': 1.218, '1.7': 1.812, 
-                '2.0': 2.437, '2.2': 3.031, '2.5': 3.625, '2.7': 4.218, 
-                '3.0': 4.812, '3.2': 5.406, '3.5': 6.031, '3.7': 6.625, 
-                '4.0': 7.250, '4.2': 7.843, '4.5': 8.406, '4.7': 9.000, 
-                '5.0': 9.593, '5.2': 10.218, '5.5': 10.812, '5.7': 11.406, 
-                '6.0': 12.750, '6.2': 12.625, '6.5': 13.218, '6.7': 13.812, 
-                '7.0': 14.406, '7.2': 15.000, '7.5': 15.625, '7.7': 16.218, 
-                '8.0': 16.843, '8.2': 17.437, '8.5': 18.000, '8.7': 18.593 
-            } // TODO: Add timings for Track 3
+                '1.0': 0.000, '1.2': 0.625, '1.5': 1.218, '1.7': 1.812,
+                '2.0': 2.437, '2.2': 3.031, '2.5': 3.625, '2.7': 4.218,
+                '3.0': 4.812, '3.2': 5.406, '3.5': 6.031, '3.7': 6.625,
+                '4.0': 7.250, '4.2': 7.843, '4.5': 8.406, '4.7': 9.000,
+                '5.0': 9.593, '5.2': 10.218, '5.5': 10.812, '5.7': 11.406,
+                '6.0': 12.000, '6.2': 12.625, '6.5': 13.218, '6.7': 13.812,
+                '7.0': 14.406, '7.2': 15.000, '7.5': 15.625, '7.7': 16.218,
+                '8.0': 16.843, '8.2': 17.437, '8.5': 18.000, '8.7': 18.593
+            } // All values now strictly increasing
         },
         // 'track4': {
         //     path: 'audio/beats/Track-4-fuji.mp3',
@@ -210,30 +218,39 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
 
     // --- Updated Visual Feedback Functions (using data-key) ---
     function addKeyVisual(keyIndex) {
-        notePressCounts[keyIndex] = (notePressCounts[keyIndex] || 0) + 1;
-        if (notePressCounts[keyIndex] === 1) {
-            const keyElement = document.querySelector(`.key[data-key="${keyIndex}"]`);
-            if (keyElement) keyElement.classList.add("pressed");
+        // Use data-key selector for consistency with how keys are created in main.js
+        const keyElement = document.querySelector(`.key[data-key="${keyIndex}"]`);
+        if (keyElement) {
+            keyElement.classList.add("pressed");
+        } else {
+            // console.warn(`Could not find key element with data-key="${keyIndex}" to add visual`);
         }
     }
 
     function removeKeyVisual(keyIndex) {
-        if (notePressCounts[keyIndex]) {
-            notePressCounts[keyIndex]--;
-            if (notePressCounts[keyIndex] === 0) {
-                const keyElement = document.querySelector(`.key[data-key="${keyIndex}"]`);
-                if (keyElement) keyElement.classList.remove("pressed");
-            }
+        const keyElement = document.querySelector(`.key[data-key="${keyIndex}"]`);
+        if (keyElement) {
+            keyElement.classList.remove("pressed");
+        } else {
+            // console.warn(`Could not find key element with data-key="${keyIndex}" to remove visual`);
         }
     }
     // --- End of Updated Visual Feedback Functions ---
+    
 
-    // --- Utility: Clear all pressed visuals and logical state ---
-    function clearAllPressedVisualsAndState() {
+    function updateTransposeDisplay() {
+        const transposeValueElement = document.getElementById("transpose-value");
+        if (transposeValueElement) {
+            transposeValueElement.textContent = chordMode ? transposeOffset : singleNoteTransposeOffset;
+        }
+    }
+
+    // --- Fix: Clear visuals and state on transpose change in chord mode ---
+    function clearPressedKeysAndState() {
+        // Remove .pressed from all keys, not just those in activeKeys
         document.querySelectorAll('.key.pressed').forEach(key => {
             key.classList.remove('pressed');
         });
-        Object.keys(notePressCounts).forEach(k => notePressCounts[k] = 0);
         activeKeys.clear();
     }
 
@@ -246,16 +263,22 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
         console.log(`Chord Mode: ${chordMode ? "ON" : "OFF"}`);
         updateTransposeDisplay(); // Display reflects the active mode's transpose
 
-        // If chord mode was turned OFF, remove all pressed visuals and clear state
+        // If chord mode was turned OFF, remove all pressed visuals
         if (!chordMode) {
             console.log("Chord mode OFF, removing all pressed visuals and clearing active keys.");
-            clearAllPressedVisualsAndState();
+            document.querySelectorAll('.key.pressed').forEach(key => {
+                key.classList.remove('pressed');
+            });
+            // Optionally clear activeKeys if you want to stop sounds too,
+            // but the request was only about visuals.
+            // activeKeys.clear();
         }
         // No need to call stopAllAudio() here unless specifically desired to stop sync key audio
     }
     // --- End of updated toggleChordMode function ---
 
     function switchKey(newKey) {
+        clearPressedKeysAndState();
         const formattedKey = newKey.replace("#", "sharp");
 
         // Ensure that the key exists in both map structures
@@ -267,9 +290,6 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
                 console.log(`Musical key changed. Both transpose offsets reset to 0.`);
             }
 
-            // --- Remove all pressed visuals and clear state when switching key ---
-            clearAllPressedVisualsAndState();
-
             currentKey = formattedKey;
             updateInternalMapSlices(); // Update the map slices based on new key and current offsets
 
@@ -279,6 +299,9 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
 
             // Trigger sync key finder playback if it's enabled
             if (syncKeyFinderEnabled) {
+                // stopAllAudio(); // This stops sync key audio
+                // handleKeyPress(currentKey); // This starts sync key audio
+                // Let toggleSyncKeyFinder handle this if it's already enabled
                 if (syncToggle && syncToggle.checked) {
                     stopAllAudio(); // Stop previous
                     handleKeyPress(currentKey); // Start new
@@ -295,6 +318,20 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
     }
 
     // --- Beat Track Playback Functions ---
+
+    // --- Patch: Also clear visuals and state on transpose in chord mode ---
+    function transpose(amount) {
+        clearPressedKeysAndState();
+        if (chordMode) {
+            transposeOffset = (transposeOffset + amount + 12) % 12;
+            updateInternalMapSlices();
+            updateTransposeDisplay();
+        } else {
+            singleNoteTransposeOffset = (singleNoteTransposeOffset + amount + 12) % 12;
+            updateInternalMapSlices();
+            updateTransposeDisplay();
+        }
+    }
     function stopBeatAudio() {
         if (currentBeatSourceNode) {
             console.log("Stopping beat audio (Web Audio).");
@@ -399,10 +436,8 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
         });
     }
 
+    // Transpose function (affects either chord or single note offset based on mode)
     function transpose(semitones) {
-        // --- Remove all pressed visuals and clear state when transposing ---
-        clearAllPressedVisualsAndState();
-
         if (chordMode) {
             const newChordOffset = (transposeOffset + semitones + 12) % 12;
             if (chordMaps[currentKey]?.[newChordOffset]) {
@@ -425,6 +460,13 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
         updateInternalMapSlices(); // Update the internal map slices to reflect new offset
         updateTransposeDisplay(); // Update the displayed transpose value
 
+        // Switch off the 'enable sing key' button if it's on
+        const syncToggle = document.getElementById("syncKeyFinderToggle");
+        if (syncToggle && syncToggle.checked) {
+            syncToggle.checked = false;
+            toggleSyncKeyFinder(false);
+        }
+
         updateSyncKey(); // Update Sync Key playback on transpose
     }
 
@@ -434,7 +476,17 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
     if (keySwitcherSelect) {
         keySwitcherSelect.addEventListener("change", (event) => {
             const newKey = event.target.value;
-            switchKey(newKey); // switchKey will reset offsets if the musical key changes
+            // Always reset transpose offsets to 0 when key is changed via select
+            transposeOffset = 0;
+            singleNoteTransposeOffset = 0;
+            switchKey(newKey);
+            updateTransposeDisplay();
+            // Disable 'Enable Sing Key' when key is changed
+            const syncToggle = document.getElementById("syncKeyFinderToggle");
+            if (syncToggle && syncToggle.checked) {
+                syncToggle.checked = false;
+                if (typeof toggleSyncKeyFinder === 'function') toggleSyncKeyFinder(false);
+            }
         });
         // Set initial value of select to currentKey (if HTML default doesn't match)
         keySwitcherSelect.value = currentKey.replace("sharp", "#"); // Ensure correct format for select value
@@ -457,29 +509,35 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
         if (isNaN(keyIndex)) return;
 
         if (!activeKeys.has(keyIndex)) {
-            activeKeys.add(keyIndex);            
+            activeKeys.add(keyIndex);
             addKeyVisual(keyIndex); // Visual for the physical key pressed
 
             // TAB Feature: Capture note if a TAB input is focused
             const focusedElement = document.activeElement;
             if (focusedElement && focusedElement.classList.contains('tab-note-input')) {
-                let noteToStore;
+                let notesToAdd = [];
                 if (chordMode) {
                     const chordNotesToPlay = currentChordMapSlice[keyIndex];
                     if (chordNotesToPlay && chordNotesToPlay.length > 0) {
-                        noteToStore = chordNotesToPlay.join(',');
+                        notesToAdd = chordNotesToPlay.map(n => n.toString());
                     } else {
-                        noteToStore = keyIndex.toString(); // Fallback
+                        notesToAdd = [keyIndex.toString()];
                     }
                 } else {
                     const singleNoteMapping = currentSingleNoteMapSlice[keyIndex];
                     if (singleNoteMapping && singleNoteMapping.length > 0) {
-                        noteToStore = singleNoteMapping[0].toString();
+                        notesToAdd = [singleNoteMapping[0].toString()];
                     } else {
-                        noteToStore = keyIndex.toString(); // Fallback
+                        notesToAdd = [keyIndex.toString()];
                     }
                 }
-                focusedElement.value = noteToStore;
+                // Append new notes to the field, comma-separated, avoiding duplicates
+                let currentVal = focusedElement.value.trim();
+                let currentNotes = currentVal ? currentVal.split(',').map(s => s.trim()).filter(Boolean) : [];
+                notesToAdd.forEach(note => {
+                    if (!currentNotes.includes(note)) currentNotes.push(note);
+                });
+                focusedElement.value = currentNotes.join(',');
             }
             if (chordMode) {
                 const chordNotesToPlay = currentChordMapSlice[keyIndex];
@@ -503,56 +561,132 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
         }
     };
 
+    // Reset all key visuals to original color on any key release
+    function resetAllKeyVisuals() {
+        document.querySelectorAll('.key.pressed').forEach(key => key.classList.remove('pressed'));
+    }
+
     const handleInteractionEnd = (event) => {
+        resetAllKeyVisuals();
+        // ...existing code for event handling (optional: can remove visuals per key if needed)...
         const keyElement = event.target.closest('.key');
         if (!keyElement) return;
-        // Note: For touchend, event.target might not be the element where touch started.
-        // However, using closest('.key') on the target of touchend *usually* works
-        // if the finger lifts directly off the key. A more robust solution involves
-        // tracking touches by identifier, but let's stick with this simpler approach first.
-
-        event.preventDefault(); // Good practice for consistency
-
+        event.preventDefault();
         const keyIndex = parseInt(keyElement.getAttribute("data-key"));
-         if (isNaN(keyIndex)) return;
-
-         if (activeKeys.has(keyIndex)) {
+        if (isNaN(keyIndex)) return;
+        if (activeKeys.has(keyIndex)) {
             activeKeys.delete(keyIndex);
-            
-            if (chordMode) {
-                const chordNotesPlayed = currentChordMapSlice[keyIndex];
-                if (chordNotesPlayed && chordNotesPlayed.length > 0) {
-                    chordNotesPlayed.forEach(note => removeKeyVisual(note));
-                } else {
-                    removeKeyVisual(keyIndex); // Fallback if only single note was played/visualized
-                }
-            } else { // Single Note Mode
-                removeKeyVisual(keyIndex); // Just remove visual from the physical key
-            }
-         }
+        }
     };
     // --- End Updated Interaction Handlers ---
 
 
     // --- Attach Listeners to Piano Container ---
-    // Mouse Listeners (Keep as is)
-    pianoContainer.addEventListener("mousedown", handleInteractionStart);
-    pianoContainer.addEventListener("mouseup", handleInteractionEnd);
+
+    // --- Piano Roll Effect: Track mouse/touch drag across keys ---
+    let isMouseDown = false;
+    let lastKeyIndex = null;
+
+    function handleRollOver(event) {
+        let keyElement = event.target.closest('.key');
+        if (!keyElement) return;
+        const keyIndex = parseInt(keyElement.getAttribute("data-key"));
+        if (isNaN(keyIndex)) return;
+        if (!activeKeys.has(keyIndex)) {
+            // Remove visual from last key if different
+            if (lastKeyIndex !== null && lastKeyIndex !== keyIndex) {
+                removeKeyVisual(lastKeyIndex);
+                activeKeys.delete(lastKeyIndex);
+            }
+            activeKeys.add(keyIndex);
+            addKeyVisual(keyIndex);
+            if (chordMode) {
+                const chordNotesToPlay = currentChordMapSlice[keyIndex];
+                if (chordNotesToPlay && chordNotesToPlay.length > 0) {
+                    playChord(chordNotesToPlay);
+                    chordNotesToPlay.forEach(note => { if (note !== keyIndex) addKeyVisual(note); });
+                } else {
+                    playSoundForKey(keyIndex);
+                }
+            } else {
+                const singleNoteMapping = currentSingleNoteMapSlice[keyIndex];
+                if (singleNoteMapping && singleNoteMapping.length > 0) {
+                    playSoundForKey(singleNoteMapping[0]);
+                } else {
+                    playSoundForKey(keyIndex);
+                }
+            }
+        }
+        lastKeyIndex = keyIndex;
+    }
+
+    pianoContainer.addEventListener("mousedown", (e) => {
+        isMouseDown = true;
+        handleInteractionStart(e);
+    });
+    pianoContainer.addEventListener("mouseup", (e) => {
+        isMouseDown = false;
+        handleInteractionEnd(e);
+        lastKeyIndex = null;
+        // Reset all visuals and state for next roll
+        resetAllKeyVisuals();
+        activeKeys.clear();
+    });
     pianoContainer.addEventListener("mouseleave", (event) => {
+        isMouseDown = false;
+        lastKeyIndex = null;
         if (event.buttons === 1) {
-             activeKeys.forEach(pkIndex => { // pkIndex is the physical key index
-                 if (chordMode) {
+            activeKeys.forEach(pkIndex => {
+                if (chordMode) {
                     const chordNotes = currentChordMapSlice[pkIndex];
                     if (chordNotes) {
                         chordNotes.forEach(removeKeyVisual);
                     } else {
                         removeKeyVisual(pkIndex);
                     }
-                 } else {
+                } else {
                     removeKeyVisual(pkIndex);
-                 }
-             });
-             activeKeys.clear();
+                }
+            });
+            activeKeys.clear();
+        }
+    });
+    pianoContainer.addEventListener("mousemove", (e) => {
+        if (isMouseDown) {
+            handleRollOver(e);
+        }
+    });
+
+    // Touch support for piano roll
+    let isTouchDown = false;
+    pianoContainer.addEventListener("touchstart", (e) => {
+        isTouchDown = true;
+        handleInteractionStart(e);
+    }, { passive: false });
+    pianoContainer.addEventListener("touchend", (e) => {
+        isTouchDown = false;
+        handleInteractionEnd(e);
+        lastKeyIndex = null;
+        // Reset all visuals and state for next roll
+        resetAllKeyVisuals();
+        activeKeys.clear();
+    });
+    pianoContainer.addEventListener("touchcancel", (e) => {
+        isTouchDown = false;
+        handleInteractionEnd(e);
+        lastKeyIndex = null;
+    });
+    pianoContainer.addEventListener("touchmove", (e) => {
+        if (!isTouchDown) return;
+        // Find the touch point under the finger
+        let touch = e.touches[0];
+        if (!touch) return;
+        let elem = document.elementFromPoint(touch.clientX, touch.clientY);
+        if (!elem) return;
+        let keyElem = elem.closest('.key');
+        if (keyElem) {
+            // Synthesize a fake event for handleRollOver
+            handleRollOver({ target: keyElem });
         }
     });
 
@@ -560,7 +694,37 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
     pianoContainer.addEventListener("touchstart", handleInteractionStart, { passive: false }); // Use passive: false because we call preventDefault
     pianoContainer.addEventListener("touchend", handleInteractionEnd);
     pianoContainer.addEventListener("touchcancel", handleInteractionEnd); // Handle cancellation (e.g., finger slides off screen)
+
     // --- End Listener Attachments ---
+
+    // --- Sticky Key Prevention: Global Release on Blur/Focus Loss ---
+    function clearAllActiveKeysAndVisuals() {
+        // Remove visuals for all currently active keys
+        activeKeys.forEach(pkIndex => {
+            if (chordMode) {
+                const chordNotes = currentChordMapSlice[pkIndex];
+                if (chordNotes) {
+                    chordNotes.forEach(removeKeyVisual);
+                } else {
+                    removeKeyVisual(pkIndex);
+                }
+            } else {
+                removeKeyVisual(pkIndex);
+            }
+        });
+        activeKeys.clear();
+    }
+
+    // Listen for window blur (user switches tab/app) and forcibly clear all keys
+    window.addEventListener('blur', clearAllActiveKeysAndVisuals);
+    // Listen for document visibility change (user switches tab/app)
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState !== 'visible') {
+            clearAllActiveKeysAndVisuals();
+        }
+    });
+    // Listen for focusout on the window (e.g., user clicks away)
+    window.addEventListener('focusout', clearAllActiveKeysAndVisuals);
 
 
     // Keyboard Interactions
@@ -579,23 +743,29 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
         // TAB Feature: Capture note if a TAB input is focused (Keyboard)
         const focusedElement = document.activeElement;
         if (focusedElement && focusedElement.classList.contains('tab-note-input')) {
-            let noteToStore;
+            let notesToAdd = [];
             if (chordMode) {
                 const chordNotesToPlay = currentChordMapSlice[keyMapped];
                 if (chordNotesToPlay && chordNotesToPlay.length > 0) {
-                    noteToStore = chordNotesToPlay.join(',');
+                    notesToAdd = chordNotesToPlay.map(n => n.toString());
                 } else {
-                    noteToStore = keyMapped.toString(); // Fallback
+                    notesToAdd = [keyMapped.toString()];
                 }
             } else {
                 const singleNoteMapping = currentSingleNoteMapSlice[keyMapped];
                 if (singleNoteMapping && singleNoteMapping.length > 0) {
-                    noteToStore = singleNoteMapping[0].toString();
+                    notesToAdd = [singleNoteMapping[0].toString()];
                 } else {
-                    noteToStore = keyMapped.toString(); // Fallback
+                    notesToAdd = [keyMapped.toString()];
                 }
             }
-            focusedElement.value = noteToStore;
+            // Append new notes to the field, comma-separated, avoiding duplicates
+            let currentVal = focusedElement.value.trim();
+            let currentNotes = currentVal ? currentVal.split(',').map(s => s.trim()).filter(Boolean) : [];
+            notesToAdd.forEach(note => {
+                if (!currentNotes.includes(note)) currentNotes.push(note);
+            });
+            focusedElement.value = currentNotes.join(',');
         }
 
 
@@ -622,21 +792,10 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
     });
 
     window.addEventListener("keyup", (event) => {
+        resetAllKeyVisuals();
         const keyMapped = keyMap[event.key.toLowerCase()];
-        if (!keyMapped || !activeKeys.has(keyMapped)) return; // Check if the key is actually active
-
+        if (!keyMapped || !activeKeys.has(keyMapped)) return;
         activeKeys.delete(keyMapped);
-
-        if (chordMode) {
-            const chordNotesPlayed = currentChordMapSlice[keyMapped];
-            if (chordNotesPlayed && chordNotesPlayed.length > 0) {
-                chordNotesPlayed.forEach(removeKeyVisual);
-            } else {
-                removeKeyVisual(keyMapped); 
-            }
-        } else { // Single Note Mode
-            removeKeyVisual(keyMapped); 
-        }
     });
     // --- End Updated Keyboard Interactions ---
 
@@ -650,29 +809,34 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
     // --- TAB Feature (Beat) Controls ---
     const tabFeatureToggle = document.getElementById("tab-feature-toggle");
     const beatTrackSelect = document.getElementById("beat-track-select");
+    // Set initial button text to match default state
+    if (tabFeatureToggle) {
+        tabFeatureToggle.textContent = "Beat: ON";
+    }
+
+    // Set default state to Beat: ON on page load
+    if (tabFeatureToggle) {
+        tabFeatureToggle.textContent = "Beat: ON";
+    }
 
     if (tabFeatureToggle) {
         tabFeatureToggle.addEventListener("click", () => {
             tabFeatureEnabled = !tabFeatureEnabled;
             tabFeatureToggle.textContent = tabFeatureEnabled ? "Beat: ON" : "Beat: OFF";
             console.log(`TAB Feature (Beat): ${tabFeatureEnabled ? "ON" : "OFF"}`);
-
-            if (tabFeatureEnabled) {
-                // Start playing the currently selected beat track
-                const selectedTrackId = beatTrackSelect?.value || 'track1'; // Default to track1 if select not found or no value
-                playBeatTrack(selectedTrackId);
-            } else {
-                // Stop the beat track
-                stopBeatAudio();
-            }
+            // Do not start or stop the beat here. Only toggle the state and update the button text.
         });
     }
 
     if (beatTrackSelect) {
         beatTrackSelect.addEventListener("change", (event) => {
-            if (tabFeatureEnabled) {
-                playBeatTrack(event.target.value); // Play the newly selected track if feature is ON
+            // Stop both beat and tab playback if either is playing when a new track is selected
+            if (isTabPlaying) {
+                stopTabPlayback();
+            } else {
+                stopBeatAudio();
             }
+            // Do not play the beat here. Only update selection.
         });
     }
 
@@ -742,6 +906,12 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
             isTabPlaying = true;
             document.getElementById('play-tab-btn').textContent = 'Stop TAB';
             console.log("Starting TAB sequence (first cycle).");
+            // Disable 'Enable Sing Key' when Play TAB starts
+            const syncToggle = document.getElementById("syncKeyFinderToggle");
+            if (syncToggle && syncToggle.checked) {
+                syncToggle.checked = false;
+                if (typeof toggleSyncKeyFinder === 'function') toggleSyncKeyFinder(false);
+            }
         } else {
             console.log("Looping TAB sequence.");
         }
@@ -769,27 +939,40 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
             return input ? input.value.trim() : "";
         });
 
-        // Schedule notes for first 16 timings
+        // Schedule highlight for all 16 tabs (first and second cycle), regardless of noteValue
         for (let i = 0; i < 16; i++) {
             const noteValue = tabValues[i];
             const timingKey = timingKeys[i];
-            if (noteValue && timingMap[timingKey] !== undefined) {
+            if (timingMap[timingKey] !== undefined) {
                 const delayMs = timingMap[timingKey] * 1000;
                 tabPlaybackTimeoutIds.push(setTimeout(() => {
+                    highlightTabEntry(i);
                     playTabNote(noteValue);
                 }, delayMs));
             }
         }
-        // Schedule notes for second 16 timings (repeat TAB values)
         for (let i = 0; i < 16; i++) {
             const noteValue = tabValues[i];
             const timingKey = timingKeys[i + 16];
-            if (noteValue && timingMap[timingKey] !== undefined) {
+            if (timingMap[timingKey] !== undefined) {
                 const delayMs = timingMap[timingKey] * 1000;
                 tabPlaybackTimeoutIds.push(setTimeout(() => {
+                    highlightTabEntry(i);
                     playTabNote(noteValue);
                 }, delayMs));
             }
+        }
+
+        // Remove highlight after each step (optional, for visual clarity)
+        function highlightTabEntry(index) {
+            const tabEntries = document.querySelectorAll('.tab-note-entry');
+            tabEntries.forEach((entry, idx) => {
+                if (idx === index) {
+                    entry.classList.add('tab-highlight');
+                } else {
+                    entry.classList.remove('tab-highlight');
+                }
+            });
         }
 
         // --- Loop logic: restart both TAB and beat for sync ---
@@ -913,16 +1096,32 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
 
     function stopAllAudio() {
         if (currentlyPlayingAudios.length > 0) {
-            console.log(`Stopping ${currentlyPlayingAudios.length} sync audio tracks.`);
+            console.log(`Stopping ${currentlyPlayingAudios.length} sync audio tracks with fade out.`);
             currentlyPlayingAudios.forEach(audio => {
                 if (!audio.paused) {
-                    audio.pause();
+                    // Fade out over 0.7 seconds
+                    let fadeDuration = 700; // ms
+                    let fadeSteps = 14;
+                    let stepTime = fadeDuration / fadeSteps;
+                    let originalVolume = audio.volume;
+                    let step = 0;
+                    let fadeInterval = setInterval(() => {
+                        step++;
+                        audio.volume = Math.max(0, originalVolume * (1 - step / fadeSteps));
+                        if (step >= fadeSteps) {
+                            clearInterval(fadeInterval);
+                            audio.pause();
+                            audio.currentTime = 0;
+                            audio.volume = originalVolume; // Reset for next play
+                        }
+                    }, stepTime);
+                } else {
+                    audio.currentTime = 0;
                 }
-                audio.currentTime = 0; // Reset playback position
                 // Optional: Remove event listeners if any were added to the Audio elements
-                // audio.src = ''; // Helps release resources
+                // audio.src = '';
             });
-            currentlyPlayingAudios = []; // Clear the array
+            currentlyPlayingAudios = [];
         }
     }
 
@@ -956,8 +1155,9 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
     function toggleSyncKeyFinder(enabled) {
         setSyncKeyFinderEnabled(enabled);
         if (enabled) {
-            // Start playing immediately for the current musical key
-            handleKeyPress(currentKey);
+            // Always use the current key and transpose offset at the time of enabling
+            let syncKeyToPlay = syncKeyMaps[currentKey]?.[chordMode ? transposeOffset : singleNoteTransposeOffset] || currentKey;
+            handleKeyPress(syncKeyToPlay);
         } else {
             stopAllAudio(); // Stop all audio immediately when unchecked
         }
@@ -967,8 +1167,9 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
         if (syncKeyFinderEnabled) {
             stopAllAudio();
             let newSyncKey = syncKeyMaps[currentKey]?.[chordMode ? transposeOffset : singleNoteTransposeOffset] || currentKey;
-
-            // Ensure that handleKeyPress is called with the musicalKey
+            // Save the last used key and offset for toggling
+            lastSyncKey = currentKey;
+            lastSyncOffset = chordMode ? transposeOffset : singleNoteTransposeOffset;
             handleKeyPress(newSyncKey);
         } else {
             stopAllAudio();
@@ -1004,13 +1205,17 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
     document.getElementById('reset-tab-btn')?.addEventListener('click', resetTabFields);
 
     document.getElementById('delete-tab-btn')?.addEventListener('click', () => {
-        // Find the currently focused TAB input
-        const focused = document.activeElement;
-        if (focused && focused.classList.contains('tab-note-input')) {
-            // Find the parent tab-note-entry
-            const entryDiv = focused.closest('.tab-note-entry');
+        // Use the last selected TAB input, fallback to currently focused
+        let targetInput = lastSelectedTabInput;
+        if (!targetInput || !document.body.contains(targetInput)) {
+            // fallback to currently focused
+            if (document.activeElement && document.activeElement.classList.contains('tab-note-input')) {
+                targetInput = document.activeElement;
+            }
+        }
+        if (targetInput && targetInput.classList.contains('tab-note-input')) {
+            const entryDiv = targetInput.closest('.tab-note-entry');
             if (entryDiv) {
-                // Clear all inputs in this entry (handles split and non-split)
                 entryDiv.querySelectorAll('.tab-note-input').forEach(input => {
                     input.value = "";
                     input.dispatchEvent(new Event('input', { bubbles: true }));
@@ -1018,5 +1223,4 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
             }
         }
     });
-
 } // End enableChordPlaying

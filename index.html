@@ -28,7 +28,7 @@
             <!-- Left Column: TAB Feature -->
             <div class="tab-column">
                 <!-- TAB Feature Section -->
-                <div class="left-piano-controls">
+                <div class="tab-feature-container">
                     <h2>TAB</h2>
                     <div class="tab-controls">
                         <button id="tab-feature-toggle">Beat: OFF</button>
@@ -128,43 +128,42 @@
                     </div>
                     <div class="tab-action-buttons">
                         <button id="play-tab-btn">Play TAB</button>
-                        <button id="delete-tab-btn">Delete</button>
-                        <button id="reset-tab-btn">Reset TAB</button>
+                        <button id="delete-tab-btn" style="background:#d32f2f; color:#fff;">Delete</button>
+                        <button id="reset-tab-btn" style="background:#ffe600; color:#222;">Reset TAB</button>
                     </div>
                 </div>
             </div>
 
             <!-- Right Column: Other Controls -->
-            <div class="right-piano-controls">
-                <!-- Third row: Enable Sing Key centered -->
-                <div class="right-controls-row3">
+            <div class="other-controls-column" style="margin-top:180px;">
+                <!-- Transpose Controls -->
+                <div class="transpose-container">
+                    <label for="transpose-value">Transpose:</label>
+                    <button class="transpose-btn" id="transpose-down">-</button>
+                    <span id="transpose-value">0</span>
+                    <button class="transpose-btn" id="transpose-up">+</button>
+                </div>
+
+                <!-- Container for the Chord Mode toggle button and key switcher buttons -->
+                <div class="controls-container">
+                    <div class="key-switcher-container">
+                        <label for="key-switcher-select">Select Key (UAT ruler):</label>
+                        <select id="key-switcher-select">
+                            <option value="C">C</option><option value="C#">C#</option><option value="D">D</option><option value="D#">D#</option><option value="E">E</option><option value="F">F</option><option value="F#">F#</option><option value="G">G</option><option value="G#">G#</option><option value="A">A</option><option value="A#">A#</option><option value="B">B</option>
+                        </select>
+                    </div>
+                    <!-- Sync Key Finder and Volume Controls -->
                     <div class="sync-controls-container">
                         <label for="syncKeyFinderToggle">
                             <input type="checkbox" id="syncKeyFinderToggle"> Enable Sing Key
                         </label>
                     </div>
-                </div>
-                <!-- First row: Transpose group (unchanged) -->
-                <div class="right-controls-row1">
-                    <div class="transpose-group">
-                        <label for="transpose-value">Transpose:</label>
-                        <button class="transpose-btn" id="transpose-down">-</button>
-                        <span id="transpose-value">0</span>
-                        <button class="transpose-btn" id="transpose-up">+</button>
+                    <div style="display:flex; justify-content:center; margin-top:10px;">
+                        <button id="chord-mode-toggle">Chord Mode: OFF</button>
                     </div>
                 </div>
-                <!-- Second row: Chord Mode + Select Key on same line -->
-                <div class="right-controls-row2">
-                    <button id="chord-mode-toggle">Chord Mode: OFF</button>
-                    <div class="key-switcher-container">
-                        <label for="key-switcher-select">Select Key:</label>
-                        <select id="key-switcher-select">
-                            <option value="C">C</option><option value="C#">C#</option><option value="D">D</option><option value="D#">D#</option><option value="E">E</option><option value="F">F</option><option value="F#">F#</option><option value="G">G</option><option value="G#">G#</option><option value="A">A</option><option value="A#">A#</option><option value="B">B</option>
-                        </select>
-                    </div>
-                </div>
-
             </div>
+
         </div>
 
         <!-- TAB Feature Section -->
@@ -174,31 +173,12 @@
     </div>
     
     <div id="login-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.7); z-index:100;">
-      <div style="background:#fff; margin:10vh auto; padding:2em; border-radius:8px; width:340px; position:relative;">
-        <!-- Tab headers -->
-        <div class="login-modal-tabs">
-          <button id="login-tab-btn" class="active" type="button">Login</button>
-          <button id="signup-tab-btn" type="button">Sign Up</button>
-        </div>
-        <!-- Login Form -->
-        <form id="login-form" class="login-modal-form">
-          <h2>Login</h2>
-          <button id="google-login-btn" type="button" style="width:100%; margin-bottom:10px;">Login with Google</button>
-          <input type="email" id="email-input" placeholder="Email" style="width:100%; margin-bottom:8px;" autocomplete="username">
-          <input type="password" id="password-input" placeholder="Password" style="width:100%; margin-bottom:8px;" autocomplete="current-password">
-          <a href="#" id="forgot-password-link" style="display:block; margin-bottom:10px; color:#5c6bc0; text-align:right; font-size:0.97em;">Forgot password?</a>
-          <button id="email-login-btn" type="button" style="width:100%; margin-bottom:10px;">Log in</button>
-        </form>
-        <!-- Sign Up Form -->
-        <form id="signup-form" class="login-modal-form" style="display:none;">
-          <h2>Sign Up</h2>
-          <button id="google-signup-btn" type="button" style="width:100%; margin-bottom:10px;">Sign up with Google</button>
-          <input type="text" id="signup-name-input" placeholder="Name" style="width:100%; margin-bottom:8px;" autocomplete="name">
-          <input type="email" id="signup-email-input" placeholder="Email" style="width:100%; margin-bottom:8px;" autocomplete="username">
-          <input type="password" id="signup-password-input" placeholder="Password" style="width:100%; margin-bottom:8px;" autocomplete="new-password">
-          <input type="password" id="signup-confirm-password-input" placeholder="Confirm Password" style="width:100%; margin-bottom:8px;" autocomplete="new-password">
-          <button id="email-signup-btn" type="button" style="width:100%; margin-bottom:10px;">Sign up</button>
-        </form>
+      <div style="background:#fff; margin:10vh auto; padding:2em; border-radius:8px; width:320px; position:relative;">
+        <h2>Login / Signup</h2>
+        <button id="google-login-btn" style="width:100%; margin-bottom:10px;">Login with Google</button>
+        <input type="email" id="email-input" placeholder="Email" style="width:100%; margin-bottom:8px;">
+        <input type="password" id="password-input" placeholder="Password" style="width:100%; margin-bottom:8px;">
+        <button id="email-login-btn" style="width:100%; margin-bottom:10px;">Login / Signup with Email</button>
         <button id="close-login-modal" title="Close" style="position:absolute; top:8px; right:8px;">&times;</button>
         <div id="login-error" style="color:red; margin-top:8px;"></div>
       </div>
@@ -227,6 +207,5 @@
 </div>
 
     <script type="module" src="/js/main.js"></script>
-</div>dy>
+  </body>
 </html>
-    <script type="module" src="/js/main.js"></script>  </body></html>
