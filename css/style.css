@@ -513,8 +513,11 @@ nav {
     flex-direction: column;
     justify-content: flex-end;
     align-items: stretch;
+    background-color: #252038;
     width: calc(50% - 10px);
     gap: 18px;
+    padding: 15px;
+    border-radius: 8px;;
     margin-top: 40px;
     min-width: 260px;
     max-width: 400px;
