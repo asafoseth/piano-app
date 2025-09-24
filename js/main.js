@@ -391,42 +391,110 @@ document.getElementById('confirm-save-tab').onclick = async () => {
 
 // Import TAB Modal logic
 document.getElementById('import-tab-btn').onclick = async () => {
-  const user = auth.currentUser;
-  if (!user) return;
-  document.getElementById('import-tab-modal').style.display = 'block';
-  const list = document.getElementById('tab-import-list');
-  list.innerHTML = "<li>Loading...</li>";
-  try {
-    const q = query(collection(db, "tabData"), where("owner", "==", user.uid));
-    const snapshot = await getDocs(q);
-    list.innerHTML = "";
-    snapshot.forEach(docSnap => {
-      const data = docSnap.data();
-      const li = document.createElement('li');
-      li.textContent = data.name;
-      li.style.cursor = "pointer";
-      li.style.padding = "8px";
-      li.onclick = () => {
-        // Populate TAB fields
-        const tabEntries = document.querySelectorAll('.tab-note-entry');
-        data.tabEntries.forEach((entry, idx) => {
-          const tabEntry = document.querySelector(`.tab-note-entry[data-entry-index="${idx}"]`);
-          if (!tabEntry) return;
-          const inputWrapper = tabEntry.querySelector('.tab-input-wrapper');
-          const inputs = inputWrapper.querySelectorAll('.tab-note-input');
-          if (inputs[0]) inputs[0].value = entry.values[0] || "";
-          if (inputs[1]) inputs[1].value = entry.values[1] || "";
+    const user = auth.currentUser;
+    if (!user) return;
+    document.getElementById('import-tab-modal').style.display = 'block';
+    const list = document.getElementById('tab-import-list');
+    list.innerHTML = "<li>Loading...</li>";
+    try {
+        const q = query(collection(db, "tabData"), where("owner", "==", user.uid));
+        const snapshot = await getDocs(q);
+        list.innerHTML = "";
+        snapshot.forEach(docSnap => {
+            const data = docSnap.data();
+            const li = document.createElement('li');
+            li.style.display = "flex";
+            li.style.alignItems = "center";
+            li.style.justifyContent = "space-between";
+            li.style.padding = "8px";
+            li.style.gap = "8px";
+
+            // TAB name (click to load)
+            const nameSpan = document.createElement('span');
+            nameSpan.textContent = data.name;
+            nameSpan.style.cursor = "pointer";
+            nameSpan.onclick = () => {
+                // Populate TAB fields
+                const tabEntries = document.querySelectorAll('.tab-note-entry');
+                data.tabEntries.forEach((entry, idx) => {
+                    const tabEntry = document.querySelector(`.tab-note-entry[data-entry-index="${idx}"]`);
+                    if (!tabEntry) return;
+                    const inputWrapper = tabEntry.querySelector('.tab-input-wrapper');
+                    const inputs = inputWrapper.querySelectorAll('.tab-note-input');
+                    if (inputs[0]) inputs[0].value = entry.values[0] || "";
+                    if (inputs[1]) inputs[1].value = entry.values[1] || "";
+                });
+
+                // Restore settings if present
+                if (data.settings) {
+                    document.getElementById('transpose-value').textContent = data.settings.transpose ?? "0";
+                    document.getElementById('beat-track-select').value = data.settings.beatTrack ?? "";
+                    document.getElementById('tab-feature-toggle').textContent = data.settings.beatOn ? "Beat: ON" : "Beat: OFF";
+                    document.getElementById('key-switcher-select').value = data.settings.key ?? "";
+                    document.getElementById('syncKeyFinderToggle').checked = !!data.settings.singKey;
+                }
+
+                document.getElementById('import-tab-modal').style.display = 'none';
+            };
+
+            // Rename icon button (✏️)
+            const renameBtn = document.createElement('button');
+            renameBtn.innerHTML = "&#9998;"; // ✏️
+            renameBtn.title = "Rename";
+            renameBtn.style.background = "none";
+            renameBtn.style.border = "none";
+            renameBtn.style.cursor = "pointer";
+            renameBtn.style.fontSize = "1.1em";
+            renameBtn.style.marginLeft = "4px";
+            renameBtn.onclick = async (e) => {
+                e.stopPropagation();
+                const newName = prompt("Enter new name for this TAB:", data.name);
+                if (!newName || newName === data.name) return;
+                const newDocId = `${user.uid}_${newName}`;
+                const oldDocId = `${user.uid}_${data.name}`;
+                try {
+                    await setDoc(doc(db, "tabData", newDocId), { ...data, name: newName });
+                    await setDoc(doc(db, "tabData", oldDocId), {}, { merge: false });
+                    await window.firebase.firestore().collection("tabData").doc(oldDocId).delete?.();
+                    li.remove();
+                    alert("TAB renamed!");
+                } catch (err) {
+                    alert("Rename failed: " + err.message);
+                }
+            };
+
+            // Delete icon button (🗑️)
+            const deleteBtn = document.createElement('button');
+            deleteBtn.innerHTML = "&#128465;"; // 🗑️
+            deleteBtn.title = "Delete";
+            deleteBtn.style.background = "none";
+            deleteBtn.style.border = "none";
+            deleteBtn.style.cursor = "pointer";
+            deleteBtn.style.fontSize = "1.1em";
+            deleteBtn.style.marginLeft = "4px";
+            deleteBtn.onclick = async (e) => {
+                e.stopPropagation();
+                if (!confirm(`Delete TAB "${data.name}"? This cannot be undone.`)) return;
+                try {
+                    await window.firebase.firestore().collection("tabData").doc(`${user.uid}_${data.name}`).delete?.();
+                    li.remove();
+                    alert("TAB deleted.");
+                } catch (err) {
+                    alert("Delete failed: " + err.message);
+                }
+            };
+
+            li.appendChild(nameSpan);
+            li.appendChild(renameBtn);
+            li.appendChild(deleteBtn);
+            list.appendChild(li);
         });
-        document.getElementById('import-tab-modal').style.display = 'none';
-      };
-      list.appendChild(li);
-    });
-    if (!list.hasChildNodes()) {
-      list.innerHTML = "<li>No saved TAB data found.</li>";
+        if (!list.hasChildNodes()) {
+            list.innerHTML = "<li>No saved TAB data found.</li>";
+        }
+    } catch (e) {
+        document.getElementById('import-tab-error').textContent = e.message;
     }
-  } catch (e) {
-    document.getElementById('import-tab-error').textContent = e.message;
-  }
 };
 document.getElementById('close-import-tab-modal').onclick = () => {
   document.getElementById('import-tab-modal').style.display = 'none';
@@ -462,3 +530,209 @@ function playTabSequence(tabEntries, beatTrackTimings, playNoteCallback) {
 
 // Usage example:
 // playTabSequence(tabEntries, beatTrackMap[selectedTrack].timings, playNote);
+
+// Helper: Get current settings for saving with TAB
+function getCurrentSettingsForTabSave() {
+    return {
+        transpose: parseInt(document.getElementById('transpose-value')?.textContent || "0", 10),
+        beatTrack: document.getElementById('beat-track-select')?.value || "",
+        beatOn: document.getElementById('tab-feature-toggle')?.textContent?.includes("ON") || false,
+        key: document.getElementById('key-switcher-select')?.value || "",
+        singKey: document.getElementById('syncKeyFinderToggle')?.checked || false
+    };
+}
+
+// --- Save TAB Modal logic (integrated with settings) ---
+document.getElementById('confirm-save-tab').onclick = async () => {
+    const name = document.getElementById('tab-save-name').value.trim();
+    if (!name) {
+        document.getElementById('save-tab-error').textContent = "Please enter a name.";
+        return;
+    }
+    const user = auth.currentUser;
+    if (!user) return;
+    // Collect TAB data from fields
+    const tabEntries = Array.from(document.querySelectorAll('.tab-note-entry')).map(entry => {
+        const inputWrapper = entry.querySelector('.tab-input-wrapper');
+        const inputs = inputWrapper.querySelectorAll('.tab-note-input');
+        return {
+            values: [
+                inputs[0]?.value || "",
+                inputs[1]?.value || ""
+            ]
+        };
+    });
+
+    // Collect settings
+    const settings = getCurrentSettingsForTabSave();
+
+    // Save to Firestore under user's UID, including settings
+    try {
+        await setDoc(doc(db, "tabData", `${user.uid}_${name}`), {
+            owner: user.uid,
+            name,
+            tabEntries,
+            settings, // <-- Save settings with TAB
+            savedAt: Date.now()
+        });
+        document.getElementById('save-tab-modal').style.display = 'none';
+        document.getElementById('tab-save-name').value = '';
+        document.getElementById('save-tab-error').textContent = '';
+        alert("TAB data and settings saved!");
+    } catch (e) {
+        document.getElementById('save-tab-error').textContent = e.message;
+    }
+};
+
+// --- Import TAB Modal logic (integrated with settings) ---
+document.getElementById('import-tab-btn').onclick = async () => {
+    const user = auth.currentUser;
+    if (!user) return;
+    document.getElementById('import-tab-modal').style.display = 'block';
+    const list = document.getElementById('tab-import-list');
+    list.innerHTML = "<li>Loading...</li>";
+    try {
+        const q = query(collection(db, "tabData"), where("owner", "==", user.uid));
+        const snapshot = await getDocs(q);
+        list.innerHTML = "";
+        snapshot.forEach(docSnap => {
+            const data = docSnap.data();
+            const li = document.createElement('li');
+            li.style.display = "flex";
+            li.style.alignItems = "center";
+            li.style.justifyContent = "space-between";
+            li.style.padding = "8px";
+            li.style.gap = "8px";
+
+            // TAB name (click to load)
+            const nameSpan = document.createElement('span');
+            nameSpan.textContent = data.name;
+            nameSpan.style.cursor = "pointer";
+            nameSpan.onclick = () => {
+                // Populate TAB fields
+                const tabEntries = document.querySelectorAll('.tab-note-entry');
+                data.tabEntries.forEach((entry, idx) => {
+                    const tabEntry = document.querySelector(`.tab-note-entry[data-entry-index="${idx}"]`);
+                    if (!tabEntry) return;
+                    const inputWrapper = tabEntry.querySelector('.tab-input-wrapper');
+                    const inputs = inputWrapper.querySelectorAll('.tab-note-input');
+                    if (inputs[0]) inputs[0].value = entry.values[0] || "";
+                    if (inputs[1]) inputs[1].value = entry.values[1] || "";
+                });
+
+                // Restore settings if present
+                if (data.settings) {
+                    document.getElementById('transpose-value').textContent = data.settings.transpose ?? "0";
+                    document.getElementById('beat-track-select').value = data.settings.beatTrack ?? "";
+                    document.getElementById('tab-feature-toggle').textContent = data.settings.beatOn ? "Beat: ON" : "Beat: OFF";
+                    document.getElementById('key-switcher-select').value = data.settings.key ?? "";
+                    document.getElementById('syncKeyFinderToggle').checked = !!data.settings.singKey;
+                }
+
+                document.getElementById('import-tab-modal').style.display = 'none';
+            };
+
+            // Rename icon button (✏️)
+            const renameBtn = document.createElement('button');
+            renameBtn.innerHTML = "&#9998;"; // ✏️
+            renameBtn.title = "Rename";
+            renameBtn.style.background = "none";
+            renameBtn.style.border = "none";
+            renameBtn.style.cursor = "pointer";
+            renameBtn.style.fontSize = "1.1em";
+            renameBtn.style.marginLeft = "4px";
+            renameBtn.onclick = async (e) => {
+                e.stopPropagation();
+                const newName = prompt("Enter new name for this TAB:", data.name);
+                if (!newName || newName === data.name) return;
+                const newDocId = `${user.uid}_${newName}`;
+                const oldDocId = `${user.uid}_${data.name}`;
+                try {
+                    await setDoc(doc(db, "tabData", newDocId), { ...data, name: newName });
+                    await setDoc(doc(db, "tabData", oldDocId), {}, { merge: false });
+                    await window.firebase.firestore().collection("tabData").doc(oldDocId).delete?.();
+                    li.remove();
+                    alert("TAB renamed!");
+                } catch (err) {
+                    alert("Rename failed: " + err.message);
+                }
+            };
+
+            // Delete icon button (🗑️)
+            const deleteBtn = document.createElement('button');
+            deleteBtn.innerHTML = "&#128465;"; // 🗑️
+            deleteBtn.title = "Delete";
+            deleteBtn.style.background = "none";
+            deleteBtn.style.border = "none";
+            deleteBtn.style.cursor = "pointer";
+            deleteBtn.style.fontSize = "1.1em";
+            deleteBtn.style.marginLeft = "4px";
+            deleteBtn.onclick = async (e) => {
+                e.stopPropagation();
+                if (!confirm(`Delete TAB "${data.name}"? This cannot be undone.`)) return;
+                try {
+                    await window.firebase.firestore().collection("tabData").doc(`${user.uid}_${data.name}`).delete?.();
+                    li.remove();
+                    alert("TAB deleted.");
+                } catch (err) {
+                    alert("Delete failed: " + err.message);
+                }
+            };
+
+            li.appendChild(nameSpan);
+            li.appendChild(renameBtn);
+            li.appendChild(deleteBtn);
+            list.appendChild(li);
+        });
+        if (!list.hasChildNodes()) {
+            list.innerHTML = "<li>No saved TAB data found.</li>";
+        }
+    } catch (e) {
+        document.getElementById('import-tab-error').textContent = e.message;
+    }
+};
+
+// Patch: Save settings with TAB
+function saveTabWithSettings(tabData, tabName) {
+    const settings = getCurrentSettingsForTabSave();
+    const saveObj = {
+        tab: tabData,
+        settings
+    };
+    localStorage.setItem(`tab_${tabName}`, JSON.stringify(saveObj));
+}
+
+// --- Replace your existing TAB save logic with this ---
+// Example: When user clicks "Save" in the modal
+document.getElementById('confirm-save-tab')?.addEventListener('click', function() {
+    const tabName = document.getElementById('tab-save-name').value.trim();
+    if (!tabName) {
+        document.getElementById('save-tab-error').textContent = "Please enter a name.";
+        return;
+    }
+    // Gather TAB data as before (replace this with your actual tab data gathering)
+    const tabData = gatherTabData(); // <-- implement or use your existing function
+
+    saveTabWithSettings(tabData, tabName);
+
+    // ...existing code to close modal, show success, etc...
+});
+
+// --- When loading a TAB, also restore settings ---
+function loadTabWithSettings(tabName) {
+    const raw = localStorage.getItem(`tab_${tabName}`);
+    if (!raw) return;
+    const { tab, settings } = JSON.parse(raw);
+
+    // Restore TAB data as before (replace this with your actual logic)
+    restoreTabData(tab);
+
+    // Restore settings:
+    if (settings) {
+        document.getElementById('transpose-value').textContent = settings.transpose ?? "0";
+        document.getElementById('beat-track-select').value = settings.beatTrack ?? "track1";
+        document.getElementById('tab-feature-toggle').textContent = settings.beatOn ? "Beat: ON" : "Beat: OFF";
+        document.getElementById('key-switcher-select').value = settings.key ?? "C";
+        document.getElementById('syncKeyFinderToggle').checked = !!settings.singKey;
+    }
+}

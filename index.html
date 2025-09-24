@@ -3,9 +3,14 @@
   <head>
     <meta name="viewport" content="width=1200, user-scalable=yes">
     <title>UA Piano (Demo)</title>
-    
     <!-- Style CSS -->
     <link rel="stylesheet" href="css/style.css">
+    <script>
+      // Force zoom to 50% on page load
+      window.addEventListener('DOMContentLoaded', function() {
+        document.body.style.zoom = "50%";
+      });
+    </script>
   </head>
   <body>
     <header>
@@ -23,7 +28,7 @@
 
         <h1>uncle Ali Piano</h1>
 
-        <!-- Container for the two control columns -->
+        <!-- Container for the two contro-->
         <div class="controls-row">
             <!-- Left Column: TAB Feature -->
             <div class="tab-column">
@@ -139,9 +144,9 @@
                 <!-- Transpose Controls -->
                 <div class="transpose-container">
                     <label for="transpose-value">Transpose:</label>
-                    <button class="transpose-btn" id="transpose-down">-</button>
-                    <span id="transpose-value">0</span>
                     <button class="transpose-btn" id="transpose-up">+</button>
+                    <span id="transpose-value">0</span>
+                    <button class="transpose-btn" id="transpose-down">-</button>
                 </div>
 
                 <!-- Container for the Chord Mode toggle button and key switcher buttons -->
