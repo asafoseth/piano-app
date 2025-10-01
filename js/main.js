@@ -1,7 +1,7 @@
 import enableChordPlaying from './multiKeyChords.js';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDocs, collection, query, where } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+import { getFirestore, doc, setDoc, getDocs, collection, query, where, deleteDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
 // Your Firebase config here:
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -383,7 +383,7 @@ document.getElementById('confirm-save-tab').onclick = async () => {
     document.getElementById('save-tab-modal').style.display = 'none';
     document.getElementById('tab-save-name').value = '';
     document.getElementById('save-tab-error').textContent = '';
-    alert("TAB data saved!");
+    // Removed: alert("TAB data saved!");
   } catch (e) {
     document.getElementById('save-tab-error').textContent = e.message;
   }
@@ -414,6 +414,8 @@ document.getElementById('import-tab-btn').onclick = async () => {
             nameSpan.textContent = data.name;
             nameSpan.style.cursor = "pointer";
             nameSpan.onclick = () => {
+                stopAndUncheckSingKey();
+
                 // Populate TAB fields
                 const tabEntries = document.querySelectorAll('.tab-note-entry');
                 data.tabEntries.forEach((entry, idx) => {
@@ -453,11 +455,14 @@ document.getElementById('import-tab-btn').onclick = async () => {
                 const newDocId = `${user.uid}_${newName}`;
                 const oldDocId = `${user.uid}_${data.name}`;
                 try {
+                    // Copy data to new document
                     await setDoc(doc(db, "tabData", newDocId), { ...data, name: newName });
-                    await setDoc(doc(db, "tabData", oldDocId), {}, { merge: false });
-                    await window.firebase.firestore().collection("tabData").doc(oldDocId).delete?.();
-                    li.remove();
-                    alert("TAB renamed!");
+                    // Delete old document
+                    await deleteDoc(doc(db, "tabData", oldDocId));
+                    // Instantly update UI without alert
+                    nameSpan.textContent = newName;
+                    data.name = newName;
+                    // No alert here
                 } catch (err) {
                     alert("Rename failed: " + err.message);
                 }
@@ -476,9 +481,9 @@ document.getElementById('import-tab-btn').onclick = async () => {
                 e.stopPropagation();
                 if (!confirm(`Delete TAB "${data.name}"? This cannot be undone.`)) return;
                 try {
-                    await window.firebase.firestore().collection("tabData").doc(`${user.uid}_${data.name}`).delete?.();
+                    await deleteDoc(doc(db, "tabData", `${user.uid}_${data.name}`));
                     li.remove();
-                    alert("TAB deleted.");
+                    // No alert here, just remove from UI instantly
                 } catch (err) {
                     alert("Delete failed: " + err.message);
                 }
@@ -578,7 +583,7 @@ document.getElementById('confirm-save-tab').onclick = async () => {
         document.getElementById('save-tab-modal').style.display = 'none';
         document.getElementById('tab-save-name').value = '';
         document.getElementById('save-tab-error').textContent = '';
-        alert("TAB data and settings saved!");
+        // Removed: alert("TAB data and settings saved!");
     } catch (e) {
         document.getElementById('save-tab-error').textContent = e.message;
     }
@@ -609,6 +614,8 @@ document.getElementById('import-tab-btn').onclick = async () => {
             nameSpan.textContent = data.name;
             nameSpan.style.cursor = "pointer";
             nameSpan.onclick = () => {
+                stopAndUncheckSingKey();
+
                 // Populate TAB fields
                 const tabEntries = document.querySelectorAll('.tab-note-entry');
                 data.tabEntries.forEach((entry, idx) => {
@@ -648,11 +655,14 @@ document.getElementById('import-tab-btn').onclick = async () => {
                 const newDocId = `${user.uid}_${newName}`;
                 const oldDocId = `${user.uid}_${data.name}`;
                 try {
+                    // Copy data to new document
                     await setDoc(doc(db, "tabData", newDocId), { ...data, name: newName });
-                    await setDoc(doc(db, "tabData", oldDocId), {}, { merge: false });
-                    await window.firebase.firestore().collection("tabData").doc(oldDocId).delete?.();
-                    li.remove();
-                    alert("TAB renamed!");
+                    // Delete old document
+                    await deleteDoc(doc(db, "tabData", oldDocId));
+                    // Instantly update UI without alert
+                    nameSpan.textContent = newName;
+                    data.name = newName;
+                    // No alert here
                 } catch (err) {
                     alert("Rename failed: " + err.message);
                 }
@@ -671,9 +681,9 @@ document.getElementById('import-tab-btn').onclick = async () => {
                 e.stopPropagation();
                 if (!confirm(`Delete TAB "${data.name}"? This cannot be undone.`)) return;
                 try {
-                    await window.firebase.firestore().collection("tabData").doc(`${user.uid}_${data.name}`).delete?.();
+                    await deleteDoc(doc(db, "tabData", `${user.uid}_${data.name}`));
                     li.remove();
-                    alert("TAB deleted.");
+                    // No alert here, just remove from UI instantly
                 } catch (err) {
                     alert("Delete failed: " + err.message);
                 }
@@ -735,4 +745,183 @@ function loadTabWithSettings(tabName) {
         document.getElementById('key-switcher-select').value = settings.key ?? "C";
         document.getElementById('syncKeyFinderToggle').checked = !!settings.singKey;
     }
+}
+
+// Show/hide password toggle for login modal
+document.addEventListener("DOMContentLoaded", () => {
+    const passwordInput = document.getElementById('password-input');
+    if (passwordInput && !document.getElementById('toggle-password-visibility')) {
+        // Create toggle button
+        const toggleBtn = document.createElement('button');
+        toggleBtn.type = "button";
+        toggleBtn.id = "toggle-password-visibility";
+        toggleBtn.innerHTML = "&#128065;"; // 👁️ Eye symbol
+        toggleBtn.style.marginLeft = "8px";
+        toggleBtn.style.fontSize = "1.1em";
+        toggleBtn.style.cursor = "pointer";
+
+        // Insert after password input
+        passwordInput.parentNode.insertBefore(toggleBtn, passwordInput.nextSibling);
+
+        toggleBtn.onclick = () => {
+            if (passwordInput.type === "password") {
+                passwordInput.type = "text";
+                toggleBtn.innerHTML = "&#128064;"; // 👁️‍🗨️ or another eye variant
+            } else {
+                passwordInput.type = "password";
+                toggleBtn.innerHTML = "&#128065;"; // 👁️
+            }
+        };
+    }
+});
+
+// Prevent auto-zoom on TAB input focus (for iOS and browsers)
+// This disables zooming when any .tab-note-input is focused
+document.addEventListener("DOMContentLoaded", () => {
+    const tabInputs = document.querySelectorAll('.tab-note-input');
+    tabInputs.forEach(input => {
+        input.addEventListener('focus', () => {
+            // For iOS: set font-size >= 16px to prevent zoom
+            input.style.fontSize = "16px";
+            // For all: blur on pinch-zoom gesture (optional)
+            // Optionally, you can prevent double-tap zoom by disabling double click
+        });
+        input.addEventListener('blur', () => {
+            // Optionally reset font-size if needed
+            // input.style.fontSize = "";
+        });
+    });
+
+    // Prevent double-tap zoom (mobile Safari/Chrome)
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', function (event) {
+        const now = (new Date()).getTime();
+        if (now - lastTouchEnd <= 300) {
+            event.preventDefault();
+        }
+        lastTouchEnd = now;
+    }, false);
+
+    // Prevent pinch-zoom
+    document.addEventListener('gesturestart', function (e) {
+        e.preventDefault();
+    });
+});
+
+// Simple undo/redo stack for TAB fields
+let undoStack = [];
+let redoStack = [];
+
+function getCurrentTabState() {
+    return Array.from(document.querySelectorAll('.tab-note-entry')).map(entry => {
+        const inputs = entry.querySelectorAll('.tab-note-input');
+        return [
+            inputs[0]?.value || "",
+            inputs[1]?.value || ""
+        ];
+    });
+}
+
+function setTabState(state) {
+    const entries = document.querySelectorAll('.tab-note-entry');
+    state.forEach((values, idx) => {
+        const entry = entries[idx];
+        if (!entry) return;
+        const inputs = entry.querySelectorAll('.tab-note-input');
+        if (inputs[0]) inputs[0].value = values[0];
+        if (inputs[1]) inputs[1].value = values[1];
+    });
+}
+
+// Save state on input
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll('.tab-note-input').forEach(input => {
+        input.addEventListener('input', () => {
+            undoStack.push(getCurrentTabState());
+            redoStack = [];
+        });
+    });
+
+    // Undo button
+    const undoBtn = document.getElementById('undo-btn');
+    if (undoBtn) {
+        undoBtn.onclick = () => {
+            if (undoStack.length > 0) {
+                redoStack.push(getCurrentTabState());
+                const prev = undoStack.pop();
+                setTabState(prev);
+            }
+        };
+    }
+
+    // Redo button
+    const redoBtn = document.getElementById('redo-btn');
+    if (redoBtn) {
+        redoBtn.onclick = () => {
+            if (redoStack.length > 0) {
+                undoStack.push(getCurrentTabState());
+                const next = redoStack.pop();
+                setTabState(next);
+            }
+        };
+    }
+});
+
+// --- DIRECT SING KEY STOP LOGIC PATCH ---
+// This function will forcibly stop all audio related to sing key, including any running AudioContext, intervals, and toggles.
+function stopAndUncheckSingKey() {
+    // 1. Uncheck the sing key toggle
+    const singKeyToggle = document.getElementById('syncKeyFinderToggle');
+    if (singKeyToggle) {
+        singKeyToggle.checked = false;
+    }
+
+    // 2. Call your sing key stop function if it exists
+    if (typeof stopSingKey === "function") stopSingKey();
+
+    // 3. Try to stop any Web Audio API nodes used by sing key
+    if (window.singKeyAudioNodes && Array.isArray(window.singKeyAudioNodes)) {
+        window.singKeyAudioNodes.forEach(node => {
+            try {
+                if (typeof node.stop === "function") node.stop(0);
+                if (typeof node.disconnect === "function") node.disconnect();
+            } catch (e) {}
+        });
+        window.singKeyAudioNodes = [];
+    }
+
+    // 4. Try to stop any global AudioBufferSourceNodes (brute force)
+    if (window.AudioBufferSourceNode && typeof window.AudioBufferSourceNode === "function") {
+        // This is a brute-force attempt, but most likely your nodes are tracked in singKeyAudioNodes
+    }
+
+    // 5. Clear any intervals/timeouts
+    if (window.singKeyInterval) {
+        clearInterval(window.singKeyInterval);
+        window.singKeyInterval = null;
+    }
+    if (window.singKeyTimeout) {
+        clearTimeout(window.singKeyTimeout);
+        window.singKeyTimeout = null;
+    }
+
+    // 6. Suspend or close the AudioContext if you use a dedicated one for sing key
+    if (window.singKeyAudioContext && typeof window.singKeyAudioContext.suspend === "function") {
+        window.singKeyAudioContext.suspend();
+    }
+    if (window.singKeyAudioContext && typeof window.singKeyAudioContext.close === "function") {
+        window.singKeyAudioContext.close();
+        window.singKeyAudioContext = null;
+    }
+
+    // 7. Try to pause all <audio> elements (if any are used for sing key)
+    document.querySelectorAll('audio').forEach(audio => {
+        try {
+            audio.pause();
+            audio.currentTime = 0;
+        } catch (e) {}
+    });
+
+    // 8. Reset any global flags
+    window.singKeyIsPlaying = false;
 }
