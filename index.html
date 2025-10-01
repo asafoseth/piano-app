@@ -40,7 +40,17 @@
                 <div class="tab-feature-container">
                     <h2>TAB</h2>
                     <div class="tab-controls">
-                        <button id="tab-feature-toggle">Beat: OFF</button>
+                        <!-- Find the Beat ON/OFF button, assumed to be: -->
+<button id="tab-feature-toggle">Beat: OFF</button>
+<!-- Place the undo/redo buttons just before or after it: -->
+<div style="display:inline-block; vertical-align:middle; margin-right:8px;">
+  <button id="undo-btn" title="Undo" style="font-size:1.3em; background: #ffe600; border: none; cursor: pointer; vertical-align: middle; border-radius: 50%; width: 2.2em; height: 2.2em; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 1px 4px #ccc;">
+    &#8630;
+  </button>
+  <button id="redo-btn" title="Redo" style="font-size:1.3em; background: #ffe600; border: none; cursor: pointer; vertical-align: middle; border-radius: 50%; width: 2.2em; height: 2.2em; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 1px 4px #ccc;">
+    &#8631;
+  </button>
+</div>
                         <div class="beat-track-select-container">
                             <label for="beat-track-select">Beat Track:</label>
                             <select id="beat-track-select">
