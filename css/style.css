@@ -99,6 +99,11 @@ nav {
     font-size: 14px;
 }
 
+/* Prevent iOS Safari auto-zoom by ensuring font-size is at least 16px for tab-note-input fields */
+.tab-note-input {
+  font-size: 16px !important;
+}
+
 .tab-note-input.split {
     /* Specific styles for split inputs if needed, e.g., width */
     /* flex-basis: 0; /* Helps with flex-grow distribution */
