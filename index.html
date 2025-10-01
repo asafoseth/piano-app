@@ -15,12 +15,16 @@
   <body>
     <header>
       <nav>
-        <a href="#" class="nav-button">Home</a>
-        <a href="#" class="nav-button">About</a>
-        <span id="user-info" style="display:none; color:#fff; font-weight:500; margin-left:10px;"></span>
+        <div class="nav-group" style="display: flex; align-items: center; gap: 10px;">
+          <a href="#" class="nav-button">Home</a>
+          <a href="#" class="nav-button">About</a>
+          <span id="user-info" style="display:none; color:#fff; font-weight:500; margin-left:10px;"></span>
+          <button id="show-login-modal">Login</button>
+          <!-- If you have a logout button, add it here and toggle with JS -->
+          <!-- <button id="logout-btn" style="display:none;">Logout</button> -->
+        </div>
         <button id="save-tab-btn" style="display:none;">Save TAB</button>
         <button id="import-tab-btn" style="display:none;">Import TAB</button>
-        <button id="show-login-modal">Login</button>
       </nav>
     </header>
     <div class="main">
@@ -176,7 +180,7 @@
         <h2 class="piano-title">uncle Ali Piano</h2>
         <div class="piano-container" id="keyboard-container"></div>
     </div>
-    
+  
     <div id="login-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.7); z-index:100;">
       <div style="background:#fff; margin:10vh auto; padding:2em; border-radius:8px; width:320px; position:relative;">
         <h2>Login / Signup</h2>
