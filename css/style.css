@@ -5,6 +5,19 @@
 }
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500&display=swap');
 
+/* Prevent Safari from auto-resizing text */
+html, body {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Ensure touch interactions feel the same */
+button, input, canvas {
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+
 * {
     margin: 0;
     padding: 0;
