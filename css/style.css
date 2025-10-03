@@ -5,7 +5,7 @@
 }
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500&display=swap');
 
-/* iOS Safari optimizations - Force desktop view */
+/* iOS Safari optimizations - Simplified for better pinch-zoom */
 html, body {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
@@ -22,34 +22,6 @@ button, input, canvas {
 body {
   min-width: 1024px;
   overflow-x: auto; /* Allow horizontal scrolling if needed */
-}
-
-/* iOS-specific fixes to prevent distortion */
-@supports (-webkit-appearance: none) {
-  /* Target WebKit browsers (Safari) */
-  .piano-container {
-    transform: none !important;
-    scale: none !important;
-    zoom: 1 !important;
-  }
-  
-  .piano-keys {
-    transform: none !important;
-    scale: none !important;
-  }
-  
-  .white-key, .black-key {
-    transform: none !important;
-    scale: none !important;
-  }
-  
-  .white-key.pressed {
-    transform: scale(0.97) !important;
-  }
-  
-  .black-key.pressed {
-    transform: scale(0.97) !important;
-  }
 }
 
 * {
