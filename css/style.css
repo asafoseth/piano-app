@@ -118,9 +118,30 @@ nav {
     font-size: 14px;
 }
 
-/* Prevent iOS Safari auto-zoom by ensuring font-size is at least 16px for tab-note-input fields */
+/* Enhanced iOS Safari auto-zoom prevention for tab-note-input fields */
 .tab-note-input {
   font-size: 16px !important;
+  /* Additional iOS zoom prevention */
+  -webkit-text-size-adjust: 100% !important;
+  text-size-adjust: 100% !important;
+  transform-origin: center !important;
+}
+
+/* Specific focus state to maintain zoom prevention */
+.tab-note-input:focus {
+  font-size: 16px !important;
+  -webkit-text-size-adjust: 100% !important;
+  text-size-adjust: 100% !important;
+  zoom: 1 !important;
+}
+
+/* iOS-specific focused input styling */
+.tab-note-input.ios-input-focused {
+  font-size: 16px !important;
+  -webkit-text-size-adjust: none !important;
+  text-size-adjust: none !important;
+  transform: scale(1) !important;
+  zoom: 1 !important;
 }
 
 .tab-note-input.split {

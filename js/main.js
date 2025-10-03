@@ -847,24 +847,62 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
-// Prevent auto-zoom on TAB input focus (for iOS and browsers)
-// This disables zooming when any .tab-note-input is focused
+// Enhanced iOS auto-zoom prevention for TAB input fields
+// This prevents iOS Safari from automatically zooming when tab inputs are focused
 document.addEventListener("DOMContentLoaded", () => {
-    const tabInputs = document.querySelectorAll('.tab-note-input');
-    tabInputs.forEach(input => {
-        input.addEventListener('focus', () => {
-            // For iOS: set font-size >= 16px to prevent zoom
-            input.style.fontSize = "16px";
-            // For all: blur on pinch-zoom gesture (optional)
-            // Optionally, you can prevent double-tap zoom by disabling double click
+    const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
+    
+    if (isIOSDevice && isSafari) {
+        console.log('iOS Safari detected - setting up tab input zoom prevention');
+        
+        // Get all tab note inputs
+        const tabInputs = document.querySelectorAll('.tab-note-input');
+        
+        // Store original viewport meta tag content
+        const viewportMeta = document.querySelector('meta[name="viewport"]');
+        const originalViewport = viewportMeta ? viewportMeta.content : '';
+        
+        tabInputs.forEach(input => {
+            // Prevent zoom on focus
+            input.addEventListener('focus', (e) => {
+                console.log('Tab input focused - preventing iOS zoom');
+                
+                // Method 1: Ensure font size is >= 16px
+                e.target.style.fontSize = "16px";
+                e.target.style.setProperty('font-size', '16px', 'important');
+                
+                // Method 2: Temporarily disable user-scalable
+                if (viewportMeta) {
+                    viewportMeta.content = 'width=1024, initial-scale=0.5, user-scalable=no';
+                }
+                
+                // Method 3: Add specific iOS class for additional styling
+                e.target.classList.add('ios-input-focused');
+            }, { passive: true });
+            
+            // Restore normal behavior on blur
+            input.addEventListener('blur', (e) => {
+                console.log('Tab input blurred - restoring normal zoom behavior');
+                
+                // Restore original viewport
+                if (viewportMeta && originalViewport) {
+                    viewportMeta.content = originalViewport;
+                }
+                
+                // Remove iOS-specific class
+                e.target.classList.remove('ios-input-focused');
+            }, { passive: true });
+            
+            // Prevent zoom on touchstart (additional safety)
+            input.addEventListener('touchstart', (e) => {
+                e.target.style.fontSize = "16px";
+                e.target.style.setProperty('font-size', '16px', 'important');
+            }, { passive: true });
         });
-        input.addEventListener('blur', () => {
-            // Optionally reset font-size if needed
-            // input.style.fontSize = "";
-        });
-    });
+    }
 
-    // Prevent double-tap zoom (mobile Safari/Chrome)
+    // Prevent double-tap zoom on tab inputs for all devices
     let lastTouchEnd = 0;
     document.addEventListener('touchend', function (event) {
         const now = (new Date()).getTime();
