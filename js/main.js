@@ -20,6 +20,18 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 document.addEventListener("DOMContentLoaded", () => {
+  // Unlock audio for iOS Safari
+  document.addEventListener('touchstart', function initAudio() {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (AudioContext) {
+      const ctx = new AudioContext();
+      if (ctx.state === 'suspended') {
+        ctx.resume();
+      }
+    }
+    document.removeEventListener('touchstart', initAudio);
+  });
+
   // --- Delete TAB Button Color Feedback ---
   const deleteTabBtn = document.getElementById('delete-tab-btn');
   if (deleteTabBtn) {
