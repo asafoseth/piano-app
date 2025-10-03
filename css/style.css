@@ -24,6 +24,34 @@ body {
   overflow-x: auto; /* Allow horizontal scrolling if needed */
 }
 
+/* iOS-specific fixes to prevent distortion */
+@supports (-webkit-appearance: none) {
+  /* Target WebKit browsers (Safari) */
+  .piano-container {
+    transform: none !important;
+    scale: none !important;
+    zoom: 1 !important;
+  }
+  
+  .piano-keys {
+    transform: none !important;
+    scale: none !important;
+  }
+  
+  .white-key, .black-key {
+    transform: none !important;
+    scale: none !important;
+  }
+  
+  .white-key.pressed {
+    transform: scale(0.97) !important;
+  }
+  
+  .black-key.pressed {
+    transform: scale(0.97) !important;
+  }
+}
+
 * {
     margin: 0;
     padding: 0;
