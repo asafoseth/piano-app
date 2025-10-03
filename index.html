@@ -1,28 +1,105 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <!-- Force desktop view on iOS Safari and all mobile devices -->
-    <meta name="viewport" content="width=1024, initial-scale=1.0, user-scalable=yes, shrink-to-fit=no">
+    <!-- Force desktop view on iOS Safari - Enhanced for better zoom -->
+    <meta name="viewport" content="width=1024, initial-scale=0.5, minimum-scale=0.25, maximum-scale=3.0, user-scalable=yes, shrink-to-fit=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>UA Piano (Demo)</title>
     <!-- Style CSS -->
     <link rel="stylesheet" href="css/style.css">
     <script>
-      // Set 50% zoom on Apple/iOS devices - Fixed distortion issue
+      // Enhanced iOS touch zoom support - Better pinch-to-zoom experience
       window.addEventListener('DOMContentLoaded', function() {
         // Detect iOS devices specifically
         const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent);
         const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
         
         if (isIOSDevice && isSafari) {
-          // Use only transform method for iOS Safari (more reliable)
-          document.body.style.transform = "scale(0.5)";
-          document.body.style.transformOrigin = "0 0";
-          document.body.style.width = "200%";
-          document.body.style.height = "200%";
-          // Remove any conflicting zoom
-          document.body.style.zoom = "";
+          // Use CSS-based scaling that works better with touch zoom
+          const style = document.createElement('style');
+          style.textContent = `
+            @media screen and (max-device-width: 768px) {
+              html {
+                zoom: 0.5;
+              }
+              
+              /* Improve touch responsiveness */
+              * {
+                touch-action: manipulation;
+              }
+              
+              /* Allow pinch zoom on piano area */
+              .piano-container {
+                touch-action: pinch-zoom;
+              }
+              
+              /* Prevent double-tap zoom except on piano */
+              body {
+                touch-action: pan-x pan-y;
+              }
+            }
+          `;
+          document.head.appendChild(style);
+          
+          // Add visual zoom controls for better UX
+          const createZoomControls = () => {
+            const zoomControls = document.createElement('div');
+            zoomControls.style.cssText = `
+              position: fixed;
+              top: 10px;
+              left: 10px;
+              z-index: 1000;
+              display: flex;
+              gap: 10px;
+              background: rgba(0,0,0,0.7);
+              padding: 5px;
+              border-radius: 5px;
+            `;
+            
+            const zoomInBtn = document.createElement('button');
+            zoomInBtn.textContent = '+';
+            zoomInBtn.style.cssText = `
+              width: 40px;
+              height: 40px;
+              font-size: 20px;
+              background: #ffe600;
+              border: none;
+              border-radius: 3px;
+              cursor: pointer;
+            `;
+            
+            const zoomOutBtn = document.createElement('button');
+            zoomOutBtn.textContent = '−';
+            zoomOutBtn.style.cssText = `
+              width: 40px;
+              height: 40px;
+              font-size: 20px;
+              background: #ffe600;
+              border: none;
+              border-radius: 3px;
+              cursor: pointer;
+            `;
+            
+            let currentZoom = 0.5;
+            
+            zoomInBtn.addEventListener('click', () => {
+              currentZoom = Math.min(currentZoom + 0.1, 2.0);
+              document.documentElement.style.zoom = currentZoom;
+            });
+            
+            zoomOutBtn.addEventListener('click', () => {
+              currentZoom = Math.max(currentZoom - 0.1, 0.3);
+              document.documentElement.style.zoom = currentZoom;
+            });
+            
+            zoomControls.appendChild(zoomOutBtn);
+            zoomControls.appendChild(zoomInBtn);
+            document.body.appendChild(zoomControls);
+          };
+          
+          // Add zoom controls after a short delay
+          setTimeout(createZoomControls, 1000);
         }
       });
     </script>
