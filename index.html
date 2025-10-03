@@ -8,6 +8,23 @@
     <title>UA Piano (Demo)</title>
     <!-- Style CSS -->
     <link rel="stylesheet" href="css/style.css">
+    <script>
+      // Set 50% zoom on Apple/iOS devices
+      window.addEventListener('DOMContentLoaded', function() {
+        // Detect Apple/iOS devices
+        const isAppleDevice = /iPad|iPhone|iPod|Macintosh|Mac OS X/.test(navigator.userAgent);
+        const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        
+        if (isAppleDevice || isIOSDevice) {
+          document.body.style.zoom = "50%";
+          // Alternative method for better Safari compatibility
+          document.body.style.transform = "scale(0.5)";
+          document.body.style.transformOrigin = "0 0";
+          document.body.style.width = "200%";
+          document.body.style.height = "200%";
+        }
+      });
+    </script>
   </head>
   <body>
     <header>

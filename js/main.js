@@ -20,6 +20,78 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 document.addEventListener("DOMContentLoaded", () => {
+  // Enhanced iOS Audio Unlock - Must be at the very beginning
+  const iosAudioUnlock = () => {
+    // Detect iOS devices
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
+    
+    if (isIOS || isSafari) {
+      console.log("iOS/Safari detected - initializing audio unlock");
+      
+      // Create a silent audio element to unlock audio playback
+      const silentAudio = new Audio();
+      silentAudio.src = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LHdSEFl3bY8xk2FjUAAA==';
+      silentAudio.preload = 'auto';
+      
+      const unlockAudio = () => {
+        console.log("Attempting to unlock iOS audio...");
+        
+        // Play silent audio to unlock
+        const playPromise = silentAudio.play();
+        if (playPromise !== undefined) {
+          playPromise.then(() => {
+            console.log("iOS audio unlocked successfully");
+            silentAudio.pause();
+            silentAudio.currentTime = 0;
+          }).catch(e => {
+            console.log("iOS audio unlock failed:", e);
+          });
+        }
+        
+        // Also try to create and resume AudioContext
+        try {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) {
+            const tempContext = new AudioContext();
+            if (tempContext.state === 'suspended') {
+              tempContext.resume().then(() => {
+                console.log("AudioContext resumed successfully");
+                tempContext.close();
+              }).catch(e => {
+                console.log("AudioContext resume failed:", e);
+                tempContext.close();
+              });
+            } else {
+              tempContext.close();
+            }
+          }
+        } catch (e) {
+          console.log("AudioContext creation failed:", e);
+        }
+        
+        // Remove event listeners after first interaction
+        document.removeEventListener('touchstart', unlockAudio);
+        document.removeEventListener('touchend', unlockAudio);
+        document.removeEventListener('click', unlockAudio);
+        document.body.removeEventListener('touchstart', unlockAudio);
+        document.body.removeEventListener('touchend', unlockAudio);
+        document.body.removeEventListener('click', unlockAudio);
+      };
+      
+      // Add multiple event listeners to catch the first user interaction
+      document.addEventListener('touchstart', unlockAudio, { once: true, passive: true });
+      document.addEventListener('touchend', unlockAudio, { once: true, passive: true });
+      document.addEventListener('click', unlockAudio, { once: true, passive: true });
+      document.body.addEventListener('touchstart', unlockAudio, { once: true, passive: true });
+      document.body.addEventListener('touchend', unlockAudio, { once: true, passive: true });
+      document.body.addEventListener('click', unlockAudio, { once: true, passive: true });
+    }
+  };
+  
+  // Call iOS audio unlock immediately
+  iosAudioUnlock();
+
   // --- Delete TAB Button Color Feedback ---
   const deleteTabBtn = document.getElementById('delete-tab-btn');
   if (deleteTabBtn) {
