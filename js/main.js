@@ -934,48 +934,130 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 });
 
-// Simple undo/redo stack for TAB fields
+// Enhanced undo/redo stack for TAB fields
 let undoStack = [];
 let redoStack = [];
+let maxUndoStates = 50; // Limit memory usage
+let isUpdatingFromUndoRedo = false; // Prevent recursive state saving
+let debounceTimer = null;
 
 function getCurrentTabState() {
     return Array.from(document.querySelectorAll('.tab-note-entry')).map(entry => {
         const inputs = entry.querySelectorAll('.tab-note-input');
-        return [
-            inputs[0]?.value || "",
-            inputs[1]?.value || ""
-        ];
+        return {
+            values: [
+                inputs[0]?.value || "",
+                inputs[1]?.value || ""
+            ],
+            timestamp: Date.now()
+        };
     });
 }
 
 function setTabState(state) {
+    isUpdatingFromUndoRedo = true; // Prevent saving state during undo/redo
+    
     const entries = document.querySelectorAll('.tab-note-entry');
-    state.forEach((values, idx) => {
+    state.forEach((entryState, idx) => {
         const entry = entries[idx];
         if (!entry) return;
         const inputs = entry.querySelectorAll('.tab-note-input');
-        if (inputs[0]) inputs[0].value = values[0];
-        if (inputs[1]) inputs[1].value = values[1];
+        if (inputs[0]) inputs[0].value = entryState.values[0];
+        if (inputs[1]) inputs[1].value = entryState.values[1];
     });
+    
+    // Update button states
+    updateUndoRedoButtons();
+    
+    setTimeout(() => {
+        isUpdatingFromUndoRedo = false;
+    }, 100);
 }
 
-// Save state on input
+function saveCurrentState() {
+    if (isUpdatingFromUndoRedo) return; // Don't save during undo/redo operations
+    
+    const currentState = getCurrentTabState();
+    
+    // Don't save if nothing has changed
+    if (undoStack.length > 0 && JSON.stringify(undoStack[undoStack.length - 1]) === JSON.stringify(currentState)) {
+        return;
+    }
+    
+    undoStack.push(currentState);
+    redoStack = []; // Clear redo stack when new action is performed
+    
+    // Limit stack size
+    if (undoStack.length > maxUndoStates) {
+        undoStack.shift(); // Remove oldest state
+    }
+    
+    updateUndoRedoButtons();
+    console.log('State saved. Undo stack size:', undoStack.length);
+}
+
+function updateUndoRedoButtons() {
+    const undoBtn = document.getElementById('undo-btn');
+    const redoBtn = document.getElementById('redo-btn');
+    
+    if (undoBtn) {
+        undoBtn.style.opacity = undoStack.length > 0 ? '1' : '0.5';
+        undoBtn.style.cursor = undoStack.length > 0 ? 'pointer' : 'not-allowed';
+        undoBtn.disabled = undoStack.length === 0;
+    }
+    
+    if (redoBtn) {
+        redoBtn.style.opacity = redoStack.length > 0 ? '1' : '0.5';
+        redoBtn.style.cursor = redoStack.length > 0 ? 'pointer' : 'not-allowed';
+        redoBtn.disabled = redoStack.length === 0;
+    }
+}
+
+function debouncedSaveState() {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+        saveCurrentState();
+    }, 500); // Save state 500ms after user stops typing
+}
+
+// Initialize undo/redo system
 document.addEventListener("DOMContentLoaded", () => {
+    // Save initial state
+    setTimeout(() => {
+        saveCurrentState();
+        console.log('Initial state saved');
+    }, 1000);
+    
+    // Add input listeners with debouncing
     document.querySelectorAll('.tab-note-input').forEach(input => {
-        input.addEventListener('input', () => {
-            undoStack.push(getCurrentTabState());
-            redoStack = [];
+        input.addEventListener('input', debouncedSaveState);
+        
+        // Also save state on focus loss (when user finishes with a field)
+        input.addEventListener('blur', () => {
+            clearTimeout(debounceTimer);
+            setTimeout(saveCurrentState, 100);
         });
     });
+    
+    // Save state when tab notes are cleared or reset
+    const resetBtn = document.getElementById('reset-tab-btn');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', () => {
+            setTimeout(saveCurrentState, 100);
+        });
+    }
 
     // Undo button
     const undoBtn = document.getElementById('undo-btn');
     if (undoBtn) {
         undoBtn.onclick = () => {
             if (undoStack.length > 0) {
+                console.log('Performing undo. Stack size:', undoStack.length);
                 redoStack.push(getCurrentTabState());
-                const prev = undoStack.pop();
-                setTabState(prev);
+                const prevState = undoStack.pop();
+                setTabState(prevState);
+            } else {
+                console.log('Nothing to undo');
             }
         };
     }
@@ -985,12 +1067,18 @@ document.addEventListener("DOMContentLoaded", () => {
     if (redoBtn) {
         redoBtn.onclick = () => {
             if (redoStack.length > 0) {
+                console.log('Performing redo. Stack size:', redoStack.length);
                 undoStack.push(getCurrentTabState());
-                const next = redoStack.pop();
-                setTabState(next);
+                const nextState = redoStack.pop();
+                setTabState(nextState);
+            } else {
+                console.log('Nothing to redo');
             }
         };
     }
+    
+    // Initialize button states
+    updateUndoRedoButtons();
 });
 
 // --- DIRECT SING KEY STOP LOGIC PATCH ---
