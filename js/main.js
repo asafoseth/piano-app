@@ -416,6 +416,22 @@ document.getElementById('email-login-btn').onclick = async () => {
   }
 };
 
+// About modal logic
+document.getElementById('show-about-modal').onclick = (e) => {
+  e.preventDefault(); // Prevent default anchor behavior
+  document.getElementById('about-modal').style.display = 'block';
+};
+document.getElementById('close-about-modal').onclick = () => {
+  document.getElementById('about-modal').style.display = 'none';
+};
+
+// Close About modal when clicking outside the modal content
+document.getElementById('about-modal').onclick = (e) => {
+  if (e.target.id === 'about-modal') {
+    document.getElementById('about-modal').style.display = 'none';
+  }
+};
+
 // Save TAB Modal logic
 document.getElementById('save-tab-btn').onclick = () => {
   document.getElementById('save-tab-modal').style.display = 'block';

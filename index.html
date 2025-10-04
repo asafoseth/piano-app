@@ -62,7 +62,7 @@
       <nav>
         <div class="nav-group" style="display: flex; align-items: center; gap: 10px;">
           <a href="#" class="nav-button">Home</a>
-          <a href="#" class="nav-button">About</a>
+          <a href="#" id="show-about-modal" class="nav-button">About</a>
           <span id="user-info" style="display:none; color:#fff; font-weight:500; margin-left:10px;"></span>
           <button id="show-login-modal">Login</button>
           <!-- If you have a logout button, add it here and toggle with JS -->
@@ -267,6 +267,38 @@
     <ul id="tab-import-list" style="list-style:none; padding:0; margin-bottom:12px;"></ul>
     <button id="close-import-tab-modal" style="position:absolute; top:12px; left:12px; background:#f44336; color:#fff; border-radius:50%; width:32px; height:32px; border:none;">&times;</button>
     <div id="import-tab-error" style="color:red; margin-top:8px;"></div>
+  </div>
+</div>
+
+<!-- About Modal -->
+<div id="about-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.8); z-index:1002;">
+  <div style="background:#fff; margin:5vh auto; padding:2em; border-radius:12px; width:90%; max-width:500px; position:relative; box-shadow:0 10px 30px rgba(0,0,0,0.3);">
+    <h2 style="font-size:1.8em; color:#333; margin-bottom:1em; text-align:center; border-bottom:2px solid #ffe600; padding-bottom:0.5em;">About Uncle Ali Piano</h2>
+    
+    <div style="color:#555; line-height:1.6; font-size:1em;">
+      <p style="margin-bottom:1em;"><strong>Uncle Ali Piano</strong> makes learning piano simple and fun for beginners and music lovers.</p>
+      
+      <p style="margin-bottom:1em;">Created by <strong>Uncle Ali (Ali Ibrahim)</strong> a musician, online piano teacher and film sound engineer from Ghana.</p>
+      
+      <p style="margin-bottom:1em;">Click here for my socials and tutorials: 
+        <a href="https://linktr.ee/uncleali101" target="_blank" style="color:#2196F3; text-decoration:none; font-weight:bold;">linktr.ee/uncleali101</a>
+      </p>
+      
+      <div style="background:#f8f9fa; padding:1em; border-radius:8px; margin:1em 0;">
+        <h3 style="color:#333; margin-bottom:0.5em; font-size:1.2em;">This app helps you:</h3>
+        <ul style="margin:0; padding-left:1.5em; color:#666;">
+          <li>Play in any key</li>
+          <li>Learn piano fast and easy</li>
+          <li>Master chords at your own pace</li>
+        </ul>
+      </div>
+      
+      <p style="margin-bottom:0; text-align:center; font-style:italic; color:#666;">
+        Our goal is to make piano learning easy, enjoyable, and creative; anytime, anywhere.
+      </p>
+    </div>
+    
+    <button id="close-about-modal" title="Close" style="position:absolute; top:12px; right:12px; background:#f44336; color:#fff; border-radius:50%; width:36px; height:36px; border:none; font-size:20px; cursor:pointer;">&times;</button>
   </div>
 </div>
 
