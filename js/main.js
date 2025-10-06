@@ -1,7 +1,7 @@
 import enableChordPlaying from './multiKeyChords.js';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDocs, collection, query, where, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+import { getFirestore, doc, setDoc, getDocs, collection, query, where, deleteDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
 // Your Firebase config here:
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -1144,6 +1144,7 @@ function stopAndUncheckSingKey() {
 class PianoFeedback {
     constructor() {
         this.feedbackDoc = 'pianoFeedback';
+        this.unsubscribe = null; // Store unsubscribe function for real-time listener
         this.init();
     }
 
@@ -1163,20 +1164,60 @@ class PianoFeedback {
         // Check user vote status
         this.checkUserVoteStatus();
         
-        // Setup periodic refresh every 30 seconds
+        // Setup real-time listener for instant cross-device synchronization
+        this.setupRealTimeListener();
+        
+        // Setup periodic refresh as backup (reduced frequency since we have real-time updates)
         this.setupPeriodicRefresh();
     }
 
     setupPeriodicRefresh() {
-        // Refresh counts every 30 seconds to show real-time updates from other users
+        // Backup refresh every 5 minutes (since we have real-time listeners)
         setInterval(async () => {
             try {
-                console.log('Periodic refresh of feedback counts...');
+                console.log('Backup periodic refresh of feedback counts...');
                 await this.loadFeedbackCounts();
             } catch (error) {
                 console.error('Error during periodic refresh:', error);
             }
-        }, 30000); // 30 seconds
+        }, 300000); // 5 minutes as backup
+    }
+
+    setupRealTimeListener() {
+        try {
+            console.log('Setting up real-time listener for instant cross-device synchronization...');
+            const docRef = doc(db, 'feedback', this.feedbackDoc);
+            
+            // Set up real-time listener using onSnapshot
+            this.unsubscribe = onSnapshot(docRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    console.log('Real-time update received from Firebase:', data);
+                    
+                    const likes = data.likes || 0;
+                    const dislikes = data.dislikes || 0;
+                    
+                    // Update display instantly
+                    this.updateCountDisplay(likes, dislikes);
+                    
+                    // Update localStorage backup
+                    localStorage.setItem('piano_likes_count', likes.toString());
+                    localStorage.setItem('piano_dislikes_count', dislikes.toString());
+                    
+                    console.log('Vote counts updated instantly across all devices:', { likes, dislikes });
+                } else {
+                    console.log('Real-time listener: Document does not exist yet');
+                }
+            }, (error) => {
+                console.error('Real-time listener error:', error);
+                // Fallback to periodic refresh if real-time fails
+                console.log('Real-time listener failed, relying on backup periodic refresh');
+            });
+            
+            console.log('Real-time listener successfully established');
+        } catch (error) {
+            console.error('Error setting up real-time listener:', error);
+        }
     }
 
     async forceRefreshCounts() {
@@ -1576,6 +1617,15 @@ class PianoFeedback {
                     messageEl.textContent = '';
                 }, 300);
             }, 3000);
+        }
+    }
+
+    // Cleanup method to unsubscribe from real-time listener
+    destroy() {
+        if (this.unsubscribe) {
+            console.log('Unsubscribing from real-time listener...');
+            this.unsubscribe();
+            this.unsubscribe = null;
         }
     }
 }
