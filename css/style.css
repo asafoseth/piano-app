@@ -1604,6 +1604,7 @@ nav {
 }
 
 .feedback-message {
+    display: none; /* Hide feedback messages completely */
     color: rgba(255, 255, 255, 0.8);
     font-size: 14px;
     margin: 0;
@@ -1612,6 +1613,7 @@ nav {
 }
 
 .feedback-message.show {
+    display: none; /* Keep hidden even when 'show' class is applied */
     color: rgba(76, 175, 80, 0.9);
     font-weight: 500;
 }
