@@ -1339,6 +1339,9 @@ class PianoFeedback {
             
             console.log('Vote action:', action);
 
+            // Provide immediate visual feedback to the voting user
+            this.provideFastFeedback(voteType, action, btn, oppositeBtn);
+
             // Check if user is authenticated
             const user = auth.currentUser;
             if (!user) {
@@ -1391,6 +1394,62 @@ class PianoFeedback {
                 this.showMessage(`Error: ${error.message || 'Unknown error occurred'}`);
             }
         }
+    }
+
+    provideFastFeedback(voteType, action, btn, oppositeBtn) {
+        // Provide immediate visual feedback to the user who voted
+        // This happens instantly before Firebase update completes
+        console.log('Providing fast visual feedback for:', voteType, action);
+        
+        // Immediately update button states for the voting user
+        btn.classList.remove('loading');
+        
+        if (action === 'add' || action === 'switch') {
+            btn.classList.add('clicked');
+            if (oppositeBtn) {
+                oppositeBtn.classList.remove('clicked');
+            }
+        } else if (action === 'remove') {
+            btn.classList.remove('clicked');
+        }
+        
+        // Immediately update vote counts displayed locally for instant feedback
+        const currentLikes = parseInt(localStorage.getItem('piano_likes_count') || '0');
+        const currentDislikes = parseInt(localStorage.getItem('piano_dislikes_count') || '0');
+        
+        let previewLikes = currentLikes;
+        let previewDislikes = currentDislikes;
+        
+        // Calculate what the new counts should be for immediate display
+        if (action === 'add') {
+            if (voteType === 'like') {
+                previewLikes++;
+            } else {
+                previewDislikes++;
+            }
+        } else if (action === 'remove') {
+            if (voteType === 'like') {
+                previewLikes = Math.max(0, previewLikes - 1);
+            } else {
+                previewDislikes = Math.max(0, previewDislikes - 1);
+            }
+        } else if (action === 'switch') {
+            if (voteType === 'like') {
+                previewLikes++;
+                previewDislikes = Math.max(0, previewDislikes - 1);
+            } else {
+                previewDislikes++;
+                previewLikes = Math.max(0, previewLikes - 1);
+            }
+        }
+        
+        // Update display instantly for immediate user feedback
+        this.updateCountDisplay(previewLikes, previewDislikes);
+        
+        // Update user vote status immediately for fast feedback
+        this.setUserVote(action === 'remove' ? null : voteType);
+        
+        console.log('Fast feedback provided - instant count update:', { previewLikes, previewDislikes });
     }
 
     handleAnonymousVoteAction(voteType, action, btn, oppositeBtn) {
@@ -1634,6 +1693,11 @@ class PianoFeedback {
 document.addEventListener('DOMContentLoaded', () => {
     // Wait a bit for other initializations to complete
     setTimeout(() => {
-        new PianoFeedback();
+        const pianoFeedback = new PianoFeedback();
+        
+        // Cleanup listener when page unloads
+        window.addEventListener('beforeunload', () => {
+            pianoFeedback.destroy();
+        });
     }, 1000);
 });
