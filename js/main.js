@@ -1154,9 +1154,40 @@ class PianoFeedback {
         // Test Firebase connectivity
         await this.testFirebaseConnection();
         
+        // Load initial counts
         await this.loadFeedbackCounts();
+        
+        // Setup event listeners
         this.setupEventListeners();
+        
+        // Check user vote status
         this.checkUserVoteStatus();
+        
+        // Setup periodic refresh every 30 seconds
+        this.setupPeriodicRefresh();
+    }
+
+    setupPeriodicRefresh() {
+        // Refresh counts every 30 seconds to show real-time updates from other users
+        setInterval(async () => {
+            try {
+                console.log('Periodic refresh of feedback counts...');
+                await this.loadFeedbackCounts();
+            } catch (error) {
+                console.error('Error during periodic refresh:', error);
+            }
+        }, 30000); // 30 seconds
+    }
+
+    async forceRefreshCounts() {
+        // Method to manually force refresh from Firestore
+        console.log('Force refreshing feedback counts...');
+        try {
+            return await this.loadFeedbackCounts();
+        } catch (error) {
+            console.error('Error during force refresh:', error);
+            return null;
+        }
     }
 
     async testFirebaseConnection() {
@@ -1173,7 +1204,7 @@ class PianoFeedback {
 
     async loadFeedbackCounts() {
         try {
-            console.log('Loading feedback counts...');
+            console.log('Loading feedback counts from Firestore...');
             const docRef = doc(db, 'feedback', this.feedbackDoc);
             const docSnap = await getDoc(docRef);
             
@@ -1185,26 +1216,38 @@ class PianoFeedback {
                 console.log('Loaded data from Firebase:', data);
                 likes = data.likes || 0;
                 dislikes = data.dislikes || 0;
+                
+                // Store in localStorage as backup
+                localStorage.setItem('piano_likes_count', likes.toString());
+                localStorage.setItem('piano_dislikes_count', dislikes.toString());
             } else {
                 console.log('Document does not exist, creating new one...');
-                // If document doesn't exist, create it
+                // If document doesn't exist, create it with current localStorage values or 0
+                const storedLikes = parseInt(localStorage.getItem('piano_likes_count') || '0');
+                const storedDislikes = parseInt(localStorage.getItem('piano_dislikes_count') || '0');
+                
+                likes = storedLikes;
+                dislikes = storedDislikes;
+                
                 await setDoc(docRef, {
-                    likes: 0,
-                    dislikes: 0,
+                    likes: likes,
+                    dislikes: dislikes,
                     lastUpdated: new Date().toISOString()
                 });
-                console.log('New document created');
+                console.log('New document created with values:', { likes, dislikes });
             }
 
             this.updateCountDisplay(likes, dislikes);
-            console.log('Feedback counts loaded successfully');
+            console.log('Feedback counts loaded successfully:', { likes, dislikes });
+            return { likes, dislikes };
         } catch (error) {
-            console.error('Error loading feedback counts:', error);
-            // Try to load from localStorage as fallback
-            const storedLikes = localStorage.getItem('piano_likes_count') || '0';
-            const storedDislikes = localStorage.getItem('piano_dislikes_count') || '0';
-            this.updateCountDisplay(parseInt(storedLikes), parseInt(storedDislikes));
-            this.showMessage('Using offline mode. Votes will sync when connection is restored.');
+            console.error('Error loading feedback counts from Firestore:', error);
+            // Fallback to localStorage only if Firebase completely fails
+            const storedLikes = parseInt(localStorage.getItem('piano_likes_count') || '0');
+            const storedDislikes = parseInt(localStorage.getItem('piano_dislikes_count') || '0');
+            this.updateCountDisplay(storedLikes, storedDislikes);
+            console.log('Using localStorage fallback:', { likes: storedLikes, dislikes: storedDislikes });
+            return { likes: storedLikes, dislikes: storedDislikes };
         }
     }
 
@@ -1352,8 +1395,18 @@ class PianoFeedback {
         // Show success message (hidden per user request)
         // this.showSuccessMessage(voteType, action, true);
         
-        // Update display
+        // Update display with localStorage values first
         this.updateCountDisplay(newLikes, newDislikes);
+        
+        // Try to refresh from Firestore to get latest global counts
+        try {
+            console.log('Refreshing counts from Firestore after anonymous vote...');
+            setTimeout(async () => {
+                await this.loadFeedbackCounts();
+            }, 500); // Small delay to allow UI update first
+        } catch (error) {
+            console.error('Error refreshing from Firestore:', error);
+        }
     }
 
     async updateFirestoreCountWithAction(voteType, action) {
