@@ -1,7 +1,7 @@
 import enableChordPlaying from './multiKeyChords.js';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDocs, collection, query, where, deleteDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+import { getFirestore, doc, setDoc, getDocs, collection, query, where, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
 // Your Firebase config here:
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -1139,3 +1139,276 @@ function stopAndUncheckSingKey() {
     // 8. Reset any global flags
     window.singKeyIsPlaying = false;
 }
+
+// Piano Feedback System
+class PianoFeedback {
+    constructor() {
+        this.feedbackDoc = 'pianoFeedback';
+        this.init();
+    }
+
+    async init() {
+        console.log('Initializing PianoFeedback...');
+        console.log('Firebase db object:', db);
+        
+        // Test Firebase connectivity
+        await this.testFirebaseConnection();
+        
+        await this.loadFeedbackCounts();
+        this.setupEventListeners();
+        this.checkUserVoteStatus();
+    }
+
+    async testFirebaseConnection() {
+        try {
+            console.log('Testing Firebase connection...');
+            const testDocRef = doc(db, 'test', 'connection');
+            const testDoc = await getDoc(testDocRef);
+            console.log('Firebase connection test successful');
+        } catch (error) {
+            console.error('Firebase connection test failed:', error);
+            this.showMessage('Firebase connection failed. Please check your internet connection.');
+        }
+    }
+
+    async loadFeedbackCounts() {
+        try {
+            console.log('Loading feedback counts...');
+            const docRef = doc(db, 'feedback', this.feedbackDoc);
+            const docSnap = await getDoc(docRef);
+            
+            let likes = 0;
+            let dislikes = 0;
+
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                console.log('Loaded data from Firebase:', data);
+                likes = data.likes || 0;
+                dislikes = data.dislikes || 0;
+            } else {
+                console.log('Document does not exist, creating new one...');
+                // If document doesn't exist, create it
+                await setDoc(docRef, {
+                    likes: 0,
+                    dislikes: 0,
+                    lastUpdated: new Date().toISOString()
+                });
+                console.log('New document created');
+            }
+
+            this.updateCountDisplay(likes, dislikes);
+            console.log('Feedback counts loaded successfully');
+        } catch (error) {
+            console.error('Error loading feedback counts:', error);
+            // Try to load from localStorage as fallback
+            const storedLikes = localStorage.getItem('piano_likes_count') || '0';
+            const storedDislikes = localStorage.getItem('piano_dislikes_count') || '0';
+            this.updateCountDisplay(parseInt(storedLikes), parseInt(storedDislikes));
+            this.showMessage('Using offline mode. Votes will sync when connection is restored.');
+        }
+    }
+
+    setupEventListeners() {
+        const likeBtn = document.getElementById('like-btn');
+        const dislikeBtn = document.getElementById('dislike-btn');
+
+        if (likeBtn) {
+            likeBtn.addEventListener('click', () => this.handleVote('like'));
+        }
+
+        if (dislikeBtn) {
+            dislikeBtn.addEventListener('click', () => this.handleVote('dislike'));
+        }
+    }
+
+    async handleVote(voteType) {
+        console.log(`Attempting to vote: ${voteType}`);
+        
+        // Check if user has already voted
+        if (this.hasUserVoted(voteType)) {
+            this.showMessage(`You have already ${voteType}d this piano session!`);
+            return;
+        }
+
+        const btn = document.getElementById(`${voteType}-btn`);
+        if (!btn) {
+            console.error('Button not found:', `${voteType}-btn`);
+            return;
+        }
+
+        // Add loading state
+        btn.classList.add('loading');
+
+        try {
+            // Check if user is authenticated
+            const user = auth.currentUser;
+            if (!user) {
+                // Use localStorage fallback for anonymous users
+                console.log('User not authenticated, using localStorage fallback');
+                this.handleAnonymousVote(voteType, btn);
+                return;
+            }
+
+            console.log('Updating Firestore count...');
+            // Update Firestore
+            await this.updateFirestoreCount(voteType);
+            console.log('Firestore update successful');
+            
+            // Mark user as voted
+            this.markUserVoted(voteType);
+            
+            // Update UI
+            btn.classList.remove('loading');
+            btn.classList.add('clicked');
+            
+            // Show success message
+            this.showMessage(`Thanks for your ${voteType}!`);
+            
+            // Reload counts to show updated numbers
+            console.log('Reloading feedback counts...');
+            await this.loadFeedbackCounts();
+            
+        } catch (error) {
+            console.error(`Detailed error submitting ${voteType}:`, error);
+            console.error('Error code:', error.code);
+            console.error('Error message:', error.message);
+            btn.classList.remove('loading');
+            
+            // If permission denied, fall back to localStorage
+            if (error.code === 'permission-denied') {
+                console.log('Permission denied, falling back to localStorage');
+                this.handleAnonymousVote(voteType, btn);
+            } else if (error.code === 'unavailable') {
+                this.showMessage('Firebase is currently unavailable. Please try again later.');
+            } else {
+                this.showMessage(`Error: ${error.message || 'Unknown error occurred'}`);
+            }
+        }
+    }
+
+    handleAnonymousVote(voteType, btn) {
+        // Handle voting for non-authenticated users using localStorage
+        const currentLikes = parseInt(localStorage.getItem('piano_likes_count') || '0');
+        const currentDislikes = parseInt(localStorage.getItem('piano_dislikes_count') || '0');
+        
+        if (voteType === 'like') {
+            localStorage.setItem('piano_likes_count', (currentLikes + 1).toString());
+        } else {
+            localStorage.setItem('piano_dislikes_count', (currentDislikes + 1).toString());
+        }
+        
+        // Mark user as voted
+        this.markUserVoted(voteType);
+        
+        // Update UI
+        btn.classList.remove('loading');
+        btn.classList.add('clicked');
+        
+        // Show success message
+        this.showMessage(`Thanks for your ${voteType}! (Offline mode)`);
+        
+        // Update display
+        const newLikes = parseInt(localStorage.getItem('piano_likes_count') || '0');
+        const newDislikes = parseInt(localStorage.getItem('piano_dislikes_count') || '0');
+        this.updateCountDisplay(newLikes, newDislikes);
+    }
+
+    async updateFirestoreCount(voteType) {
+        console.log('updateFirestoreCount called with:', voteType);
+        console.log('Database object:', db);
+        
+        const docRef = doc(db, 'feedback', this.feedbackDoc);
+        console.log('Document reference created:', docRef);
+        
+        try {
+            // Get current counts
+            console.log('Getting document...');
+            const docSnap = await getDoc(docRef);
+            console.log('Document snapshot received:', docSnap.exists());
+            
+            let currentLikes = 0;
+            let currentDislikes = 0;
+
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                console.log('Current document data:', data);
+                currentLikes = data.likes || 0;
+                currentDislikes = data.dislikes || 0;
+            } else {
+                console.log('Document does not exist, will create new one');
+            }
+
+            // Increment the appropriate count
+            const newData = {
+                likes: voteType === 'like' ? currentLikes + 1 : currentLikes,
+                dislikes: voteType === 'dislike' ? currentDislikes + 1 : currentDislikes,
+                lastUpdated: new Date().toISOString()
+            };
+            
+            console.log('New data to be saved:', newData);
+            console.log('Setting document...');
+            await setDoc(docRef, newData);
+            console.log('Document set successfully');
+            
+        } catch (error) {
+            console.error('Error in updateFirestoreCount:', error);
+            throw error; // Re-throw to be caught by handleVote
+        }
+    }
+
+    updateCountDisplay(likes, dislikes) {
+        const likeCount = document.getElementById('like-count');
+        const dislikeCount = document.getElementById('dislike-count');
+
+        if (likeCount) {
+            likeCount.textContent = likes;
+        }
+        if (dislikeCount) {
+            dislikeCount.textContent = dislikes;
+        }
+    }
+
+    hasUserVoted(voteType) {
+        return localStorage.getItem(`piano_${voteType}_voted`) === 'true';
+    }
+
+    markUserVoted(voteType) {
+        localStorage.setItem(`piano_${voteType}_voted`, 'true');
+    }
+
+    checkUserVoteStatus() {
+        const likeBtn = document.getElementById('like-btn');
+        const dislikeBtn = document.getElementById('dislike-btn');
+
+        if (this.hasUserVoted('like') && likeBtn) {
+            likeBtn.classList.add('clicked');
+        }
+
+        if (this.hasUserVoted('dislike') && dislikeBtn) {
+            dislikeBtn.classList.add('clicked');
+        }
+    }
+
+    showMessage(message) {
+        const messageEl = document.getElementById('feedback-message');
+        if (messageEl) {
+            messageEl.textContent = message;
+            messageEl.classList.add('show');
+            
+            setTimeout(() => {
+                messageEl.classList.remove('show');
+                setTimeout(() => {
+                    messageEl.textContent = '';
+                }, 300);
+            }, 3000);
+        }
+    }
+}
+
+// Initialize feedback system when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    // Wait a bit for other initializations to complete
+    setTimeout(() => {
+        new PianoFeedback();
+    }, 1000);
+});
