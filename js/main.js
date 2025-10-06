@@ -1224,13 +1224,10 @@ class PianoFeedback {
     async handleVote(voteType) {
         console.log(`Attempting to vote: ${voteType}`);
         
-        // Check if user has already voted
-        if (this.hasUserVoted(voteType)) {
-            this.showMessage(`You have already ${voteType}d this piano session!`);
-            return;
-        }
-
         const btn = document.getElementById(`${voteType}-btn`);
+        const oppositeType = voteType === 'like' ? 'dislike' : 'like';
+        const oppositeBtn = document.getElementById(`${oppositeType}-btn`);
+        
         if (!btn) {
             console.error('Button not found:', `${voteType}-btn`);
             return;
@@ -1240,29 +1237,46 @@ class PianoFeedback {
         btn.classList.add('loading');
 
         try {
+            const currentVote = this.getUserCurrentVote();
+            console.log('Current user vote:', currentVote);
+            
+            // Determine the action to take
+            let action = 'none';
+            if (currentVote === null) {
+                // No previous vote, add new vote
+                action = 'add';
+            } else if (currentVote === voteType) {
+                // Same vote clicked, remove it
+                action = 'remove';
+            } else {
+                // Different vote clicked, switch votes
+                action = 'switch';
+            }
+            
+            console.log('Vote action:', action);
+
             // Check if user is authenticated
             const user = auth.currentUser;
             if (!user) {
                 // Use localStorage fallback for anonymous users
                 console.log('User not authenticated, using localStorage fallback');
-                this.handleAnonymousVote(voteType, btn);
+                this.handleAnonymousVoteAction(voteType, action, btn, oppositeBtn);
                 return;
             }
 
             console.log('Updating Firestore count...');
             // Update Firestore
-            await this.updateFirestoreCount(voteType);
+            await this.updateFirestoreCountWithAction(voteType, action);
             console.log('Firestore update successful');
             
-            // Mark user as voted
-            this.markUserVoted(voteType);
+            // Update user's vote preference
+            this.setUserVote(action === 'remove' ? null : voteType);
             
             // Update UI
-            btn.classList.remove('loading');
-            btn.classList.add('clicked');
+            this.updateButtonStates(voteType, action, btn, oppositeBtn);
             
-            // Show success message
-            this.showMessage(`Thanks for your ${voteType}!`);
+            // Show success message (hidden per user request)
+            // this.showSuccessMessage(voteType, action);
             
             // Reload counts to show updated numbers
             console.log('Reloading feedback counts...');
@@ -1277,7 +1291,16 @@ class PianoFeedback {
             // If permission denied, fall back to localStorage
             if (error.code === 'permission-denied') {
                 console.log('Permission denied, falling back to localStorage');
-                this.handleAnonymousVote(voteType, btn);
+                const currentVote = this.getUserCurrentVote();
+                let action = 'none';
+                if (currentVote === null) {
+                    action = 'add';
+                } else if (currentVote === voteType) {
+                    action = 'remove';
+                } else {
+                    action = 'switch';
+                }
+                this.handleAnonymousVoteAction(voteType, action, btn, oppositeBtn);
             } else if (error.code === 'unavailable') {
                 this.showMessage('Firebase is currently unavailable. Please try again later.');
             } else {
@@ -1286,35 +1309,55 @@ class PianoFeedback {
         }
     }
 
-    handleAnonymousVote(voteType, btn) {
+    handleAnonymousVoteAction(voteType, action, btn, oppositeBtn) {
         // Handle voting for non-authenticated users using localStorage
         const currentLikes = parseInt(localStorage.getItem('piano_likes_count') || '0');
         const currentDislikes = parseInt(localStorage.getItem('piano_dislikes_count') || '0');
         
-        if (voteType === 'like') {
-            localStorage.setItem('piano_likes_count', (currentLikes + 1).toString());
-        } else {
-            localStorage.setItem('piano_dislikes_count', (currentDislikes + 1).toString());
+        let newLikes = currentLikes;
+        let newDislikes = currentDislikes;
+        
+        if (action === 'add') {
+            if (voteType === 'like') {
+                newLikes++;
+            } else {
+                newDislikes++;
+            }
+        } else if (action === 'remove') {
+            if (voteType === 'like') {
+                newLikes = Math.max(0, newLikes - 1);
+            } else {
+                newDislikes = Math.max(0, newDislikes - 1);
+            }
+        } else if (action === 'switch') {
+            if (voteType === 'like') {
+                newLikes++;
+                newDislikes = Math.max(0, newDislikes - 1);
+            } else {
+                newDislikes++;
+                newLikes = Math.max(0, newLikes - 1);
+            }
         }
         
-        // Mark user as voted
-        this.markUserVoted(voteType);
+        // Update localStorage
+        localStorage.setItem('piano_likes_count', newLikes.toString());
+        localStorage.setItem('piano_dislikes_count', newDislikes.toString());
+        
+        // Update user's vote preference
+        this.setUserVote(action === 'remove' ? null : voteType);
         
         // Update UI
-        btn.classList.remove('loading');
-        btn.classList.add('clicked');
+        this.updateButtonStates(voteType, action, btn, oppositeBtn);
         
-        // Show success message
-        this.showMessage(`Thanks for your ${voteType}! (Offline mode)`);
+        // Show success message (hidden per user request)
+        // this.showSuccessMessage(voteType, action, true);
         
         // Update display
-        const newLikes = parseInt(localStorage.getItem('piano_likes_count') || '0');
-        const newDislikes = parseInt(localStorage.getItem('piano_dislikes_count') || '0');
         this.updateCountDisplay(newLikes, newDislikes);
     }
 
-    async updateFirestoreCount(voteType) {
-        console.log('updateFirestoreCount called with:', voteType);
+    async updateFirestoreCountWithAction(voteType, action) {
+        console.log('updateFirestoreCountWithAction called with:', voteType, action);
         console.log('Database object:', db);
         
         const docRef = doc(db, 'feedback', this.feedbackDoc);
@@ -1338,10 +1381,36 @@ class PianoFeedback {
                 console.log('Document does not exist, will create new one');
             }
 
-            // Increment the appropriate count
+            let newLikes = currentLikes;
+            let newDislikes = currentDislikes;
+            
+            // Apply the action
+            if (action === 'add') {
+                if (voteType === 'like') {
+                    newLikes++;
+                } else {
+                    newDislikes++;
+                }
+            } else if (action === 'remove') {
+                if (voteType === 'like') {
+                    newLikes = Math.max(0, newLikes - 1);
+                } else {
+                    newDislikes = Math.max(0, newDislikes - 1);
+                }
+            } else if (action === 'switch') {
+                if (voteType === 'like') {
+                    newLikes++;
+                    newDislikes = Math.max(0, newDislikes - 1);
+                } else {
+                    newDislikes++;
+                    newLikes = Math.max(0, newLikes - 1);
+                }
+            }
+
+            // Prepare new data
             const newData = {
-                likes: voteType === 'like' ? currentLikes + 1 : currentLikes,
-                dislikes: voteType === 'dislike' ? currentDislikes + 1 : currentDislikes,
+                likes: newLikes,
+                dislikes: newDislikes,
                 lastUpdated: new Date().toISOString()
             };
             
@@ -1351,7 +1420,7 @@ class PianoFeedback {
             console.log('Document set successfully');
             
         } catch (error) {
-            console.error('Error in updateFirestoreCount:', error);
+            console.error('Error in updateFirestoreCountWithAction:', error);
             throw error; // Re-throw to be caught by handleVote
         }
     }
@@ -1376,15 +1445,68 @@ class PianoFeedback {
         localStorage.setItem(`piano_${voteType}_voted`, 'true');
     }
 
+    // New methods for updated voting system
+    getUserCurrentVote() {
+        const likeVoted = localStorage.getItem('piano_user_vote') === 'like';
+        const dislikeVoted = localStorage.getItem('piano_user_vote') === 'dislike';
+        
+        if (likeVoted) return 'like';
+        if (dislikeVoted) return 'dislike';
+        return null;
+    }
+
+    setUserVote(voteType) {
+        if (voteType === null) {
+            localStorage.removeItem('piano_user_vote');
+        } else {
+            localStorage.setItem('piano_user_vote', voteType);
+        }
+    }
+
+    updateButtonStates(voteType, action, btn, oppositeBtn) {
+        btn.classList.remove('loading');
+        
+        if (action === 'add' || action === 'switch') {
+            // Activate the clicked button
+            btn.classList.add('clicked');
+            // Deactivate the opposite button
+            if (oppositeBtn) {
+                oppositeBtn.classList.remove('clicked');
+            }
+        } else if (action === 'remove') {
+            // Deactivate the clicked button
+            btn.classList.remove('clicked');
+        }
+    }
+
+    showSuccessMessage(voteType, action, isOffline = false) {
+        const offlineText = isOffline ? ' (Offline mode)' : '';
+        let message = '';
+        
+        if (action === 'add') {
+            message = `Thanks for your ${voteType}!${offlineText}`;
+        } else if (action === 'remove') {
+            message = `${voteType.charAt(0).toUpperCase() + voteType.slice(1)} removed${offlineText}`;
+        } else if (action === 'switch') {
+            message = `Changed to ${voteType}!${offlineText}`;
+        }
+        
+        this.showMessage(message);
+    }
+
     checkUserVoteStatus() {
         const likeBtn = document.getElementById('like-btn');
         const dislikeBtn = document.getElementById('dislike-btn');
+        const currentVote = this.getUserCurrentVote();
 
-        if (this.hasUserVoted('like') && likeBtn) {
+        // Remove all clicked states first
+        if (likeBtn) likeBtn.classList.remove('clicked');
+        if (dislikeBtn) dislikeBtn.classList.remove('clicked');
+
+        // Apply the current vote state
+        if (currentVote === 'like' && likeBtn) {
             likeBtn.classList.add('clicked');
-        }
-
-        if (this.hasUserVoted('dislike') && dislikeBtn) {
+        } else if (currentVote === 'dislike' && dislikeBtn) {
             dislikeBtn.classList.add('clicked');
         }
     }
