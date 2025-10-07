@@ -1,7 +1,8 @@
 import enableChordPlaying from './multiKeyChords.js';
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAuth, signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDocs, collection, query, where, deleteDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+import { getAuth, signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDocs, collection, query, where, deleteDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-analytics.js";
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -11,14 +12,15 @@ const firebaseConfig = {
   projectId: "uncle-ali-piano",
   storageBucket: "uncle-ali-piano.firebasestorage.app",
   messagingSenderId: "639101542865",
-  appId: "1:639101542865:web:230392d4499bb9f2a8c0f0",
-  measurementId: "G-EDCCJMJ96B"
+  appId: "1:639101542865:web:e4ace865b05d78f0a8c0f0",
+  measurementId: "G-GLDW02K380"
 };
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const analytics = getAnalytics(app);
 
 document.addEventListener("DOMContentLoaded", () => {
   // Enhanced iOS Audio Unlock - Must be at the very beginning
