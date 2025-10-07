@@ -1330,7 +1330,8 @@ class PianoFeedback {
                 // No previous vote, add new vote
                 action = 'add';
             } else if (currentVote === voteType) {
-                // Same vote clicked, remove it
+                // Same vote clicked, remove vote (allow unlike/undislike)
+                console.log('Same vote clicked, removing vote to allow unlike/undislike');
                 action = 'remove';
             } else {
                 // Different vote clicked, switch votes
@@ -1383,7 +1384,10 @@ class PianoFeedback {
                 if (currentVote === null) {
                     action = 'add';
                 } else if (currentVote === voteType) {
-                    action = 'remove';
+                    // Same vote clicked, do nothing (prevent vote removal)
+                    console.log('Same vote clicked in fallback, ignoring to maintain exclusive selection');
+                    btn.classList.remove('loading');
+                    return;
                 } else {
                     action = 'switch';
                 }
@@ -1427,12 +1431,6 @@ class PianoFeedback {
             } else {
                 previewDislikes++;
             }
-        } else if (action === 'remove') {
-            if (voteType === 'like') {
-                previewLikes = Math.max(0, previewLikes - 1);
-            } else {
-                previewDislikes = Math.max(0, previewDislikes - 1);
-            }
         } else if (action === 'switch') {
             if (voteType === 'like') {
                 previewLikes++;
@@ -1441,13 +1439,23 @@ class PianoFeedback {
                 previewDislikes++;
                 previewLikes = Math.max(0, previewLikes - 1);
             }
+        } else if (action === 'remove') {
+            if (voteType === 'like') {
+                previewLikes = Math.max(0, previewLikes - 1);
+            } else {
+                previewDislikes = Math.max(0, previewDislikes - 1);
+            }
         }
         
         // Update display instantly for immediate user feedback
         this.updateCountDisplay(previewLikes, previewDislikes);
         
         // Update user vote status immediately for fast feedback
-        this.setUserVote(action === 'remove' ? null : voteType);
+        if (action === 'remove') {
+            this.setUserVote(null); // Clear the vote
+        } else {
+            this.setUserVote(voteType);
+        }
         
         console.log('Fast feedback provided - instant count update:', { previewLikes, previewDislikes });
     }
@@ -1466,12 +1474,6 @@ class PianoFeedback {
             } else {
                 newDislikes++;
             }
-        } else if (action === 'remove') {
-            if (voteType === 'like') {
-                newLikes = Math.max(0, newLikes - 1);
-            } else {
-                newDislikes = Math.max(0, newDislikes - 1);
-            }
         } else if (action === 'switch') {
             if (voteType === 'like') {
                 newLikes++;
@@ -1480,6 +1482,12 @@ class PianoFeedback {
                 newDislikes++;
                 newLikes = Math.max(0, newLikes - 1);
             }
+        } else if (action === 'remove') {
+            if (voteType === 'like') {
+                newLikes = Math.max(0, newLikes - 1);
+            } else {
+                newDislikes = Math.max(0, newDislikes - 1);
+            }
         }
         
         // Update localStorage
@@ -1487,7 +1495,11 @@ class PianoFeedback {
         localStorage.setItem('piano_dislikes_count', newDislikes.toString());
         
         // Update user's vote preference
-        this.setUserVote(action === 'remove' ? null : voteType);
+        if (action === 'remove') {
+            this.setUserVote(null); // Clear the vote
+        } else {
+            this.setUserVote(voteType);
+        }
         
         // Update UI
         this.updateButtonStates(voteType, action, btn, oppositeBtn);
@@ -1544,12 +1556,6 @@ class PianoFeedback {
                 } else {
                     newDislikes++;
                 }
-            } else if (action === 'remove') {
-                if (voteType === 'like') {
-                    newLikes = Math.max(0, newLikes - 1);
-                } else {
-                    newDislikes = Math.max(0, newDislikes - 1);
-                }
             } else if (action === 'switch') {
                 if (voteType === 'like') {
                     newLikes++;
@@ -1557,6 +1563,12 @@ class PianoFeedback {
                 } else {
                     newDislikes++;
                     newLikes = Math.max(0, newLikes - 1);
+                }
+            } else if (action === 'remove') {
+                if (voteType === 'like') {
+                    newLikes = Math.max(0, newLikes - 1);
+                } else {
+                    newDislikes = Math.max(0, newDislikes - 1);
                 }
             }
 
@@ -1627,7 +1639,7 @@ class PianoFeedback {
                 oppositeBtn.classList.remove('clicked');
             }
         } else if (action === 'remove') {
-            // Deactivate the clicked button
+            // Deactivate the clicked button (allow unlike/undislike)
             btn.classList.remove('clicked');
         }
     }
@@ -1638,10 +1650,10 @@ class PianoFeedback {
         
         if (action === 'add') {
             message = `Thanks for your ${voteType}!${offlineText}`;
-        } else if (action === 'remove') {
-            message = `${voteType.charAt(0).toUpperCase() + voteType.slice(1)} removed${offlineText}`;
         } else if (action === 'switch') {
             message = `Changed to ${voteType}!${offlineText}`;
+        } else if (action === 'remove') {
+            message = `Removed your ${voteType}!${offlineText}`;
         }
         
         this.showMessage(message);
