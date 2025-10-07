@@ -1,20 +1,21 @@
 import enableChordPlaying from './multiKeyChords.js';
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-import { getAuth, signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDocs, collection, query, where, deleteDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getAuth, signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDocs, collection, query, where, deleteDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// Your Firebase config here:
+// Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyDITrrDnAKRWjgQnpwfcyGKdUgjkI4ogA8",
-  authDomain: "ali-piano.firebaseapp.com",
-  projectId: "ali-piano",
-  storageBucket: "ali-piano.firebasestorage.app",
-  messagingSenderId: "806442476961",
-  appId: "1:806442476961:web:365f1a133a33f0ed69d7e0",
-  measurementId: "G-6NG4N6WK95"
+  apiKey: "AIzaSyCIqEzxusl4VtVfODqTafgAi22U8AkIDbo",
+  authDomain: "uncle-ali-piano.firebaseapp.com",
+  projectId: "uncle-ali-piano",
+  storageBucket: "uncle-ali-piano.firebasestorage.app",
+  messagingSenderId: "639101542865",
+  appId: "1:639101542865:web:230392d4499bb9f2a8c0f0",
+  measurementId: "G-EDCCJMJ96B"
 };
 
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);

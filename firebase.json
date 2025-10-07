@@ -1,6 +1,6 @@
 {
   "projects": {
-    "default": "ali-piano"
+    "default": "uncle-ali-piano"
   },
   "firestore": {
     "rules": "firestore.rules"
