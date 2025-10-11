@@ -1148,15 +1148,49 @@ class PianoFeedback {
     }
 
     async init() {
-        console.log('Initializing PianoFeedback...');
+        console.log('🎹 Initializing PianoFeedback system...');
         console.log('Firebase db object:', db);
         
-        // Test Firebase connectivity and initialize document
+        // Always load fresh counts from database first
+        console.log('📊 Loading fresh feedback counts from database...');
+        await this.loadFeedbackCounts();
+        
+        // Then test Firebase connectivity and initialize document if needed
         await this.initializeFeedbackDocument();
         
+        // Load counts again after initialization to ensure we have latest data
+        console.log('🔄 Reloading feedback counts after initialization...');
         await this.loadFeedbackCounts();
+        
         this.setupEventListeners();
         this.checkUserVoteStatus();
+        
+        // Set up automatic refresh on page visibility changes
+        this.setupAutoRefresh();
+        
+        console.log('✅ PianoFeedback system fully initialized');
+    }
+
+    setupAutoRefresh() {
+        // Refresh counts when page becomes visible again
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                console.log('👁️ Page became visible - refreshing feedback counts...');
+                this.loadFeedbackCounts();
+            }
+        });
+
+        // Refresh counts when window gains focus
+        window.addEventListener('focus', () => {
+            console.log('🎯 Window gained focus - refreshing feedback counts...');
+            this.loadFeedbackCounts();
+        });
+
+        // Refresh counts every 30 seconds to stay up-to-date
+        setInterval(() => {
+            console.log('⏰ Auto-refresh - updating feedback counts...');
+            this.loadFeedbackCounts();
+        }, 30000); // 30 seconds
     }
 
     async initializeFeedbackDocument() {
@@ -1212,7 +1246,7 @@ class PianoFeedback {
 
     async loadFeedbackCounts() {
         try {
-            console.log('Loading feedback counts...');
+            console.log('📥 Loading feedback counts from Firestore...');
             const docRef = doc(db, 'feedback', this.feedbackDoc);
             const docSnap = await getDoc(docRef);
             
@@ -1221,11 +1255,12 @@ class PianoFeedback {
 
             if (docSnap.exists()) {
                 const data = docSnap.data();
-                console.log('Loaded data from Firebase:', data);
+                console.log('📊 Loaded data from Firebase:', data);
                 likes = data.likes || 0;
                 dislikes = data.dislikes || 0;
+                console.log(`✅ Fresh counts loaded: ${likes} likes, ${dislikes} dislikes`);
             } else {
-                console.log('Document does not exist, creating new one...');
+                console.log('⚠️ Document does not exist, creating new one...');
                 // If document doesn't exist, create it with initial values
                 const initialData = {
                     likes: 0,
@@ -1235,23 +1270,38 @@ class PianoFeedback {
                 };
                 
                 await setDoc(docRef, initialData);
-                console.log('New document created successfully');
+                console.log('📄 New document created successfully');
                 likes = 0;
                 dislikes = 0;
             }
 
+            // Always update the display with fresh data
             this.updateCountDisplay(likes, dislikes);
-            console.log('✅ Feedback counts loaded successfully');
-            console.log(`📊 AGGREGATED TOTALS - Likes: ${likes}, Dislikes: ${dislikes}, Total: ${likes + dislikes}`);
+            console.log('🔄 Display updated with latest counts');
+            console.log(`📊 CURRENT AGGREGATED TOTALS - Likes: ${likes}, Dislikes: ${dislikes}, Total: ${likes + dislikes}`);
+            
+            // Store in localStorage as backup
+            localStorage.setItem('piano_likes_count', likes.toString());
+            localStorage.setItem('piano_dislikes_count', dislikes.toString());
+            localStorage.setItem('piano_counts_last_updated', new Date().toISOString());
+            
         } catch (error) {
-            console.error('Error loading feedback counts:', error);
+            console.error('❌ Error loading feedback counts:', error);
             console.error('Error details:', error.code, error.message);
             
             // Try to load from localStorage as fallback
             const storedLikes = localStorage.getItem('piano_likes_count') || '0';
             const storedDislikes = localStorage.getItem('piano_dislikes_count') || '0';
+            const lastUpdated = localStorage.getItem('piano_counts_last_updated');
+            
+            console.log('🔄 Falling back to localStorage data');
+            console.log(`📱 Offline counts: ${storedLikes} likes, ${storedDislikes} dislikes`);
+            if (lastUpdated) {
+                console.log(`⏰ Last updated: ${lastUpdated}`);
+            }
+            
             this.updateCountDisplay(parseInt(storedLikes), parseInt(storedDislikes));
-            this.showMessage('Using offline mode. Votes will sync when connection is restored.');
+            this.showMessage('📱 Using offline mode. Counts will sync when connection is restored.');
         }
     }
 
@@ -1507,18 +1557,27 @@ class PianoFeedback {
         const likeCount = document.getElementById('like-count');
         const dislikeCount = document.getElementById('dislike-count');
 
+        console.log('🔄 Updating count display...');
+        console.log(`   👍 Setting likes to: ${likes}`);
+        console.log(`   👎 Setting dislikes to: ${dislikes}`);
+
         if (likeCount) {
             likeCount.textContent = likes;
-            console.log('🔢 Updated like count display:', likes);
+            console.log('✅ Like count element updated');
+        } else {
+            console.error('❌ Could not find like-count element');
         }
+        
         if (dislikeCount) {
             dislikeCount.textContent = dislikes;
-            console.log('🔢 Updated dislike count display:', dislikes);
+            console.log('✅ Dislike count element updated');
+        } else {
+            console.error('❌ Could not find dislike-count element');
         }
         
         // Log total votes for debugging
         const totalVotes = likes + dislikes;
-        console.log(`📊 Total feedback: ${totalVotes} votes (${likes} likes, ${dislikes} dislikes)`);
+        console.log(`📊 Display updated - Total feedback: ${totalVotes} votes (${likes} likes, ${dislikes} dislikes)`);
     }
 
     hasUserVoted(voteType) {
@@ -1615,8 +1674,23 @@ class PianoFeedback {
 document.addEventListener('DOMContentLoaded', () => {
     // Wait a bit for other initializations to complete
     setTimeout(() => {
-        new PianoFeedback();
+        console.log('🚀 Starting PianoFeedback initialization...');
+        window.pianoFeedbackInstance = new PianoFeedback();
+        console.log('📌 PianoFeedback instance stored globally for manual refresh');
     }, 1000);
+});
+
+// Also ensure feedback loads on page load/refresh
+window.addEventListener('load', () => {
+    setTimeout(() => {
+        console.log('🔄 Page fully loaded - ensuring feedback counts are current...');
+        if (window.pianoFeedbackInstance) {
+            window.pianoFeedbackInstance.loadFeedbackCounts();
+        } else {
+            // Fallback if instance not ready yet
+            window.checkFeedbackCounts();
+        }
+    }, 2000);
 });
 
 // Manual function to initialize feedback document (for testing)
@@ -1688,5 +1762,24 @@ window.checkFeedbackCounts = async function() {
     } catch (error) {
         console.error('❌ Error checking feedback counts:', error);
         return null;
+    }
+};
+
+// Function to manually refresh feedback counts
+window.refreshFeedbackCounts = async function() {
+    try {
+        console.log('🔄 Manually refreshing feedback counts...');
+        
+        // Get the current PianoFeedback instance if it exists
+        if (window.pianoFeedbackInstance) {
+            await window.pianoFeedbackInstance.loadFeedbackCounts();
+            console.log('✅ Feedback counts refreshed successfully');
+        } else {
+            // Fallback: call the check function
+            await window.checkFeedbackCounts();
+            console.log('✅ Feedback counts checked and updated');
+        }
+    } catch (error) {
+        console.error('❌ Error refreshing feedback counts:', error);
     }
 };

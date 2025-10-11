@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page Refresh Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-card {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .feedback-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        .feedback-btn {
+            padding: 15px 25px;
+            font-size: 18px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            background: #f9f9f9;
+        }
+        .feedback-btn:hover {
+            background: #e9e9e9;
+        }
+        .count {
+            font-weight: bold;
+            margin-left: 8px;
+            color: #2196F3;
+        }
+        .log {
+            background: #f8f8f8;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            white-space: pre-wrap;
+        }
+        button {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #1976D2;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .status.loading {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔄 Page Refresh Feedback Test</h1>
+    
+    <div class="test-card">
+        <h2>📊 Current Counts (Should Update on Refresh)</h2>
+        <div class="status" id="load-status">Loading...</div>
+        <div class="feedback-buttons">
+            <button class="feedback-btn">
+                👍 Likes: <span id="like-count" class="count">Loading...</span>
+            </button>
+            <button class="feedback-btn">
+                👎 Dislikes: <span id="dislike-count" class="count">Loading...</span>
+            </button>
+        </div>
+        <p><strong>Last Loaded:</strong> <span id="last-loaded">Never</span></p>
+    </div>
+
+    <div class="test-card">
+        <h2>🧪 Test Controls</h2>
+        <button onclick="manualRefresh()">🔄 Manual Refresh</button>
+        <button onclick="addTestVote()">➕ Add Test Vote</button>
+        <button onclick="window.location.reload()">🔄 Refresh Page</button>
+        <button onclick="clearLog()">🗑️ Clear Log</button>
+    </div>
+
+    <div class="test-card">
+        <h2>📝 Activity Log</h2>
+        <div id="log" class="log">Starting page refresh test...\n</div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+        // Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyDITrrDnAKRWjgQnpwfcyGKdUgjkI4ogA8",
+            authDomain: "ali-piano.firebaseapp.com",
+            projectId: "ali-piano",
+            storageBucket: "ali-piano.firebasestorage.app",
+            messagingSenderId: "806442476961",
+            appId: "1:806442476961:web:365f1a133a33f0ed69d7e0",
+            measurementId: "G-6NG4N6WK95"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        function log(message) {
+            const logEl = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logEl.textContent += `[${timestamp}] ${message}\n`;
+            logEl.scrollTop = logEl.scrollHeight;
+            console.log(message);
+        }
+
+        function setStatus(message, type = 'loading') {
+            const statusEl = document.getElementById('load-status');
+            statusEl.textContent = message;
+            statusEl.className = `status ${type}`;
+        }
+
+        async function loadFeedbackCounts() {
+            try {
+                log('📥 Loading feedback counts from database...');
+                setStatus('Loading counts from database...', 'loading');
+                
+                const docRef = doc(db, 'feedback', 'pianoFeedback');
+                const docSnap = await getDoc(docRef);
+                
+                let likes = 0;
+                let dislikes = 0;
+                
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    likes = data.likes || 0;
+                    dislikes = data.dislikes || 0;
+                    log(`✅ Loaded from database: ${likes} likes, ${dislikes} dislikes`);
+                    setStatus(`✅ Loaded: ${likes} likes, ${dislikes} dislikes`, 'success');
+                } else {
+                    log('⚠️ No document found, creating initial document...');
+                    await setDoc(docRef, {
+                        likes: 0,
+                        dislikes: 0,
+                        created: new Date().toISOString(),
+                        lastUpdated: new Date().toISOString()
+                    });
+                    log('📄 Initial document created');
+                    setStatus('✅ Initial document created', 'success');
+                }
+                
+                // Update display
+                document.getElementById('like-count').textContent = likes;
+                document.getElementById('dislike-count').textContent = dislikes;
+                document.getElementById('last-loaded').textContent = new Date().toLocaleTimeString();
+                
+                log(`🔄 Display updated with fresh counts`);
+                
+            } catch (error) {
+                log(`❌ Error loading counts: ${error.message}`);
+                setStatus(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function addTestVote() {
+            try {
+                log('🧪 Adding test vote...');
+                const docRef = doc(db, 'feedback', 'pianoFeedback');
+                const docSnap = await getDoc(docRef);
+                
+                let likes = 0;
+                let dislikes = 0;
+                
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    likes = data.likes || 0;
+                    dislikes = data.dislikes || 0;
+                }
+                
+                // Add random vote
+                if (Math.random() > 0.5) {
+                    likes++;
+                    log('➕ Added like vote');
+                } else {
+                    dislikes++;
+                    log('➕ Added dislike vote');
+                }
+                
+                await setDoc(docRef, {
+                    likes,
+                    dislikes,
+                    lastUpdated: new Date().toISOString()
+                });
+                
+                log(`✅ Vote saved. New totals: ${likes} likes, ${dislikes} dislikes`);
+                
+                // Refresh display
+                await loadFeedbackCounts();
+                
+            } catch (error) {
+                log(`❌ Error adding test vote: ${error.message}`);
+            }
+        }
+
+        function manualRefresh() {
+            log('🔄 Manual refresh triggered...');
+            loadFeedbackCounts();
+        }
+
+        function clearLog() {
+            document.getElementById('log').textContent = '';
+        }
+
+        // Make functions global
+        window.manualRefresh = manualRefresh;
+        window.addTestVote = addTestVote;
+        window.clearLog = clearLog;
+
+        // Load counts when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            log('🚀 Page loaded - loading initial counts...');
+            loadFeedbackCounts();
+        });
+
+        // Load counts when page becomes visible
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                log('👁️ Page became visible - refreshing counts...');
+                loadFeedbackCounts();
+            }
+        });
+
+        // Load counts when window gains focus
+        window.addEventListener('focus', () => {
+            log('🎯 Window gained focus - refreshing counts...');
+            loadFeedbackCounts();
+        });
+
+        log('✅ Page refresh test initialized');
+    </script>
+</body>
+</html>
