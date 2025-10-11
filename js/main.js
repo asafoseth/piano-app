@@ -1,48 +1,23 @@
 import enableChordPlaying from './multiKeyChords.js';
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
-import { getAuth, signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDocs, collection, query, where, deleteDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
-import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-analytics.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+import { getAuth, signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDocs, collection, query, where, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
-// Your web app's Firebase configuration
+// Your Firebase config here:
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyCIqEzxusl4VtVfODqTafgAi22U8AkIDbo",
-  authDomain: "uncle-ali-piano.firebaseapp.com",
-  projectId: "uncle-ali-piano",
-  storageBucket: "uncle-ali-piano.firebasestorage.app",
-  messagingSenderId: "639101542865",
-  appId: "1:639101542865:web:e4ace865b05d78f0a8c0f0",
-  measurementId: "G-GLDW02K380"
+  apiKey: "AIzaSyDITrrDnAKRWjgQnpwfcyGKdUgjkI4ogA8",
+  authDomain: "ali-piano.firebaseapp.com",
+  projectId: "ali-piano",
+  storageBucket: "ali-piano.firebasestorage.app",
+  messagingSenderId: "806442476961",
+  appId: "1:806442476961:web:365f1a133a33f0ed69d7e0",
+  measurementId: "G-6NG4N6WK95"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
-let auth = null;
-let db = null;
-let analytics = null;
-
-try {
-    db = getFirestore(app);
-    console.log('✅ Firestore initialized successfully');
-} catch (error) {
-    console.error('❌ Firestore initialization failed:', error);
-}
-
-try {
-    auth = getAuth(app);
-    console.log('✅ Auth initialized successfully');
-} catch (error) {
-    console.error('❌ Auth initialization failed:', error);
-    console.log('🔄 Continuing without authentication - voting will use localStorage only');
-}
-
-try {
-    analytics = getAnalytics(app);
-    console.log('✅ Analytics initialized successfully');
-} catch (error) {
-    console.error('❌ Analytics initialization failed:', error);
-}
+const auth = getAuth(app);
+const db = getFirestore(app);
 
 document.addEventListener("DOMContentLoaded", () => {
   // Enhanced iOS Audio Unlock - Must be at the very beginning
@@ -417,56 +392,26 @@ document.getElementById('close-login-modal').onclick = () => {
   document.getElementById('login-modal').style.display = 'none';
 };
 document.getElementById('google-login-btn').onclick = async () => {
-  if (!auth) {
-    document.getElementById('login-error').textContent = 'Authentication service not available. Please check Firebase configuration.';
-    return;
-  }
   try {
-    console.log('Attempting Google sign in...');
-    const provider = new GoogleAuthProvider();
-    await signInWithPopup(auth, provider);
+    await signInWithPopup(auth, new GoogleAuthProvider());
     document.getElementById('login-modal').style.display = 'none';
-    console.log('Google sign in successful');
   } catch (e) {
-    console.error('Google sign in failed:', e);
-    document.getElementById('login-error').textContent = `Google Sign In Error: ${e.message}`;
+    document.getElementById('login-error').textContent = e.message;
   }
 };
 document.getElementById('email-login-btn').onclick = async () => {
-  if (!auth) {
-    document.getElementById('login-error').textContent = 'Authentication service not available. Please check Firebase configuration.';
-    return;
-  }
-  
   const email = document.getElementById('email-input').value;
   const password = document.getElementById('password-input').value;
-  
-  if (!email || !password) {
-    document.getElementById('login-error').textContent = 'Please enter both email and password.';
-    return;
-  }
-  
   try {
-    console.log('Attempting to sign in with email:', email);
     await signInWithEmailAndPassword(auth, email, password);
     document.getElementById('login-modal').style.display = 'none';
-    console.log('Sign in successful');
   } catch (e) {
-    console.log('Sign in failed, trying signup:', e.code);
     // If user not found, try signup
-    if (e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password') {
-      try {
-        console.log('Attempting to create new user');
-        await createUserWithEmailAndPassword(auth, email, password);
-        document.getElementById('login-modal').style.display = 'none';
-        console.log('User creation successful');
-      } catch (err) {
-        console.error('User creation failed:', err);
-        document.getElementById('login-error').textContent = `Error: ${err.message}`;
-      }
-    } else {
-      console.error('Authentication error:', e);
-      document.getElementById('login-error').textContent = `Error: ${e.message}`;
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
+      document.getElementById('login-modal').style.display = 'none';
+    } catch (err) {
+      document.getElementById('login-error').textContent = err.message;
     }
   }
 };
@@ -1199,7 +1144,6 @@ function stopAndUncheckSingKey() {
 class PianoFeedback {
     constructor() {
         this.feedbackDoc = 'pianoFeedback';
-        this.unsubscribe = null; // Store unsubscribe function for real-time listener
         this.init();
     }
 
@@ -1210,80 +1154,9 @@ class PianoFeedback {
         // Test Firebase connectivity
         await this.testFirebaseConnection();
         
-        // Load initial counts
         await this.loadFeedbackCounts();
-        
-        // Setup event listeners
         this.setupEventListeners();
-        
-        // Check user vote status
         this.checkUserVoteStatus();
-        
-        // Setup real-time listener for instant cross-device synchronization
-        this.setupRealTimeListener();
-        
-        // Setup periodic refresh as backup (reduced frequency since we have real-time updates)
-        this.setupPeriodicRefresh();
-    }
-
-    setupPeriodicRefresh() {
-        // Backup refresh every 5 minutes (since we have real-time listeners)
-        setInterval(async () => {
-            try {
-                console.log('Backup periodic refresh of feedback counts...');
-                await this.loadFeedbackCounts();
-            } catch (error) {
-                console.error('Error during periodic refresh:', error);
-            }
-        }, 300000); // 5 minutes as backup
-    }
-
-    setupRealTimeListener() {
-        try {
-            console.log('Setting up real-time listener for instant cross-device synchronization...');
-            const docRef = doc(db, 'feedback', this.feedbackDoc);
-            
-            // Set up real-time listener using onSnapshot
-            this.unsubscribe = onSnapshot(docRef, (docSnap) => {
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    console.log('Real-time update received from Firebase:', data);
-                    
-                    const likes = data.likes || 0;
-                    const dislikes = data.dislikes || 0;
-                    
-                    // Update display instantly
-                    this.updateCountDisplay(likes, dislikes);
-                    
-                    // Update localStorage backup
-                    localStorage.setItem('piano_likes_count', likes.toString());
-                    localStorage.setItem('piano_dislikes_count', dislikes.toString());
-                    
-                    console.log('Vote counts updated instantly across all devices:', { likes, dislikes });
-                } else {
-                    console.log('Real-time listener: Document does not exist yet');
-                }
-            }, (error) => {
-                console.error('Real-time listener error:', error);
-                // Fallback to periodic refresh if real-time fails
-                console.log('Real-time listener failed, relying on backup periodic refresh');
-            });
-            
-            console.log('Real-time listener successfully established');
-        } catch (error) {
-            console.error('Error setting up real-time listener:', error);
-        }
-    }
-
-    async forceRefreshCounts() {
-        // Method to manually force refresh from Firestore
-        console.log('Force refreshing feedback counts...');
-        try {
-            return await this.loadFeedbackCounts();
-        } catch (error) {
-            console.error('Error during force refresh:', error);
-            return null;
-        }
     }
 
     async testFirebaseConnection() {
@@ -1300,7 +1173,7 @@ class PianoFeedback {
 
     async loadFeedbackCounts() {
         try {
-            console.log('Loading feedback counts from Firestore...');
+            console.log('Loading feedback counts...');
             const docRef = doc(db, 'feedback', this.feedbackDoc);
             const docSnap = await getDoc(docRef);
             
@@ -1312,38 +1185,26 @@ class PianoFeedback {
                 console.log('Loaded data from Firebase:', data);
                 likes = data.likes || 0;
                 dislikes = data.dislikes || 0;
-                
-                // Store in localStorage as backup
-                localStorage.setItem('piano_likes_count', likes.toString());
-                localStorage.setItem('piano_dislikes_count', dislikes.toString());
             } else {
                 console.log('Document does not exist, creating new one...');
-                // If document doesn't exist, create it with current localStorage values or 0
-                const storedLikes = parseInt(localStorage.getItem('piano_likes_count') || '0');
-                const storedDislikes = parseInt(localStorage.getItem('piano_dislikes_count') || '0');
-                
-                likes = storedLikes;
-                dislikes = storedDislikes;
-                
+                // If document doesn't exist, create it
                 await setDoc(docRef, {
-                    likes: likes,
-                    dislikes: dislikes,
+                    likes: 0,
+                    dislikes: 0,
                     lastUpdated: new Date().toISOString()
                 });
-                console.log('New document created with values:', { likes, dislikes });
+                console.log('New document created');
             }
 
             this.updateCountDisplay(likes, dislikes);
-            console.log('Feedback counts loaded successfully:', { likes, dislikes });
-            return { likes, dislikes };
+            console.log('Feedback counts loaded successfully');
         } catch (error) {
-            console.error('Error loading feedback counts from Firestore:', error);
-            // Fallback to localStorage only if Firebase completely fails
-            const storedLikes = parseInt(localStorage.getItem('piano_likes_count') || '0');
-            const storedDislikes = parseInt(localStorage.getItem('piano_dislikes_count') || '0');
-            this.updateCountDisplay(storedLikes, storedDislikes);
-            console.log('Using localStorage fallback:', { likes: storedLikes, dislikes: storedDislikes });
-            return { likes: storedLikes, dislikes: storedDislikes };
+            console.error('Error loading feedback counts:', error);
+            // Try to load from localStorage as fallback
+            const storedLikes = localStorage.getItem('piano_likes_count') || '0';
+            const storedDislikes = localStorage.getItem('piano_dislikes_count') || '0';
+            this.updateCountDisplay(parseInt(storedLikes), parseInt(storedDislikes));
+            this.showMessage('Using offline mode. Votes will sync when connection is restored.');
         }
     }
 
@@ -1385,8 +1246,7 @@ class PianoFeedback {
                 // No previous vote, add new vote
                 action = 'add';
             } else if (currentVote === voteType) {
-                // Same vote clicked, remove vote (allow unlike/undislike)
-                console.log('Same vote clicked, removing vote to allow unlike/undislike');
+                // Same vote clicked, remove it
                 action = 'remove';
             } else {
                 // Different vote clicked, switch votes
@@ -1395,14 +1255,11 @@ class PianoFeedback {
             
             console.log('Vote action:', action);
 
-            // Provide immediate visual feedback to the voting user
-            this.provideFastFeedback(voteType, action, btn, oppositeBtn);
-
             // Check if user is authenticated
-            const user = auth ? auth.currentUser : null;
-            if (!user || !auth) {
-                // Use localStorage fallback for anonymous users or when auth is not available
-                console.log('User not authenticated or auth not available, using localStorage fallback');
+            const user = auth.currentUser;
+            if (!user) {
+                // Use localStorage fallback for anonymous users
+                console.log('User not authenticated, using localStorage fallback');
                 this.handleAnonymousVoteAction(voteType, action, btn, oppositeBtn);
                 return;
             }
@@ -1439,10 +1296,7 @@ class PianoFeedback {
                 if (currentVote === null) {
                     action = 'add';
                 } else if (currentVote === voteType) {
-                    // Same vote clicked, do nothing (prevent vote removal)
-                    console.log('Same vote clicked in fallback, ignoring to maintain exclusive selection');
-                    btn.classList.remove('loading');
-                    return;
+                    action = 'remove';
                 } else {
                     action = 'switch';
                 }
@@ -1453,66 +1307,6 @@ class PianoFeedback {
                 this.showMessage(`Error: ${error.message || 'Unknown error occurred'}`);
             }
         }
-    }
-
-    provideFastFeedback(voteType, action, btn, oppositeBtn) {
-        // Provide immediate visual feedback to the user who voted
-        // This happens instantly before Firebase update completes
-        console.log('Providing fast visual feedback for:', voteType, action);
-        
-        // Immediately update button states for the voting user
-        btn.classList.remove('loading');
-        
-        if (action === 'add' || action === 'switch') {
-            btn.classList.add('clicked');
-            if (oppositeBtn) {
-                oppositeBtn.classList.remove('clicked');
-            }
-        } else if (action === 'remove') {
-            btn.classList.remove('clicked');
-        }
-        
-        // Immediately update vote counts displayed locally for instant feedback
-        const currentLikes = parseInt(localStorage.getItem('piano_likes_count') || '0');
-        const currentDislikes = parseInt(localStorage.getItem('piano_dislikes_count') || '0');
-        
-        let previewLikes = currentLikes;
-        let previewDislikes = currentDislikes;
-        
-        // Calculate what the new counts should be for immediate display
-        if (action === 'add') {
-            if (voteType === 'like') {
-                previewLikes++;
-            } else {
-                previewDislikes++;
-            }
-        } else if (action === 'switch') {
-            if (voteType === 'like') {
-                previewLikes++;
-                previewDislikes = Math.max(0, previewDislikes - 1);
-            } else {
-                previewDislikes++;
-                previewLikes = Math.max(0, previewLikes - 1);
-            }
-        } else if (action === 'remove') {
-            if (voteType === 'like') {
-                previewLikes = Math.max(0, previewLikes - 1);
-            } else {
-                previewDislikes = Math.max(0, previewDislikes - 1);
-            }
-        }
-        
-        // Update display instantly for immediate user feedback
-        this.updateCountDisplay(previewLikes, previewDislikes);
-        
-        // Update user vote status immediately for fast feedback
-        if (action === 'remove') {
-            this.setUserVote(null); // Clear the vote
-        } else {
-            this.setUserVote(voteType);
-        }
-        
-        console.log('Fast feedback provided - instant count update:', { previewLikes, previewDislikes });
     }
 
     handleAnonymousVoteAction(voteType, action, btn, oppositeBtn) {
@@ -1529,6 +1323,12 @@ class PianoFeedback {
             } else {
                 newDislikes++;
             }
+        } else if (action === 'remove') {
+            if (voteType === 'like') {
+                newLikes = Math.max(0, newLikes - 1);
+            } else {
+                newDislikes = Math.max(0, newDislikes - 1);
+            }
         } else if (action === 'switch') {
             if (voteType === 'like') {
                 newLikes++;
@@ -1537,12 +1337,6 @@ class PianoFeedback {
                 newDislikes++;
                 newLikes = Math.max(0, newLikes - 1);
             }
-        } else if (action === 'remove') {
-            if (voteType === 'like') {
-                newLikes = Math.max(0, newLikes - 1);
-            } else {
-                newDislikes = Math.max(0, newDislikes - 1);
-            }
         }
         
         // Update localStorage
@@ -1550,11 +1344,7 @@ class PianoFeedback {
         localStorage.setItem('piano_dislikes_count', newDislikes.toString());
         
         // Update user's vote preference
-        if (action === 'remove') {
-            this.setUserVote(null); // Clear the vote
-        } else {
-            this.setUserVote(voteType);
-        }
+        this.setUserVote(action === 'remove' ? null : voteType);
         
         // Update UI
         this.updateButtonStates(voteType, action, btn, oppositeBtn);
@@ -1562,18 +1352,8 @@ class PianoFeedback {
         // Show success message (hidden per user request)
         // this.showSuccessMessage(voteType, action, true);
         
-        // Update display with localStorage values first
+        // Update display
         this.updateCountDisplay(newLikes, newDislikes);
-        
-        // Try to refresh from Firestore to get latest global counts
-        try {
-            console.log('Refreshing counts from Firestore after anonymous vote...');
-            setTimeout(async () => {
-                await this.loadFeedbackCounts();
-            }, 500); // Small delay to allow UI update first
-        } catch (error) {
-            console.error('Error refreshing from Firestore:', error);
-        }
     }
 
     async updateFirestoreCountWithAction(voteType, action) {
@@ -1611,6 +1391,12 @@ class PianoFeedback {
                 } else {
                     newDislikes++;
                 }
+            } else if (action === 'remove') {
+                if (voteType === 'like') {
+                    newLikes = Math.max(0, newLikes - 1);
+                } else {
+                    newDislikes = Math.max(0, newDislikes - 1);
+                }
             } else if (action === 'switch') {
                 if (voteType === 'like') {
                     newLikes++;
@@ -1618,12 +1404,6 @@ class PianoFeedback {
                 } else {
                     newDislikes++;
                     newLikes = Math.max(0, newLikes - 1);
-                }
-            } else if (action === 'remove') {
-                if (voteType === 'like') {
-                    newLikes = Math.max(0, newLikes - 1);
-                } else {
-                    newDislikes = Math.max(0, newDislikes - 1);
                 }
             }
 
@@ -1694,7 +1474,7 @@ class PianoFeedback {
                 oppositeBtn.classList.remove('clicked');
             }
         } else if (action === 'remove') {
-            // Deactivate the clicked button (allow unlike/undislike)
+            // Deactivate the clicked button
             btn.classList.remove('clicked');
         }
     }
@@ -1705,10 +1485,10 @@ class PianoFeedback {
         
         if (action === 'add') {
             message = `Thanks for your ${voteType}!${offlineText}`;
+        } else if (action === 'remove') {
+            message = `${voteType.charAt(0).toUpperCase() + voteType.slice(1)} removed${offlineText}`;
         } else if (action === 'switch') {
             message = `Changed to ${voteType}!${offlineText}`;
-        } else if (action === 'remove') {
-            message = `Removed your ${voteType}!${offlineText}`;
         }
         
         this.showMessage(message);
@@ -1745,26 +1525,12 @@ class PianoFeedback {
             }, 3000);
         }
     }
-
-    // Cleanup method to unsubscribe from real-time listener
-    destroy() {
-        if (this.unsubscribe) {
-            console.log('Unsubscribing from real-time listener...');
-            this.unsubscribe();
-            this.unsubscribe = null;
-        }
-    }
 }
 
 // Initialize feedback system when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     // Wait a bit for other initializations to complete
     setTimeout(() => {
-        const pianoFeedback = new PianoFeedback();
-        
-        // Cleanup listener when page unloads
-        window.addEventListener('beforeunload', () => {
-            pianoFeedback.destroy();
-        });
+        new PianoFeedback();
     }, 1000);
 });
