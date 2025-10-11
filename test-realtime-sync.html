@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Multi-User Sync Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .test-card {
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
+            padding: 25px;
+            margin: 20px 0;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+        .sync-status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-weight: bold;
+            text-align: center;
+        }
+        .sync-status.connected {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #28a745;
+        }
+        .sync-status.disconnected {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #dc3545;
+        }
+        .feedback-display {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            margin: 25px 0;
+        }
+        .count-card {
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            border-radius: 15px;
+            color: white;
+            min-width: 120px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .count-number {
+            font-size: 3em;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .feedback-btn {
+            padding: 15px 30px;
+            margin: 10px;
+            font-size: 18px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: transform 0.2s;
+        }
+        .feedback-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        .feedback-btn:active {
+            transform: translateY(0);
+        }
+        .log {
+            background: #1a1a1a;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 2px solid #333;
+            white-space: pre-wrap;
+        }
+        .instructions {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            backdrop-filter: blur(10px);
+        }
+        .multi-window-test {
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+            color: #333;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        .update-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-left: 10px;
+            animation: pulse 1s infinite;
+        }
+        .update-indicator.active {
+            background: #28a745;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <h1>🌍 Real-Time Multi-User Sync Test</h1>
+    <p style="text-align: center; font-size: 1.2em;">Test global synchronization across multiple users/windows</p>
+
+    <div class="instructions">
+        <h2>🧪 How to Test Multi-User Sync:</h2>
+        <ol>
+            <li><strong>Open multiple browser windows/tabs</strong> with this page</li>
+            <li><strong>Vote in one window</strong> and watch counts update in ALL windows instantly</li>
+            <li><strong>Try different browsers</strong> (Chrome, Firefox, Safari) simultaneously</li>
+            <li><strong>Test on different devices</strong> (phone, tablet, computer)</li>
+            <li><strong>Watch the live log</strong> for real-time update notifications</li>
+        </ol>
+    </div>
+
+    <div class="test-card">
+        <h2>🔗 Connection Status</h2>
+        <div id="sync-status" class="sync-status disconnected">
+            Connecting to real-time sync...
+        </div>
+        <p><strong>Last Update:</strong> <span id="last-update">Never</span><span id="update-indicator" class="update-indicator"></span></p>
+    </div>
+
+    <div class="test-card">
+        <h2>📊 Live Global Counts</h2>
+        <div class="feedback-display">
+            <div class="count-card">
+                <div class="count-number" id="like-count">0</div>
+                <div>👍 Likes</div>
+            </div>
+            <div class="count-card">
+                <div class="count-number" id="dislike-count">0</div>
+                <div>👎 Dislikes</div>
+            </div>
+            <div class="count-card">
+                <div class="count-number" id="total-count">0</div>
+                <div>🔢 Total</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-card multi-window-test">
+        <h2>🗳️ Vote Here (Updates All Windows Globally)</h2>
+        <div style="text-align: center;">
+            <button class="feedback-btn" onclick="vote('like')">
+                👍 Like
+            </button>
+            <button class="feedback-btn" onclick="vote('dislike')">
+                👎 Dislike
+            </button>
+        </div>
+        <p style="text-align: center; margin-top: 15px;">
+            <small>Vote here and watch ALL open windows update instantly!</small>
+        </p>
+    </div>
+
+    <div class="test-card">
+        <h2>🎛️ Test Controls</h2>
+        <button onclick="simulateMultipleVotes()">🎲 Simulate 10 Random Votes</button>
+        <button onclick="resetCounts()">🗑️ Reset All Counts</button>
+        <button onclick="clearLog()">📝 Clear Log</button>
+        <button onclick="window.open(window.location.href, '_blank')">🔗 Open New Window</button>
+    </div>
+
+    <div class="test-card">
+        <h2>📡 Real-Time Activity Log</h2>
+        <div id="log" class="log">Initializing real-time sync test...\n</div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+        // Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyDITrrDnAKRWjgQnpwfcyGKdUgjkI4ogA8",
+            authDomain: "ali-piano.firebaseapp.com",
+            projectId: "ali-piano",
+            storageBucket: "ali-piano.firebasestorage.app",
+            messagingSenderId: "806442476961",
+            appId: "1:806442476961:web:365f1a133a33f0ed69d7e0",
+            measurementId: "G-6NG4N6WK95"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let realtimeListener = null;
+        let sessionId = Math.random().toString(36).substr(2, 9);
+
+        function log(message) {
+            const logEl = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logEl.textContent += `[${timestamp}] ${message}\n`;
+            logEl.scrollTop = logEl.scrollHeight;
+            console.log(`[${sessionId}] ${message}`);
+        }
+
+        function updateStatus(message, isConnected) {
+            const statusEl = document.getElementById('sync-status');
+            statusEl.textContent = message;
+            statusEl.className = `sync-status ${isConnected ? 'connected' : 'disconnected'}`;
+        }
+
+        function showUpdateIndicator() {
+            const indicator = document.getElementById('update-indicator');
+            indicator.classList.add('active');
+            setTimeout(() => indicator.classList.remove('active'), 2000);
+        }
+
+        function updateDisplay(likes, dislikes, fromRealtime = false) {
+            document.getElementById('like-count').textContent = likes;
+            document.getElementById('dislike-count').textContent = dislikes;
+            document.getElementById('total-count').textContent = likes + dislikes;
+            document.getElementById('last-update').textContent = new Date().toLocaleTimeString();
+            
+            if (fromRealtime) {
+                showUpdateIndicator();
+                log(`🌍 REAL-TIME UPDATE: ${likes} likes, ${dislikes} dislikes (from global sync)`);
+            }
+        }
+
+        function setupRealtimeListener() {
+            log('🌐 Setting up real-time listener...');
+            
+            const docRef = doc(db, 'feedback', 'pianoFeedback');
+            
+            realtimeListener = onSnapshot(docRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    const likes = data.likes || 0;
+                    const dislikes = data.dislikes || 0;
+                    
+                    updateDisplay(likes, dislikes, true);
+                    updateStatus('🟢 Connected - Real-time sync active', true);
+                    
+                } else {
+                    log('⚠️ Document does not exist, creating...');
+                    setDoc(docRef, {
+                        likes: 0,
+                        dislikes: 0,
+                        created: new Date().toISOString(),
+                        lastUpdated: new Date().toISOString()
+                    });
+                }
+            }, (error) => {
+                log(`❌ Real-time listener error: ${error.message}`);
+                updateStatus('🔴 Disconnected - Real-time sync failed', false);
+            });
+            
+            log('✅ Real-time listener activated');
+        }
+
+        async function vote(voteType) {
+            try {
+                log(`🗳️ Submitting ${voteType} vote...`);
+                
+                const docRef = doc(db, 'feedback', 'pianoFeedback');
+                const docSnap = await getDoc(docRef);
+                
+                let likes = 0;
+                let dislikes = 0;
+                
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    likes = data.likes || 0;
+                    dislikes = data.dislikes || 0;
+                }
+                
+                if (voteType === 'like') {
+                    likes++;
+                } else {
+                    dislikes++;
+                }
+                
+                await setDoc(docRef, {
+                    likes,
+                    dislikes,
+                    lastUpdated: new Date().toISOString(),
+                    lastVoter: sessionId
+                });
+                
+                log(`✅ Vote submitted! New totals: ${likes} likes, ${dislikes} dislikes`);
+                log('🌍 Real-time sync will update all connected users...');
+                
+            } catch (error) {
+                log(`❌ Vote failed: ${error.message}`);
+            }
+        }
+
+        async function simulateMultipleVotes() {
+            log('🎲 Starting simulation of 10 random votes...');
+            for (let i = 0; i < 10; i++) {
+                const voteType = Math.random() > 0.5 ? 'like' : 'dislike';
+                await vote(voteType);
+                await new Promise(resolve => setTimeout(resolve, 300));
+            }
+            log('✅ Simulation complete!');
+        }
+
+        async function resetCounts() {
+            if (confirm('Reset all feedback counts to zero? This will affect all users globally.')) {
+                try {
+                    log('🗑️ Resetting all counts globally...');
+                    const docRef = doc(db, 'feedback', 'pianoFeedback');
+                    await setDoc(docRef, {
+                        likes: 0,
+                        dislikes: 0,
+                        lastUpdated: new Date().toISOString(),
+                        resetBy: sessionId,
+                        resetAt: new Date().toISOString()
+                    });
+                    log('✅ Global reset complete - all users will see updated counts');
+                } catch (error) {
+                    log(`❌ Reset failed: ${error.message}`);
+                }
+            }
+        }
+
+        function clearLog() {
+            document.getElementById('log').textContent = '';
+        }
+
+        // Make functions global
+        window.vote = vote;
+        window.simulateMultipleVotes = simulateMultipleVotes;
+        window.resetCounts = resetCounts;
+        window.clearLog = clearLog;
+
+        // Initialize
+        log(`🚀 Session ${sessionId} starting real-time sync test...`);
+        log('💡 Open multiple windows/tabs to test multi-user synchronization');
+        setupRealtimeListener();
+    </script>
+</body>
+</html>

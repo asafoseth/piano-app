@@ -1,7 +1,7 @@
 import enableChordPlaying from './multiKeyChords.js';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDocs, collection, query, where, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+import { getFirestore, doc, setDoc, getDocs, collection, query, where, deleteDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
 // Your Firebase config here:
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -1144,6 +1144,7 @@ function stopAndUncheckSingKey() {
 class PianoFeedback {
     constructor() {
         this.feedbackDoc = 'pianoFeedback';
+        this.realtimeListener = null; // Store the real-time listener
         this.init();
     }
 
@@ -1168,7 +1169,60 @@ class PianoFeedback {
         // Set up automatic refresh on page visibility changes
         this.setupAutoRefresh();
         
+        // Set up real-time listener for global synchronization
+        this.setupRealtimeListener();
+        
         console.log('✅ PianoFeedback system fully initialized');
+    }
+
+    setupRealtimeListener() {
+        console.log('🌐 Setting up real-time listener for global synchronization...');
+        
+        const docRef = doc(db, 'feedback', this.feedbackDoc);
+        
+        // Set up real-time listener
+        this.realtimeListener = onSnapshot(docRef, (docSnap) => {
+            console.log('🔄 Real-time update received from Firestore!');
+            
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                const likes = data.likes || 0;
+                const dislikes = data.dislikes || 0;
+                
+                console.log(`🌍 GLOBAL UPDATE: ${likes} likes, ${dislikes} dislikes`);
+                console.log('📡 Updating display for all users worldwide...');
+                
+                // Update the display immediately
+                this.updateCountDisplay(likes, dislikes);
+                
+                // Store in localStorage as backup
+                localStorage.setItem('piano_likes_count', likes.toString());
+                localStorage.setItem('piano_dislikes_count', dislikes.toString());
+                localStorage.setItem('piano_counts_last_updated', new Date().toISOString());
+                
+                console.log('✅ Real-time update applied successfully');
+            } else {
+                console.log('⚠️ Real-time listener: Document does not exist');
+                // Initialize document if it doesn't exist
+                this.initializeFeedbackDocument();
+            }
+        }, (error) => {
+            console.error('❌ Real-time listener error:', error);
+            console.error('Falling back to periodic updates...');
+            
+            // Fallback to periodic updates if real-time fails
+            this.setupPeriodicUpdates();
+        });
+        
+        console.log('🎯 Real-time listener activated - all users will see live updates!');
+    }
+
+    setupPeriodicUpdates() {
+        // Fallback: refresh counts every 10 seconds if real-time fails
+        setInterval(() => {
+            console.log('⏰ Fallback update - checking for changes...');
+            this.loadFeedbackCounts();
+        }, 10000); // 10 seconds
     }
 
     setupAutoRefresh() {
@@ -1191,6 +1245,16 @@ class PianoFeedback {
             console.log('⏰ Auto-refresh - updating feedback counts...');
             this.loadFeedbackCounts();
         }, 30000); // 30 seconds
+    }
+
+    // Cleanup method to properly dispose of real-time listener
+    destroy() {
+        if (this.realtimeListener) {
+            console.log('🧹 Cleaning up real-time listener...');
+            this.realtimeListener(); // Call the unsubscribe function
+            this.realtimeListener = null;
+            console.log('✅ Real-time listener cleaned up');
+        }
     }
 
     async initializeFeedbackDocument() {
@@ -1375,9 +1439,8 @@ class PianoFeedback {
             // Show success message (hidden per user request)
             // this.showSuccessMessage(voteType, action);
             
-            // Reload counts to show updated numbers
-            console.log('Reloading feedback counts...');
-            await this.loadFeedbackCounts();
+            // Note: No need to manually reload counts - real-time listener handles this
+            console.log('✅ Vote submitted - real-time listener will update all displays globally');
             
         } catch (error) {
             console.error(`Detailed error submitting ${voteType}:`, error);
@@ -1544,6 +1607,9 @@ class PianoFeedback {
             console.log('Setting document...');
             await setDoc(docRef, newData);
             console.log('Document set successfully. New counts - Likes:', newLikes, 'Dislikes:', newDislikes);
+            
+            // Note: The real-time listener will automatically update all displays
+            console.log('🌍 Real-time update will propagate to all users automatically');
             
         } catch (error) {
             console.error('Error in updateFirestoreCountWithAction:', error);
