@@ -349,6 +349,13 @@ document.addEventListener("DOMContentLoaded", () => {
     //     }
     // }
 
+    // Initialize Piano Feedback System
+    console.log('🚀 Initializing PianoFeedback system...');
+    setTimeout(() => {
+        window.pianoFeedbackInstance = new PianoFeedback();
+        console.log('📌 PianoFeedback instance created and stored globally');
+    }, 500); // Small delay to ensure DOM is fully ready
+
 }); // End DOMContentLoaded
 
 const loginBtn = document.getElementById('show-login-modal');
@@ -1432,17 +1439,8 @@ class PianoFeedback {
             
             console.log('Vote action:', action);
 
-            // Check if user is authenticated
-            const user = auth.currentUser;
-            if (!user) {
-                // Use localStorage fallback for anonymous users
-                console.log('User not authenticated, using localStorage fallback');
-                this.handleAnonymousVoteAction(voteType, action, btn, oppositeBtn);
-                return;
-            }
-
             console.log('Updating Firestore count...');
-            // Update Firestore
+            // Update Firestore (allow anonymous users for feedback)
             await this.updateFirestoreCountWithAction(voteType, action);
             console.log('Firestore update successful');
             
@@ -1466,43 +1464,12 @@ class PianoFeedback {
             
             // Handle specific Firebase errors
             if (error.code === 'permission-denied') {
-                console.log('Permission denied, falling back to localStorage');
-                this.showMessage('⚠️ Firebase permission issue detected. Using local storage mode.');
-                const currentVote = this.getUserCurrentVote();
-                let action = 'none';
-                if (currentVote === null) {
-                    action = 'add';
-                } else if (currentVote === voteType) {
-                    action = 'remove';
-                } else {
-                    action = 'switch';
-                }
-                this.handleAnonymousVoteAction(voteType, action, btn, oppositeBtn);
+                console.log('Permission denied - check Firebase security rules');
+                this.showMessage('🔒 Database permissions need to be updated. Check Firebase security rules.');
             } else if (error.code === 'unavailable') {
-                this.showMessage('🔧 Firebase is currently unavailable. Using offline mode.');
-                // Also fall back to localStorage for unavailable
-                const currentVote = this.getUserCurrentVote();
-                let action = 'none';
-                if (currentVote === null) {
-                    action = 'add';
-                } else if (currentVote === voteType) {
-                    action = 'remove';
-                } else {
-                    action = 'switch';
-                }
-                this.handleAnonymousVoteAction(voteType, action, btn, oppositeBtn);
+                this.showMessage('🔧 Firebase is currently unavailable. Please try again later.');
             } else if (error.code === 'unauthenticated') {
-                this.showMessage('🔑 Authentication required for cloud sync. Using local storage.');
-                const currentVote = this.getUserCurrentVote();
-                let action = 'none';
-                if (currentVote === null) {
-                    action = 'add';
-                } else if (currentVote === voteType) {
-                    action = 'remove';
-                } else {
-                    action = 'switch';
-                }
-                this.handleAnonymousVoteAction(voteType, action, btn, oppositeBtn);
+                this.showMessage('🔑 Authentication issue. Please refresh the page and try again.');
             } else {
                 this.showMessage(`❌ Error: ${error.message || 'Unknown error occurred'}`);
             }
@@ -1764,16 +1731,6 @@ class PianoFeedback {
         }
     }
 }
-
-// Initialize feedback system when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-    // Wait a bit for other initializations to complete
-    setTimeout(() => {
-        console.log('🚀 Starting PianoFeedback initialization...');
-        window.pianoFeedbackInstance = new PianoFeedback();
-        console.log('📌 PianoFeedback instance stored globally for manual refresh');
-    }, 1000);
-});
 
 // Also ensure feedback loads on page load/refresh
 window.addEventListener('load', () => {

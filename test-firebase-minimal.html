@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Firebase Test</title>
+</head>
+<body>
+    <h1>Firebase Connection Test</h1>
+    <button id="test-btn">Test Firebase Write</button>
+    <div id="result"></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDITrrDnAKRWjgQnpwfcyGKdUgjkI4ogA8",
+            authDomain: "ali-piano.firebaseapp.com",
+            projectId: "ali-piano",
+            storageBucket: "ali-piano.firebasestorage.app",
+            messagingSenderId: "806442476961",
+            appId: "1:806442476961:web:365f1a133a33f0ed69d7e0",
+            measurementId: "G-6NG4N6WK95"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        function log(message) {
+            document.getElementById('result').innerHTML += message + '<br>';
+            console.log(message);
+        }
+
+        document.getElementById('test-btn').addEventListener('click', async () => {
+            try {
+                log('🔄 Testing Firebase write...');
+                
+                const docRef = doc(db, 'feedback', 'pianoFeedback');
+                const testData = {
+                    likes: Math.floor(Math.random() * 100),
+                    dislikes: Math.floor(Math.random() * 100),
+                    lastUpdated: new Date().toISOString(),
+                    testId: Date.now()
+                };
+                
+                log(`📝 Writing data: ${JSON.stringify(testData)}`);
+                await setDoc(docRef, testData);
+                log('✅ Write successful!');
+                
+                log('📖 Reading back data...');
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    log(`📊 Read data: ${JSON.stringify(docSnap.data())}`);
+                } else {
+                    log('❌ Document not found after write');
+                }
+                
+            } catch (error) {
+                log(`❌ Error: ${error.code} - ${error.message}`);
+            }
+        });
+
+        log('✅ Firebase initialized. Click button to test write/read.');
+    </script>
+</body>
+</html>

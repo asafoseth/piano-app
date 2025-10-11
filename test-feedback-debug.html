@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feedback Debug Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        .test-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .feedback-buttons {
+            display: flex;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .feedback-btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .like-btn {
+            background: #4CAF50;
+            color: white;
+        }
+        .dislike-btn {
+            background: #f44336;
+            color: white;
+        }
+        .feedback-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        .feedback-btn.clicked {
+            transform: scale(0.95);
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.3);
+        }
+        .feedback-btn.loading {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+        .count {
+            background: rgba(255,255,255,0.3);
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+        .debug-info {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .status.success { background: #d4edda; color: #155724; }
+        .status.error { background: #f8d7da; color: #721c24; }
+        .status.warning { background: #fff3cd; color: #856404; }
+        .test-buttons {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        .test-btn {
+            padding: 8px 16px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .test-btn:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🐛 Feedback System Debug Test</h1>
+        <p>This page helps debug the Piano Feedback system.</p>
+        
+        <div id="status-container"></div>
+        
+        <h3>🎹 Feedback Test</h3>
+        <div class="feedback-buttons">
+            <button id="like-btn" class="feedback-btn like-btn" aria-label="Like this piano session">
+                👍 Like
+                <span id="like-count" class="count">0</span>
+            </button>
+            <button id="dislike-btn" class="feedback-btn dislike-btn" aria-label="Dislike this piano session">
+                👎 Dislike
+                <span id="dislike-count" class="count">0</span>
+            </button>
+        </div>
+        <p class="feedback-message" id="feedback-message"></p>
+        
+        <div class="test-buttons">
+            <button class="test-btn" onclick="testFirebaseConnection()">🔗 Test Firebase Connection</button>
+            <button class="test-btn" onclick="testReadPermissions()">📖 Test Read Permissions</button>
+            <button class="test-btn" onclick="testWritePermissions()">✏️ Test Write Permissions</button>
+            <button class="test-btn" onclick="testFeedbackButtons()">🎯 Test Feedback Buttons</button>
+            <button class="test-btn" onclick="manualRefresh()">🔄 Manual Refresh</button>
+            <button class="test-btn" onclick="clearLocalStorage()">🗑️ Clear Local Storage</button>
+            <button class="test-btn" onclick="showDebugInfo()">📊 Show Debug Info</button>
+        </div>
+        
+        <h3>📝 Debug Log</h3>
+        <div id="debug-log" class="debug-info">Debug log will appear here...\n</div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+        // Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyDITrrDnAKRWjgQnpwfcyGKdUgjkI4ogA8",
+            authDomain: "ali-piano.firebaseapp.com",
+            projectId: "ali-piano",
+            storageBucket: "ali-piano.firebasestorage.app",
+            messagingSenderId: "806442476961",
+            appId: "1:806442476961:web:365f1a133a33f0ed69d7e0",
+            measurementId: "G-6NG4N6WK95"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Debug logging
+        function debugLog(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logDiv = document.getElementById('debug-log');
+            logDiv.textContent += `[${timestamp}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(`[DEBUG] ${message}`);
+        }
+
+        function showStatus(message, type = 'info') {
+            const container = document.getElementById('status-container');
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.textContent = message;
+            container.appendChild(div);
+            
+            // Remove after 5 seconds
+            setTimeout(() => {
+                if (div.parentNode) {
+                    div.parentNode.removeChild(div);
+                }
+            }, 5000);
+        }
+
+        // Global test functions
+        window.testFirebaseConnection = async function() {
+            debugLog('🔗 Testing Firebase connection...');
+            try {
+                const testDoc = doc(db, 'test', 'connection');
+                const snapshot = await getDoc(testDoc);
+                debugLog('✅ Firebase connection successful');
+                showStatus('✅ Firebase connection successful', 'success');
+                return true;
+            } catch (error) {
+                debugLog(`❌ Firebase connection failed: ${error.message}`);
+                showStatus(`❌ Firebase connection failed: ${error.message}`, 'error');
+                return false;
+            }
+        };
+
+        window.testReadPermissions = async function() {
+            debugLog('📖 Testing read permissions...');
+            try {
+                const docRef = doc(db, 'feedback', 'pianoFeedback');
+                const snapshot = await getDoc(docRef);
+                debugLog('✅ Read permissions OK');
+                debugLog(`Document exists: ${snapshot.exists()}`);
+                if (snapshot.exists()) {
+                    debugLog(`Document data: ${JSON.stringify(snapshot.data(), null, 2)}`);
+                }
+                showStatus('✅ Read permissions OK', 'success');
+                return true;
+            } catch (error) {
+                debugLog(`❌ Read permissions failed: ${error.code} - ${error.message}`);
+                showStatus(`❌ Read permissions failed: ${error.code}`, 'error');
+                return false;
+            }
+        };
+
+        window.testWritePermissions = async function() {
+            debugLog('✏️ Testing write permissions...');
+            try {
+                const testDoc = doc(db, 'feedback', 'pianoFeedback');
+                const testData = {
+                    likes: 0,
+                    dislikes: 0,
+                    lastUpdated: new Date().toISOString(),
+                    testWrite: true,
+                    timestamp: Date.now()
+                };
+                
+                await setDoc(testDoc, testData);
+                debugLog('✅ Write permissions OK - document created/updated');
+                showStatus('✅ Write permissions OK', 'success');
+                return true;
+            } catch (error) {
+                debugLog(`❌ Write permissions failed: ${error.code} - ${error.message}`);
+                showStatus(`❌ Write permissions failed: ${error.code}`, 'error');
+                return false;
+            }
+        };
+
+        window.testFeedbackButtons = function() {
+            debugLog('🎯 Testing feedback buttons...');
+            const likeBtn = document.getElementById('like-btn');
+            const dislikeBtn = document.getElementById('dislike-btn');
+            
+            if (!likeBtn || !dislikeBtn) {
+                debugLog('❌ Feedback buttons not found in DOM');
+                showStatus('❌ Feedback buttons not found', 'error');
+                return false;
+            }
+            
+            debugLog('✅ Feedback buttons found in DOM');
+            debugLog(`Like button: ${likeBtn.outerHTML.substring(0, 100)}...`);
+            debugLog(`Dislike button: ${dislikeBtn.outerHTML.substring(0, 100)}...`);
+            
+            // Test click events
+            const likeClickCount = parseInt(localStorage.getItem('test_like_clicks') || '0');
+            const dislikeClickCount = parseInt(localStorage.getItem('test_dislike_clicks') || '0');
+            
+            debugLog(`Previous like clicks: ${likeClickCount}`);
+            debugLog(`Previous dislike clicks: ${dislikeClickCount}`);
+            
+            showStatus('✅ Feedback buttons test completed', 'success');
+            return true;
+        };
+
+        window.manualRefresh = async function() {
+            debugLog('🔄 Manual refresh triggered...');
+            if (window.pianoFeedbackInstance) {
+                await window.pianoFeedbackInstance.loadFeedbackCounts();
+                debugLog('✅ Feedback counts refreshed via instance');
+                showStatus('✅ Feedback refreshed via instance', 'success');
+            } else {
+                debugLog('⚠️ No pianoFeedbackInstance found, refreshing manually...');
+                await loadFeedbackCounts();
+                showStatus('⚠️ Refreshed manually (no instance)', 'warning');
+            }
+        };
+
+        window.clearLocalStorage = function() {
+            debugLog('🗑️ Clearing localStorage feedback data...');
+            const keys = ['piano_likes_count', 'piano_dislikes_count', 'piano_user_vote', 'piano_counts_last_updated'];
+            keys.forEach(key => {
+                localStorage.removeItem(key);
+                debugLog(`Removed: ${key}`);
+            });
+            showStatus('✅ Local storage cleared', 'success');
+        };
+
+        window.showDebugInfo = function() {
+            debugLog('📊 === DEBUG INFO ===');
+            debugLog(`Firebase app: ${app ? 'initialized' : 'not initialized'}`);
+            debugLog(`Auth state: ${auth.currentUser ? 'logged in' : 'anonymous'}`);
+            debugLog(`Database: ${db ? 'connected' : 'not connected'}`);
+            debugLog(`User agent: ${navigator.userAgent}`);
+            debugLog(`Local storage data:`);
+            
+            const localData = {
+                likes: localStorage.getItem('piano_likes_count'),
+                dislikes: localStorage.getItem('piano_dislikes_count'),
+                userVote: localStorage.getItem('piano_user_vote'),
+                lastUpdated: localStorage.getItem('piano_counts_last_updated')
+            };
+            
+            debugLog(JSON.stringify(localData, null, 2));
+            debugLog('=== END DEBUG INFO ===');
+        };
+
+        // Simplified PianoFeedback for testing
+        class TestPianoFeedback {
+            constructor() {
+                this.feedbackDoc = 'pianoFeedback';
+                this.init();
+            }
+
+            async init() {
+                debugLog('🎹 Initializing TestPianoFeedback...');
+                await this.loadFeedbackCounts();
+                this.setupEventListeners();
+                this.setupRealtimeListener();
+                debugLog('✅ TestPianoFeedback initialized');
+            }
+
+            async loadFeedbackCounts() {
+                try {
+                    debugLog('📥 Loading feedback counts...');
+                    const docRef = doc(db, 'feedback', this.feedbackDoc);
+                    const docSnap = await getDoc(docRef);
+                    
+                    let likes = 0;
+                    let dislikes = 0;
+
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        likes = data.likes || 0;
+                        dislikes = data.dislikes || 0;
+                        debugLog(`✅ Loaded from Firebase: ${likes} likes, ${dislikes} dislikes`);
+                    } else {
+                        debugLog('⚠️ Document does not exist, will create with initial values');
+                    }
+
+                    this.updateCountDisplay(likes, dislikes);
+                    
+                } catch (error) {
+                    debugLog(`❌ Error loading counts: ${error.code} - ${error.message}`);
+                    // Try localStorage fallback
+                    const likes = parseInt(localStorage.getItem('piano_likes_count') || '0');
+                    const dislikes = parseInt(localStorage.getItem('piano_dislikes_count') || '0');
+                    this.updateCountDisplay(likes, dislikes);
+                    debugLog(`📱 Using localStorage fallback: ${likes} likes, ${dislikes} dislikes`);
+                }
+            }
+
+            setupEventListeners() {
+                const likeBtn = document.getElementById('like-btn');
+                const dislikeBtn = document.getElementById('dislike-btn');
+
+                if (likeBtn) {
+                    likeBtn.addEventListener('click', () => {
+                        debugLog('👍 Like button clicked');
+                        this.handleVote('like');
+                    });
+                }
+
+                if (dislikeBtn) {
+                    dislikeBtn.addEventListener('click', () => {
+                        debugLog('👎 Dislike button clicked');
+                        this.handleVote('dislike');
+                    });
+                }
+            }
+
+            setupRealtimeListener() {
+                debugLog('🌐 Setting up real-time listener...');
+                const docRef = doc(db, 'feedback', this.feedbackDoc);
+                
+                this.realtimeListener = onSnapshot(docRef, (docSnap) => {
+                    debugLog('🔄 Real-time update received');
+                    
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        const likes = data.likes || 0;
+                        const dislikes = data.dislikes || 0;
+                        debugLog(`🌍 Real-time data: ${likes} likes, ${dislikes} dislikes`);
+                        this.updateCountDisplay(likes, dislikes);
+                    }
+                }, (error) => {
+                    debugLog(`❌ Real-time listener error: ${error.message}`);
+                });
+            }
+
+            async handleVote(voteType) {
+                debugLog(`🗳️ Handling vote: ${voteType}`);
+                
+                try {
+                    const docRef = doc(db, 'feedback', this.feedbackDoc);
+                    const docSnap = await getDoc(docRef);
+                    
+                    let likes = 0;
+                    let dislikes = 0;
+
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        likes = data.likes || 0;
+                        dislikes = data.dislikes || 0;
+                    }
+
+                    // Simple increment for testing
+                    if (voteType === 'like') {
+                        likes++;
+                    } else {
+                        dislikes++;
+                    }
+
+                    const newData = {
+                        likes: likes,
+                        dislikes: dislikes,
+                        lastUpdated: new Date().toISOString(),
+                        lastAction: `add_${voteType}`,
+                        totalVotes: likes + dislikes
+                    };
+
+                    debugLog(`💾 Saving to Firebase: ${JSON.stringify(newData)}`);
+                    await setDoc(docRef, newData);
+                    debugLog('✅ Vote saved successfully');
+                    
+                } catch (error) {
+                    debugLog(`❌ Vote failed: ${error.code} - ${error.message}`);
+                    showStatus(`❌ Vote failed: ${error.code}`, 'error');
+                }
+            }
+
+            updateCountDisplay(likes, dislikes) {
+                const likeCount = document.getElementById('like-count');
+                const dislikeCount = document.getElementById('dislike-count');
+
+                if (likeCount) {
+                    likeCount.textContent = likes;
+                }
+                
+                if (dislikeCount) {
+                    dislikeCount.textContent = dislikes;
+                }
+                
+                debugLog(`📊 Display updated: ${likes} likes, ${dislikes} dislikes`);
+            }
+        }
+
+        // Store global reference for testing
+        window.loadFeedbackCounts = async function() {
+            if (window.testFeedbackInstance) {
+                await window.testFeedbackInstance.loadFeedbackCounts();
+            }
+        };
+
+        // Initialize when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            debugLog('🚀 DOM loaded - initializing test feedback system...');
+            window.testFeedbackInstance = new TestPianoFeedback();
+            window.pianoFeedbackInstance = window.testFeedbackInstance; // Alias for compatibility
+        });
+
+        // Auth state listener
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                debugLog(`👤 User logged in: ${user.email || user.displayName}`);
+                showStatus(`👤 Logged in as ${user.email || user.displayName}`, 'success');
+            } else {
+                debugLog('👤 User is anonymous');
+                showStatus('👤 Anonymous user', 'warning');
+            }
+        });
+
+        debugLog('📄 Test page script loaded');
+    </script>
+</body>
+</html>
