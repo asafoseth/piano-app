@@ -18,9 +18,31 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const analytics = getAnalytics(app);
+let auth = null;
+let db = null;
+let analytics = null;
+
+try {
+    db = getFirestore(app);
+    console.log('✅ Firestore initialized successfully');
+} catch (error) {
+    console.error('❌ Firestore initialization failed:', error);
+}
+
+try {
+    auth = getAuth(app);
+    console.log('✅ Auth initialized successfully');
+} catch (error) {
+    console.error('❌ Auth initialization failed:', error);
+    console.log('🔄 Continuing without authentication - voting will use localStorage only');
+}
+
+try {
+    analytics = getAnalytics(app);
+    console.log('✅ Analytics initialized successfully');
+} catch (error) {
+    console.error('❌ Analytics initialization failed:', error);
+}
 
 document.addEventListener("DOMContentLoaded", () => {
   // Enhanced iOS Audio Unlock - Must be at the very beginning
@@ -395,26 +417,56 @@ document.getElementById('close-login-modal').onclick = () => {
   document.getElementById('login-modal').style.display = 'none';
 };
 document.getElementById('google-login-btn').onclick = async () => {
+  if (!auth) {
+    document.getElementById('login-error').textContent = 'Authentication service not available. Please check Firebase configuration.';
+    return;
+  }
   try {
-    await signInWithPopup(auth, new GoogleAuthProvider());
+    console.log('Attempting Google sign in...');
+    const provider = new GoogleAuthProvider();
+    await signInWithPopup(auth, provider);
     document.getElementById('login-modal').style.display = 'none';
+    console.log('Google sign in successful');
   } catch (e) {
-    document.getElementById('login-error').textContent = e.message;
+    console.error('Google sign in failed:', e);
+    document.getElementById('login-error').textContent = `Google Sign In Error: ${e.message}`;
   }
 };
 document.getElementById('email-login-btn').onclick = async () => {
+  if (!auth) {
+    document.getElementById('login-error').textContent = 'Authentication service not available. Please check Firebase configuration.';
+    return;
+  }
+  
   const email = document.getElementById('email-input').value;
   const password = document.getElementById('password-input').value;
+  
+  if (!email || !password) {
+    document.getElementById('login-error').textContent = 'Please enter both email and password.';
+    return;
+  }
+  
   try {
+    console.log('Attempting to sign in with email:', email);
     await signInWithEmailAndPassword(auth, email, password);
     document.getElementById('login-modal').style.display = 'none';
+    console.log('Sign in successful');
   } catch (e) {
+    console.log('Sign in failed, trying signup:', e.code);
     // If user not found, try signup
-    try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      document.getElementById('login-modal').style.display = 'none';
-    } catch (err) {
-      document.getElementById('login-error').textContent = err.message;
+    if (e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password') {
+      try {
+        console.log('Attempting to create new user');
+        await createUserWithEmailAndPassword(auth, email, password);
+        document.getElementById('login-modal').style.display = 'none';
+        console.log('User creation successful');
+      } catch (err) {
+        console.error('User creation failed:', err);
+        document.getElementById('login-error').textContent = `Error: ${err.message}`;
+      }
+    } else {
+      console.error('Authentication error:', e);
+      document.getElementById('login-error').textContent = `Error: ${e.message}`;
     }
   }
 };
@@ -1347,10 +1399,10 @@ class PianoFeedback {
             this.provideFastFeedback(voteType, action, btn, oppositeBtn);
 
             // Check if user is authenticated
-            const user = auth.currentUser;
-            if (!user) {
-                // Use localStorage fallback for anonymous users
-                console.log('User not authenticated, using localStorage fallback');
+            const user = auth ? auth.currentUser : null;
+            if (!user || !auth) {
+                // Use localStorage fallback for anonymous users or when auth is not available
+                console.log('User not authenticated or auth not available, using localStorage fallback');
                 this.handleAnonymousVoteAction(voteType, action, btn, oppositeBtn);
                 return;
             }
