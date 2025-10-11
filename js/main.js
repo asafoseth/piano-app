@@ -1241,7 +1241,8 @@ class PianoFeedback {
             }
 
             this.updateCountDisplay(likes, dislikes);
-            console.log('Feedback counts loaded successfully - Likes:', likes, 'Dislikes:', dislikes);
+            console.log('✅ Feedback counts loaded successfully');
+            console.log(`📊 AGGREGATED TOTALS - Likes: ${likes}, Dislikes: ${dislikes}, Total: ${likes + dislikes}`);
         } catch (error) {
             console.error('Error loading feedback counts:', error);
             console.error('Error details:', error.code, error.message);
@@ -1508,10 +1509,16 @@ class PianoFeedback {
 
         if (likeCount) {
             likeCount.textContent = likes;
+            console.log('🔢 Updated like count display:', likes);
         }
         if (dislikeCount) {
             dislikeCount.textContent = dislikes;
+            console.log('🔢 Updated dislike count display:', dislikes);
         }
+        
+        // Log total votes for debugging
+        const totalVotes = likes + dislikes;
+        console.log(`📊 Total feedback: ${totalVotes} votes (${likes} likes, ${dislikes} dislikes)`);
     }
 
     hasUserVoted(voteType) {
@@ -1645,5 +1652,41 @@ window.initializeFeedbackDocument = async function() {
         console.error('❌ Failed to initialize feedback document:', error);
         console.error('Error details:', error.code, error.message);
         return false;
+    }
+};
+
+// Function to check current aggregated feedback counts
+window.checkFeedbackCounts = async function() {
+    try {
+        console.log('🔍 Checking current feedback counts...');
+        const docRef = doc(db, 'feedback', 'pianoFeedback');
+        const docSnap = await getDoc(docRef);
+        
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            const likes = data.likes || 0;
+            const dislikes = data.dislikes || 0;
+            const total = likes + dislikes;
+            
+            console.log('📊 CURRENT FEEDBACK TOTALS:');
+            console.log(`   👍 Likes: ${likes}`);
+            console.log(`   👎 Dislikes: ${dislikes}`);
+            console.log(`   🔢 Total votes: ${total}`);
+            console.log(`   📅 Last updated: ${data.lastUpdated || 'Unknown'}`);
+            
+            // Also update the display
+            const likeElement = document.getElementById('like-count');
+            const dislikeElement = document.getElementById('dislike-count');
+            if (likeElement) likeElement.textContent = likes;
+            if (dislikeElement) dislikeElement.textContent = dislikes;
+            
+            return { likes, dislikes, total };
+        } else {
+            console.log('❌ No feedback document found');
+            return null;
+        }
+    } catch (error) {
+        console.error('❌ Error checking feedback counts:', error);
+        return null;
     }
 };
