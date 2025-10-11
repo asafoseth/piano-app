@@ -1188,19 +1188,27 @@ class PianoFeedback {
                 const data = docSnap.data();
                 const likes = data.likes || 0;
                 const dislikes = data.dislikes || 0;
+                const lastUpdated = data.lastUpdated;
+                const lastAction = data.lastAction;
+                const totalVotes = data.totalVotes || (likes + dislikes);
                 
                 console.log(`🌍 GLOBAL UPDATE: ${likes} likes, ${dislikes} dislikes`);
+                console.log(`⏰ Last updated: ${lastUpdated}`);
+                console.log(`🎯 Last action: ${lastAction || 'unknown'}`);
+                console.log(`📊 Total votes: ${totalVotes}`);
                 console.log('📡 Updating display for all users worldwide...');
                 
                 // Update the display immediately
                 this.updateCountDisplay(likes, dislikes);
                 
-                // Store in localStorage as backup
+                // Store in localStorage as backup with timestamp
                 localStorage.setItem('piano_likes_count', likes.toString());
                 localStorage.setItem('piano_dislikes_count', dislikes.toString());
-                localStorage.setItem('piano_counts_last_updated', new Date().toISOString());
+                localStorage.setItem('piano_counts_last_updated', lastUpdated || new Date().toISOString());
+                localStorage.setItem('piano_last_action', lastAction || 'unknown');
                 
                 console.log('✅ Real-time update applied successfully');
+                console.log('💾 Backup data stored in localStorage');
             } else {
                 console.log('⚠️ Real-time listener: Document does not exist');
                 // Initialize document if it doesn't exist
@@ -1326,15 +1334,23 @@ class PianoFeedback {
             } else {
                 console.log('⚠️ Document does not exist, creating new one...');
                 // If document doesn't exist, create it with initial values
+                const timestamp = new Date().toISOString();
                 const initialData = {
                     likes: 0,
                     dislikes: 0,
-                    created: new Date().toISOString(),
-                    lastUpdated: new Date().toISOString()
+                    totalVotes: 0,
+                    created: timestamp,
+                    lastUpdated: timestamp,
+                    firstVoteTimestamp: null,
+                    lastAction: 'initial_creation',
+                    lastVoteType: null,
+                    lastVoteAction: null,
+                    version: '2.0'
                 };
                 
                 await setDoc(docRef, initialData);
-                console.log('📄 New document created successfully');
+                console.log('📄 New document created successfully with timestamp tracking');
+                console.log('⏰ Initial lastUpdated set to:', timestamp);
                 likes = 0;
                 dislikes = 0;
             }
@@ -1594,22 +1610,35 @@ class PianoFeedback {
                 }
             }
 
-            // Prepare new data
+            // Prepare new data with comprehensive tracking
+            const timestamp = new Date().toISOString();
             const newData = {
                 likes: newLikes,
                 dislikes: newDislikes,
-                lastUpdated: new Date().toISOString(),
+                lastUpdated: timestamp,
+                lastAction: `${action}_${voteType}`, // e.g., "add_like", "remove_dislike", "switch_like"
+                lastVoteType: voteType,
+                lastVoteAction: action,
+                totalVotes: newLikes + newDislikes,
+                lastVoteTimestamp: timestamp,
                 // Add created timestamp if this is a new document
-                ...(docSnap.exists() ? {} : { created: new Date().toISOString() })
+                ...(docSnap.exists() ? {} : { 
+                    created: timestamp,
+                    firstVoteTimestamp: timestamp 
+                })
             };
             
-            console.log('New data to be saved:', newData);
-            console.log('Setting document...');
+            console.log('📊 New data to be saved:', newData);
+            console.log('⏰ Updating lastUpdated timestamp:', timestamp);
+            console.log('🎯 Vote action tracked:', `${action}_${voteType}`);
+            console.log('🔄 Setting document...');
             await setDoc(docRef, newData);
-            console.log('Document set successfully. New counts - Likes:', newLikes, 'Dislikes:', newDislikes);
+            console.log('✅ Document set successfully. New counts - Likes:', newLikes, 'Dislikes:', newDislikes);
+            console.log('📅 lastUpdated timestamp saved:', timestamp);
             
             // Note: The real-time listener will automatically update all displays
             console.log('🌍 Real-time update will propagate to all users automatically');
+            console.log('🔔 All users worldwide will see the new timestamp and counts');
             
         } catch (error) {
             console.error('Error in updateFirestoreCountWithAction:', error);
@@ -1798,7 +1827,7 @@ window.initializeFeedbackDocument = async function() {
 // Function to check current aggregated feedback counts
 window.checkFeedbackCounts = async function() {
     try {
-        console.log('🔍 Checking current feedback counts...');
+        console.log('🔍 Checking current feedback counts and timestamps...');
         const docRef = doc(db, 'feedback', 'pianoFeedback');
         const docSnap = await getDoc(docRef);
         
@@ -1807,12 +1836,33 @@ window.checkFeedbackCounts = async function() {
             const likes = data.likes || 0;
             const dislikes = data.dislikes || 0;
             const total = likes + dislikes;
+            const lastUpdated = data.lastUpdated;
+            const lastAction = data.lastAction;
+            const created = data.created;
+            const totalVotes = data.totalVotes || total;
             
             console.log('📊 CURRENT FEEDBACK TOTALS:');
             console.log(`   👍 Likes: ${likes}`);
             console.log(`   👎 Dislikes: ${dislikes}`);
-            console.log(`   🔢 Total votes: ${total}`);
-            console.log(`   📅 Last updated: ${data.lastUpdated || 'Unknown'}`);
+            console.log(`   🔢 Total votes: ${totalVotes}`);
+            console.log(`   📅 Last updated: ${lastUpdated || 'Unknown'}`);
+            console.log(`   🎯 Last action: ${lastAction || 'Unknown'}`);
+            console.log(`   🏗️ Created: ${created || 'Unknown'}`);
+            
+            if (lastUpdated) {
+                const updateTime = new Date(lastUpdated);
+                const now = new Date();
+                const timeDiff = Math.round((now - updateTime) / 1000);
+                console.log(`   ⏱️ Time since last update: ${timeDiff} seconds ago`);
+                
+                if (timeDiff < 60) {
+                    console.log('   🔥 Very recent activity!');
+                } else if (timeDiff < 3600) {
+                    console.log(`   ⏰ Updated ${Math.round(timeDiff/60)} minutes ago`);
+                } else {
+                    console.log(`   📅 Updated ${Math.round(timeDiff/3600)} hours ago`);
+                }
+            }
             
             // Also update the display
             const likeElement = document.getElementById('like-count');
@@ -1820,7 +1870,7 @@ window.checkFeedbackCounts = async function() {
             if (likeElement) likeElement.textContent = likes;
             if (dislikeElement) dislikeElement.textContent = dislikes;
             
-            return { likes, dislikes, total };
+            return { likes, dislikes, total, lastUpdated, lastAction, created, totalVotes };
         } else {
             console.log('❌ No feedback document found');
             return null;

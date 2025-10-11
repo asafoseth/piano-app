@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timestamp Update Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .test-card {
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
+            padding: 25px;
+            margin: 20px 0;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+        .timestamp-display {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #007bff;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+        }
+        .vote-button {
+            padding: 15px 25px;
+            margin: 10px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: transform 0.2s;
+        }
+        .vote-button:hover {
+            transform: translateY(-2px);
+        }
+        .log {
+            background: #1a1a1a;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-indicator.live {
+            background: #28a745;
+            animation: pulse 1.5s infinite;
+        }
+        .status-indicator.stale {
+            background: #ffc107;
+        }
+        .status-indicator.error {
+            background: #dc3545;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        .timestamp-detail {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .detail-item {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+        }
+        .detail-value {
+            font-weight: bold;
+            font-size: 1.1em;
+            color: #007bff;
+        }
+        button {
+            background: linear-gradient(135deg, #007bff 0%, #6f42c1 100%);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body>
+    <h1>⏰ Timestamp Update Test</h1>
+    <p style="text-align: center; font-size: 1.1em;">Verify that lastUpdated timestamp updates with every vote globally</p>
+
+    <div class="test-card">
+        <h2>📊 Live Feedback Data</h2>
+        <div class="timestamp-detail">
+            <div class="detail-item">
+                <div>👍 Likes</div>
+                <div class="detail-value" id="likes-count">0</div>
+            </div>
+            <div class="detail-item">
+                <div>👎 Dislikes</div>
+                <div class="detail-value" id="dislikes-count">0</div>
+            </div>
+            <div class="detail-item">
+                <div>🔢 Total Votes</div>
+                <div class="detail-value" id="total-votes">0</div>
+            </div>
+            <div class="detail-item">
+                <div>🎯 Last Action</div>
+                <div class="detail-value" id="last-action">None</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>⏰ Timestamp Tracking</h2>
+        <div class="timestamp-display">
+            <div><strong>📅 Last Updated:</strong> <span id="last-updated">Never</span></div>
+            <div><strong>⏱️ Time Ago:</strong> <span id="time-ago">-</span></div>
+            <div><strong>🕐 Local Time:</strong> <span id="local-time">-</span></div>
+            <div><strong>📡 Status:</strong> <span class="status-indicator" id="status-indicator"></span><span id="connection-status">Connecting...</span></div>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>🗳️ Vote to Test Timestamp Updates</h2>
+        <div style="text-align: center;">
+            <button class="vote-button" onclick="vote('like')">👍 Like (Test Timestamp)</button>
+            <button class="vote-button" onclick="vote('dislike')">👎 Dislike (Test Timestamp)</button>
+        </div>
+        <p style="text-align: center; color: #666; margin-top: 15px;">
+            <small>Vote and watch the timestamp update in real-time!</small>
+        </p>
+    </div>
+
+    <div class="test-card">
+        <h2>🧪 Test Controls</h2>
+        <button onclick="checkTimestamps()">🔍 Check Current Timestamps</button>
+        <button onclick="simulateVotes()">🎲 Simulate Multiple Votes</button>
+        <button onclick="clearLog()">📝 Clear Log</button>
+        <button onclick="setInterval(updateTimeAgo, 1000)">⏰ Start Live Timer</button>
+    </div>
+
+    <div class="test-card">
+        <h2>📝 Timestamp Activity Log</h2>
+        <div id="log" class="log">Initializing timestamp tracking...\n</div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+        // Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyDITrrDnAKRWjgQnpwfcyGKdUgjkI4ogA8",
+            authDomain: "ali-piano.firebaseapp.com",
+            projectId: "ali-piano",
+            storageBucket: "ali-piano.firebasestorage.app",
+            messagingSenderId: "806442476961",
+            appId: "1:806442476961:web:365f1a133a33f0ed69d7e0",
+            measurementId: "G-6NG4N6WK95"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let currentData = {};
+        let lastTimestamp = null;
+
+        function log(message) {
+            const logEl = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logEl.textContent += `[${timestamp}] ${message}\n`;
+            logEl.scrollTop = logEl.scrollHeight;
+            console.log(message);
+        }
+
+        function updateDisplay(data) {
+            currentData = data;
+            
+            document.getElementById('likes-count').textContent = data.likes || 0;
+            document.getElementById('dislikes-count').textContent = data.dislikes || 0;
+            document.getElementById('total-votes').textContent = data.totalVotes || 0;
+            document.getElementById('last-action').textContent = data.lastAction || 'None';
+            
+            if (data.lastUpdated) {
+                lastTimestamp = data.lastUpdated;
+                const updateDate = new Date(data.lastUpdated);
+                document.getElementById('last-updated').textContent = updateDate.toLocaleString();
+                document.getElementById('local-time').textContent = updateDate.toLocaleTimeString();
+                updateTimeAgo();
+                
+                // Check if this is a recent update
+                const now = new Date();
+                const timeDiff = (now - updateDate) / 1000;
+                
+                const indicator = document.getElementById('status-indicator');
+                const status = document.getElementById('connection-status');
+                
+                if (timeDiff < 5) {
+                    indicator.className = 'status-indicator live';
+                    status.textContent = 'Live Updates';
+                    log(`🔥 FRESH UPDATE: ${data.lastAction || 'vote'} - ${timeDiff.toFixed(1)}s ago`);
+                } else if (timeDiff < 60) {
+                    indicator.className = 'status-indicator stale';
+                    status.textContent = 'Recent Activity';
+                } else {
+                    indicator.className = 'status-indicator error';
+                    status.textContent = 'Stale Data';
+                }
+            }
+        }
+
+        function updateTimeAgo() {
+            if (lastTimestamp) {
+                const now = new Date();
+                const updateTime = new Date(lastTimestamp);
+                const diffSeconds = Math.floor((now - updateTime) / 1000);
+                
+                let timeAgoText;
+                if (diffSeconds < 60) {
+                    timeAgoText = `${diffSeconds} seconds ago`;
+                } else if (diffSeconds < 3600) {
+                    timeAgoText = `${Math.floor(diffSeconds / 60)} minutes ago`;
+                } else {
+                    timeAgoText = `${Math.floor(diffSeconds / 3600)} hours ago`;
+                }
+                
+                document.getElementById('time-ago').textContent = timeAgoText;
+            }
+        }
+
+        function setupRealtimeListener() {
+            log('⏰ Setting up real-time timestamp listener...');
+            
+            const docRef = doc(db, 'feedback', 'pianoFeedback');
+            
+            onSnapshot(docRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    log(`📡 Real-time update: ${data.lastAction || 'unknown'} at ${data.lastUpdated}`);
+                    updateDisplay(data);
+                } else {
+                    log('⚠️ Document does not exist');
+                }
+            }, (error) => {
+                log(`❌ Real-time listener error: ${error.message}`);
+            });
+        }
+
+        async function vote(voteType) {
+            try {
+                log(`🗳️ Submitting ${voteType} vote with timestamp update...`);
+                
+                const docRef = doc(db, 'feedback', 'pianoFeedback');
+                const docSnap = await getDoc(docRef);
+                
+                let likes = 0;
+                let dislikes = 0;
+                
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    likes = data.likes || 0;
+                    dislikes = data.dislikes || 0;
+                }
+                
+                if (voteType === 'like') {
+                    likes++;
+                } else {
+                    dislikes++;
+                }
+                
+                const timestamp = new Date().toISOString();
+                const newData = {
+                    likes,
+                    dislikes,
+                    totalVotes: likes + dislikes,
+                    lastUpdated: timestamp,
+                    lastAction: `add_${voteType}`,
+                    lastVoteType: voteType,
+                    lastVoteAction: 'add',
+                    lastVoteTimestamp: timestamp
+                };
+                
+                await setDoc(docRef, newData);
+                
+                log(`✅ Vote submitted with timestamp: ${timestamp}`);
+                log(`📊 New totals: ${likes} likes, ${dislikes} dislikes`);
+                
+            } catch (error) {
+                log(`❌ Vote failed: ${error.message}`);
+            }
+        }
+
+        async function checkTimestamps() {
+            try {
+                log('🔍 Manually checking current timestamps...');
+                const docRef = doc(db, 'feedback', 'pianoFeedback');
+                const docSnap = await getDoc(docRef);
+                
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    log('📋 Current document data:');
+                    log(`   📅 lastUpdated: ${data.lastUpdated || 'Not set'}`);
+                    log(`   🏗️ created: ${data.created || 'Not set'}`);
+                    log(`   🎯 lastAction: ${data.lastAction || 'Not set'}`);
+                    log(`   📊 totalVotes: ${data.totalVotes || 0}`);
+                    
+                    updateDisplay(data);
+                } else {
+                    log('❌ No document found');
+                }
+            } catch (error) {
+                log(`❌ Error checking timestamps: ${error.message}`);
+            }
+        }
+
+        async function simulateVotes() {
+            log('🎲 Simulating votes to test timestamp updates...');
+            for (let i = 0; i < 5; i++) {
+                const voteType = Math.random() > 0.5 ? 'like' : 'dislike';
+                await vote(voteType);
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+            log('✅ Vote simulation complete');
+        }
+
+        function clearLog() {
+            document.getElementById('log').textContent = '';
+        }
+
+        // Make functions global
+        window.vote = vote;
+        window.checkTimestamps = checkTimestamps;
+        window.simulateVotes = simulateVotes;
+        window.clearLog = clearLog;
+        window.updateTimeAgo = updateTimeAgo;
+
+        // Initialize
+        log('🚀 Starting timestamp update test...');
+        setupRealtimeListener();
+        checkTimestamps();
+        
+        // Update time ago every second
+        setInterval(updateTimeAgo, 1000);
+    </script>
+</body>
+</html>
