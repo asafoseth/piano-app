@@ -1151,23 +1151,62 @@ class PianoFeedback {
         console.log('Initializing PianoFeedback...');
         console.log('Firebase db object:', db);
         
-        // Test Firebase connectivity
-        await this.testFirebaseConnection();
+        // Test Firebase connectivity and initialize document
+        await this.initializeFeedbackDocument();
         
         await this.loadFeedbackCounts();
         this.setupEventListeners();
         this.checkUserVoteStatus();
     }
 
-    async testFirebaseConnection() {
+    async initializeFeedbackDocument() {
         try {
-            console.log('Testing Firebase connection...');
-            const testDocRef = doc(db, 'test', 'connection');
-            const testDoc = await getDoc(testDocRef);
-            console.log('Firebase connection test successful');
+            console.log('Initializing feedback document...');
+            const docRef = doc(db, 'feedback', this.feedbackDoc);
+            
+            // First, try to read the document to check permissions
+            console.log('Testing read permissions...');
+            const docSnap = await getDoc(docRef);
+            console.log('✅ Read permissions OK');
+            
+            if (!docSnap.exists()) {
+                console.log('Creating initial feedback document...');
+                // Test write permissions
+                const initialData = {
+                    likes: 0,
+                    dislikes: 0,
+                    created: new Date().toISOString(),
+                    lastUpdated: new Date().toISOString(),
+                    version: "1.0"
+                };
+                
+                await setDoc(docRef, initialData);
+                console.log('✅ Initial feedback document created successfully');
+            } else {
+                console.log('✅ Feedback document already exists');
+                
+                // Test write permissions by updating lastAccessed
+                const updateData = {
+                    ...docSnap.data(),
+                    lastAccessed: new Date().toISOString()
+                };
+                await setDoc(docRef, updateData);
+                console.log('✅ Write permissions OK');
+            }
+            
+            console.log('✅ Firebase connection and permissions test successful');
         } catch (error) {
-            console.error('Firebase connection test failed:', error);
-            this.showMessage('Firebase connection failed. Please check your internet connection.');
+            console.error('❌ Firebase initialization failed:', error);
+            console.error('Error code:', error.code);
+            console.error('Error message:', error.message);
+            
+            if (error.code === 'permission-denied') {
+                console.error('🔒 PERMISSION DENIED: Firestore security rules are blocking access');
+                console.error('💡 SOLUTION: Update your Firestore security rules to allow feedback collection access');
+                this.showMessage('🔒 Database permissions need to be updated. Using offline mode for now.');
+            } else {
+                this.showMessage('🔧 Firebase connection failed. Using offline mode.');
+            }
         }
     }
 
@@ -1187,19 +1226,26 @@ class PianoFeedback {
                 dislikes = data.dislikes || 0;
             } else {
                 console.log('Document does not exist, creating new one...');
-                // If document doesn't exist, create it
-                await setDoc(docRef, {
+                // If document doesn't exist, create it with initial values
+                const initialData = {
                     likes: 0,
                     dislikes: 0,
+                    created: new Date().toISOString(),
                     lastUpdated: new Date().toISOString()
-                });
-                console.log('New document created');
+                };
+                
+                await setDoc(docRef, initialData);
+                console.log('New document created successfully');
+                likes = 0;
+                dislikes = 0;
             }
 
             this.updateCountDisplay(likes, dislikes);
-            console.log('Feedback counts loaded successfully');
+            console.log('Feedback counts loaded successfully - Likes:', likes, 'Dislikes:', dislikes);
         } catch (error) {
             console.error('Error loading feedback counts:', error);
+            console.error('Error details:', error.code, error.message);
+            
             // Try to load from localStorage as fallback
             const storedLikes = localStorage.getItem('piano_likes_count') || '0';
             const storedDislikes = localStorage.getItem('piano_dislikes_count') || '0';
@@ -1288,9 +1334,10 @@ class PianoFeedback {
             console.error('Error message:', error.message);
             btn.classList.remove('loading');
             
-            // If permission denied, fall back to localStorage
+            // Handle specific Firebase errors
             if (error.code === 'permission-denied') {
                 console.log('Permission denied, falling back to localStorage');
+                this.showMessage('⚠️ Firebase permission issue detected. Using local storage mode.');
                 const currentVote = this.getUserCurrentVote();
                 let action = 'none';
                 if (currentVote === null) {
@@ -1302,9 +1349,32 @@ class PianoFeedback {
                 }
                 this.handleAnonymousVoteAction(voteType, action, btn, oppositeBtn);
             } else if (error.code === 'unavailable') {
-                this.showMessage('Firebase is currently unavailable. Please try again later.');
+                this.showMessage('🔧 Firebase is currently unavailable. Using offline mode.');
+                // Also fall back to localStorage for unavailable
+                const currentVote = this.getUserCurrentVote();
+                let action = 'none';
+                if (currentVote === null) {
+                    action = 'add';
+                } else if (currentVote === voteType) {
+                    action = 'remove';
+                } else {
+                    action = 'switch';
+                }
+                this.handleAnonymousVoteAction(voteType, action, btn, oppositeBtn);
+            } else if (error.code === 'unauthenticated') {
+                this.showMessage('🔑 Authentication required for cloud sync. Using local storage.');
+                const currentVote = this.getUserCurrentVote();
+                let action = 'none';
+                if (currentVote === null) {
+                    action = 'add';
+                } else if (currentVote === voteType) {
+                    action = 'remove';
+                } else {
+                    action = 'switch';
+                }
+                this.handleAnonymousVoteAction(voteType, action, btn, oppositeBtn);
             } else {
-                this.showMessage(`Error: ${error.message || 'Unknown error occurred'}`);
+                this.showMessage(`❌ Error: ${error.message || 'Unknown error occurred'}`);
             }
         }
     }
@@ -1367,7 +1437,7 @@ class PianoFeedback {
             // Get current counts
             console.log('Getting document...');
             const docSnap = await getDoc(docRef);
-            console.log('Document snapshot received:', docSnap.exists());
+            console.log('Document snapshot received. Exists:', docSnap.exists());
             
             let currentLikes = 0;
             let currentDislikes = 0;
@@ -1378,7 +1448,10 @@ class PianoFeedback {
                 currentLikes = data.likes || 0;
                 currentDislikes = data.dislikes || 0;
             } else {
-                console.log('Document does not exist, will create new one');
+                console.log('Document does not exist, will create new one with initial values');
+                // Initialize with zero values since document doesn't exist
+                currentLikes = 0;
+                currentDislikes = 0;
             }
 
             let newLikes = currentLikes;
@@ -1411,16 +1484,20 @@ class PianoFeedback {
             const newData = {
                 likes: newLikes,
                 dislikes: newDislikes,
-                lastUpdated: new Date().toISOString()
+                lastUpdated: new Date().toISOString(),
+                // Add created timestamp if this is a new document
+                ...(docSnap.exists() ? {} : { created: new Date().toISOString() })
             };
             
             console.log('New data to be saved:', newData);
             console.log('Setting document...');
             await setDoc(docRef, newData);
-            console.log('Document set successfully');
+            console.log('Document set successfully. New counts - Likes:', newLikes, 'Dislikes:', newDislikes);
             
         } catch (error) {
             console.error('Error in updateFirestoreCountWithAction:', error);
+            console.error('Error code:', error.code);
+            console.error('Error message:', error.message);
             throw error; // Re-throw to be caught by handleVote
         }
     }
@@ -1534,3 +1611,39 @@ document.addEventListener('DOMContentLoaded', () => {
         new PianoFeedback();
     }, 1000);
 });
+
+// Manual function to initialize feedback document (for testing)
+window.initializeFeedbackDocument = async function() {
+    try {
+        console.log('Manually initializing feedback document...');
+        const docRef = doc(db, 'feedback', 'pianoFeedback');
+        
+        const initialData = {
+            likes: 0,
+            dislikes: 0,
+            created: new Date().toISOString(),
+            lastUpdated: new Date().toISOString(),
+            version: "1.0",
+            description: "Piano app feedback counters"
+        };
+        
+        await setDoc(docRef, initialData);
+        console.log('✅ Feedback document created successfully!');
+        console.log('Document data:', initialData);
+        
+        // Verify it was created
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+            console.log('✅ Verification successful - document exists in Firestore');
+            console.log('Retrieved data:', docSnap.data());
+        } else {
+            console.log('❌ Verification failed - document not found');
+        }
+        
+        return true;
+    } catch (error) {
+        console.error('❌ Failed to initialize feedback document:', error);
+        console.error('Error details:', error.code, error.message);
+        return false;
+    }
+};

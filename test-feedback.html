@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feedback Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .feedback-btn {
+            padding: 10px 20px;
+            margin: 10px;
+            font-size: 18px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            background: #f9f9f9;
+        }
+        .feedback-btn.clicked {
+            background: #4CAF50;
+            color: white;
+            border-color: #45a049;
+        }
+        .feedback-btn.loading {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .count {
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        #feedback-message {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        #feedback-message.show {
+            opacity: 1;
+            background: #e8f5e8;
+            border: 1px solid #4CAF50;
+        }
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 8px;
+            background: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Piano Feedback System Test</h1>
+    
+    <div class="status">
+        <h3>Connection Status:</h3>
+        <p id="connection-status">Testing Firebase connection...</p>
+        <p id="user-status">User: Not logged in</p>
+    </div>
+
+    <div class="feedback-section">
+        <h3>Did you enjoy this piano session?</h3>
+        <div class="feedback-buttons">
+            <button id="like-btn" class="feedback-btn">
+                👍 Like <span id="like-count" class="count">0</span>
+            </button>
+            <button id="dislike-btn" class="feedback-btn">
+                👎 Dislike <span id="dislike-count" class="count">0</span>
+            </button>
+        </div>
+        <p id="feedback-message"></p>
+    </div>
+
+    <div class="status">
+        <h3>Debug Info:</h3>
+        <pre id="debug-info">Loading...</pre>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+        // Your Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyDITrrDnAKRWjgQnpwfcyGKdUgjkI4ogA8",
+            authDomain: "ali-piano.firebaseapp.com",
+            projectId: "ali-piano",
+            storageBucket: "ali-piano.firebasestorage.app",
+            messagingSenderId: "806442476961",
+            appId: "1:806442476961:web:365f1a133a33f0ed69d7e0",
+            measurementId: "G-6NG4N6WK95"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let debugInfo = {
+            firebaseInitialized: false,
+            firestoreConnected: false,
+            currentLikes: 0,
+            currentDislikes: 0,
+            userVote: null,
+            lastError: null
+        };
+
+        function updateDebugInfo() {
+            document.getElementById('debug-info').textContent = JSON.stringify(debugInfo, null, 2);
+        }
+
+        // Test Firebase connection
+        async function testConnection() {
+            try {
+                debugInfo.firebaseInitialized = true;
+                document.getElementById('connection-status').textContent = "Firebase initialized ✅";
+                
+                // Test Firestore read permissions
+                console.log('Testing Firestore read permissions...');
+                const testDoc = await getDoc(doc(db, 'feedback', 'pianoFeedback'));
+                debugInfo.firestoreConnected = true;
+                
+                // Test write permissions
+                console.log('Testing Firestore write permissions...');
+                if (!testDoc.exists()) {
+                    // Try to create the document
+                    await setDoc(doc(db, 'feedback', 'pianoFeedback'), {
+                        likes: 0,
+                        dislikes: 0,
+                        created: new Date().toISOString(),
+                        lastUpdated: new Date().toISOString()
+                    });
+                    console.log('✅ Document created successfully');
+                } else {
+                    // Try to update existing document
+                    const data = testDoc.data();
+                    await setDoc(doc(db, 'feedback', 'pianoFeedback'), {
+                        ...data,
+                        lastTested: new Date().toISOString()
+                    });
+                    console.log('✅ Document updated successfully');
+                }
+                
+                document.getElementById('connection-status').textContent = "Firebase & Firestore connected with write permissions ✅";
+                
+                // Load current counts
+                if (testDoc.exists()) {
+                    const data = testDoc.data();
+                    debugInfo.currentLikes = data.likes || 0;
+                    debugInfo.currentDislikes = data.dislikes || 0;
+                } else {
+                    debugInfo.currentLikes = 0;
+                    debugInfo.currentDislikes = 0;
+                }
+                
+                updateCounts();
+                
+            } catch (error) {
+                debugInfo.lastError = error.message;
+                console.error('Firebase test failed:', error);
+                
+                if (error.code === 'permission-denied') {
+                    document.getElementById('connection-status').innerHTML = `
+                        <span style="color: red;">❌ Permission Denied</span><br>
+                        <small>Firestore security rules are blocking access. See console for solution.</small>
+                    `;
+                    console.error('🔒 PERMISSION DENIED ERROR');
+                    console.error('💡 SOLUTION: Update your Firestore security rules');
+                    console.error('📋 Add this to your Firestore rules:');
+                    console.error(`
+match /feedback/{document} {
+  allow read, write: if true;
+}
+                    `);
+                } else {
+                    document.getElementById('connection-status').textContent = `Connection failed: ${error.message}`;
+                }
+            }
+            updateDebugInfo();
+        }
+
+        function updateCounts() {
+            document.getElementById('like-count').textContent = debugInfo.currentLikes;
+            document.getElementById('dislike-count').textContent = debugInfo.currentDislikes;
+        }
+
+        // Monitor auth state
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                document.getElementById('user-status').textContent = `User: ${user.email || user.displayName || 'Authenticated'}`;
+            } else {
+                document.getElementById('user-status').textContent = 'User: Not logged in (using localStorage fallback)';
+            }
+        });
+
+        // Handle votes
+        async function handleVote(voteType) {
+            const btn = document.getElementById(`${voteType}-btn`);
+            btn.classList.add('loading');
+            
+            try {
+                // Get current document
+                const docRef = doc(db, 'feedback', 'pianoFeedback');
+                const docSnap = await getDoc(docRef);
+                
+                let likes = 0;
+                let dislikes = 0;
+                
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    likes = data.likes || 0;
+                    dislikes = data.dislikes || 0;
+                }
+                
+                // Determine current user vote
+                const currentVote = localStorage.getItem('piano_user_vote');
+                let action = 'add';
+                
+                if (currentVote === voteType) {
+                    action = 'remove';
+                } else if (currentVote) {
+                    action = 'switch';
+                }
+                
+                // Apply changes
+                if (action === 'add') {
+                    if (voteType === 'like') likes++;
+                    else dislikes++;
+                } else if (action === 'remove') {
+                    if (voteType === 'like') likes = Math.max(0, likes - 1);
+                    else dislikes = Math.max(0, dislikes - 1);
+                } else if (action === 'switch') {
+                    if (voteType === 'like') {
+                        likes++;
+                        dislikes = Math.max(0, dislikes - 1);
+                    } else {
+                        dislikes++;
+                        likes = Math.max(0, likes - 1);
+                    }
+                }
+                
+                // Save to Firestore
+                await setDoc(docRef, {
+                    likes,
+                    dislikes,
+                    lastUpdated: new Date().toISOString()
+                });
+                
+                // Update local storage
+                localStorage.setItem('piano_user_vote', action === 'remove' ? '' : voteType);
+                
+                // Update UI
+                debugInfo.currentLikes = likes;
+                debugInfo.currentDislikes = dislikes;
+                debugInfo.userVote = action === 'remove' ? null : voteType;
+                
+                updateCounts();
+                updateButtonStates();
+                
+                showMessage(`${action === 'remove' ? 'Removed' : action === 'switch' ? 'Changed to' : 'Added'} ${voteType}!`);
+                
+            } catch (error) {
+                debugInfo.lastError = error.message;
+                showMessage(`Error: ${error.message}`);
+                console.error('Vote failed:', error);
+            }
+            
+            btn.classList.remove('loading');
+            updateDebugInfo();
+        }
+
+        function updateButtonStates() {
+            const currentVote = localStorage.getItem('piano_user_vote');
+            
+            document.getElementById('like-btn').classList.toggle('clicked', currentVote === 'like');
+            document.getElementById('dislike-btn').classList.toggle('clicked', currentVote === 'dislike');
+        }
+
+        function showMessage(text) {
+            const msg = document.getElementById('feedback-message');
+            msg.textContent = text;
+            msg.classList.add('show');
+            setTimeout(() => msg.classList.remove('show'), 3000);
+        }
+
+        // Event listeners
+        document.getElementById('like-btn').addEventListener('click', () => handleVote('like'));
+        document.getElementById('dislike-btn').addEventListener('click', () => handleVote('dislike'));
+
+        // Initialize
+        testConnection();
+        updateButtonStates();
+        updateDebugInfo();
+    </script>
+</body>
+</html>
