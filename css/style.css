@@ -5,23 +5,26 @@
 }
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500&display=swap');
 
-/* iOS Safari optimizations - Simplified for better pinch-zoom */
+/* iOS Safari optimizations - Allow pinch-zoom while maintaining functionality */
 html, body {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
-  min-width: 1024px; /* Force minimum width for desktop view */
+  /* Removed min-width to allow responsive design and zoom */
 }
 
-button, input, canvas {
+/* Only prevent selection on specific interactive elements, not globally */
+button, input[type="text"], input[type="email"], input[type="password"], canvas, .key, .tab-note-input {
   -webkit-user-select: none;
   -webkit-touch-callout: none;
   user-select: none;
 }
 
-/* Force desktop layout on all devices */
+/* Allow pinch-zoom by ensuring body doesn't force desktop layout */
 body {
-  min-width: 1024px;
-  overflow-x: auto; /* Allow horizontal scrolling if needed */
+  /* Removed min-width: 1024px; to allow responsive behavior */
+  overflow-x: auto;
+  /* Enable touch-action for zoom gestures */
+  touch-action: pan-x pan-y pinch-zoom;
 }
 
 * {

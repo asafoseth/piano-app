@@ -500,7 +500,9 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
         const keyElement = event.target.closest('.key');
         if (!keyElement) return;
 
-        event.preventDefault(); // Prevent default touch actions like scrolling
+        // Only prevent default if we're actually touching a piano key
+        // This allows pinch-zoom on other parts of the app
+        event.preventDefault(); // Prevent default touch actions like scrolling on piano keys
         if (audioContext.state === "suspended") {
             audioContext.resume().catch(err => console.error("Error resuming AudioContext:", err));
         }
@@ -657,12 +659,17 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
         }
     });
 
-    // Touch support for piano roll
+    // Touch support for piano roll - Allow pinch-zoom on non-piano areas
     let isTouchDown = false;
     pianoContainer.addEventListener("touchstart", (e) => {
-        isTouchDown = true;
-        handleInteractionStart(e);
-    }, { passive: false });
+        // Check if touch is on a piano key
+        const keyElement = e.target.closest('.key');
+        if (keyElement) {
+            // Only handle piano key touches, allow pinch-zoom elsewhere
+            isTouchDown = true;
+            handleInteractionStart(e);
+        }
+    }, { passive: true }); // Use passive: true to allow pinch-zoom
     pianoContainer.addEventListener("touchend", (e) => {
         isTouchDown = false;
         handleInteractionEnd(e);
@@ -690,10 +697,28 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
         }
     });
 
-    // Touch Listeners (ADD THESE)
-    pianoContainer.addEventListener("touchstart", handleInteractionStart, { passive: false }); // Use passive: false because we call preventDefault
-    pianoContainer.addEventListener("touchend", handleInteractionEnd);
-    pianoContainer.addEventListener("touchcancel", handleInteractionEnd); // Handle cancellation (e.g., finger slides off screen)
+    // Touch Listeners - Selective handling for piano keys only
+    // Note: Piano key touch handling is already set up above with selective event handling
+    // These additional listeners are for touch end/cancel events
+    pianoContainer.addEventListener("touchend", (e) => {
+        if (isTouchDown) {
+            isTouchDown = false;
+            handleInteractionEnd(e);
+            lastKeyIndex = null;
+            resetAllKeyVisuals();
+            activeKeys.clear();
+        }
+    }, { passive: true });
+    
+    pianoContainer.addEventListener("touchcancel", (e) => {
+        if (isTouchDown) {
+            isTouchDown = false;
+            handleInteractionEnd(e);
+            lastKeyIndex = null;
+            resetAllKeyVisuals();
+            activeKeys.clear();
+        }
+    }, { passive: true });
 
     // --- End Listener Attachments ---
 

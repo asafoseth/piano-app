@@ -1,56 +1,64 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <!-- Simplified iOS viewport for better pinch-zoom -->
-    <meta name="viewport" content="width=1024, initial-scale=0.5, user-scalable=yes">
+    <!-- iOS-friendly viewport that allows pinch-to-zoom -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=0.5, maximum-scale=3.0, user-scalable=yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>UA Piano (Demo)</title>
     <!-- Style CSS -->
     <link rel="stylesheet" href="css/style.css">
     <script>
-      // Simplified iOS zoom - No interference with pinch-to-zoom
+      // iOS pinch-zoom optimization - Allow natural zoom behavior
       window.addEventListener('DOMContentLoaded', function() {
-        // Detect iOS devices specifically
         const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent);
         const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
         
-        if (isIOSDevice && isSafari) {
-          console.log('iOS detected - enabling natural pinch-zoom');
+        if (isIOSDevice) {
+          console.log('iOS detected - enabling pinch-zoom support');
           
-          // Just ensure no conflicting styles
+          // Remove any conflicting transform styles
           document.body.style.transform = "";
           document.body.style.zoom = "";
-          document.body.style.width = "";
-          document.body.style.height = "";
           
-          // Add simple CSS for iOS optimization
+          // Add iOS-optimized CSS that doesn't interfere with pinch-zoom
           const style = document.createElement('style');
           style.textContent = `
-            /* iOS pinch-zoom optimization */
-            * {
-              -webkit-user-select: none;
-              -webkit-touch-callout: none;
-              user-select: none;
-            }
-            
-            /* Allow natural zooming */
-            html {
-              -webkit-text-size-adjust: none;
-              text-size-adjust: none;
-            }
-            
-            /* Ensure piano doesn't break during zoom */
+            /* iOS pinch-zoom friendly styles */
             .piano-container {
               position: relative;
+              /* Allow zoom and pan */
+              transform-origin: top left;
             }
             
             .piano-keys {
               display: flex !important;
               flex-wrap: nowrap !important;
+              /* Maintain layout during zoom */
+              min-width: max-content;
+            }
+            
+            /* Only prevent text selection on interactive elements, not touch gestures */
+            .key, .tab-note-input, .feedback-btn {
+              -webkit-user-select: none;
+              user-select: none;
             }
           `;
           document.head.appendChild(style);
+          
+          // Enable pinch-zoom by ensuring no gesture prevention
+          document.addEventListener('gesturestart', function(e) {
+            // Allow pinch gestures - do not prevent default
+            console.log('Pinch gesture detected - allowing zoom');
+          }, { passive: true });
+          
+          document.addEventListener('gesturechange', function(e) {
+            // Allow pinch gestures - do not prevent default
+          }, { passive: true });
+          
+          document.addEventListener('gestureend', function(e) {
+            // Allow pinch gestures - do not prevent default
+          }, { passive: true });
         }
       });
     </script>

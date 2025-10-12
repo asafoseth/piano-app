@@ -925,20 +925,30 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Prevent double-tap zoom on tab inputs for all devices
+    // iOS optimizations - Allow pinch-zoom while preventing input auto-zoom
     let lastTouchEnd = 0;
     document.addEventListener('touchend', function (event) {
         const now = (new Date()).getTime();
-        if (now - lastTouchEnd <= 300) {
+        // Only prevent double-tap zoom on input fields, not globally
+        if (event.target.tagName === 'INPUT' && now - lastTouchEnd <= 300) {
             event.preventDefault();
         }
         lastTouchEnd = now;
     }, false);
 
-    // Prevent pinch-zoom
+    // Allow pinch-zoom gestures - do not prevent them
     document.addEventListener('gesturestart', function (e) {
-        e.preventDefault();
-    });
+        console.log('Pinch gesture started - allowing zoom');
+        // Do not prevent default - allow pinch-zoom
+    }, { passive: true });
+    
+    document.addEventListener('gesturechange', function (e) {
+        // Do not prevent default - allow pinch-zoom
+    }, { passive: true });
+    
+    document.addEventListener('gestureend', function (e) {
+        // Do not prevent default - allow pinch-zoom
+    }, { passive: true });
 });
 
 // Enhanced undo/redo stack for TAB fields
