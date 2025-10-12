@@ -38,6 +38,23 @@
   user-select: none;
 }
 
+/* Desktop forced mode tab input optimizations */
+.desktop-forced .tab-note-input {
+  font-size: 16px !important;
+  -webkit-text-size-adjust: none !important;
+  text-size-adjust: none !important;
+  touch-action: manipulation;
+}
+
+.desktop-forced .tab-note-input:focus {
+  font-size: 16px !important;
+  -webkit-text-size-adjust: none !important;
+  text-size-adjust: none !important;
+  /* Ensure no viewport changes on focus in desktop mode */
+  zoom: 1 !important;
+  transform: none !important;
+}
+
 .tab-note-entry.tab-highlight {
     background: linear-gradient(90deg, #ffe066 0%, #ffd700 100%);
     box-shadow: 0 0 8px 2px #ffd70099;

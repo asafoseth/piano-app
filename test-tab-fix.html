@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tab Field Mobile View Fix Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        .status {
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .pass { color: green; }
+        .fail { color: red; }
+        .info { color: blue; }
+        button {
+            padding: 10px 15px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            background: #4CAF50;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .test-input {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+            width: 200px;
+        }
+        #viewport-monitor {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div id="viewport-monitor">
+        <div>Viewport: <span id="viewport-content">Loading...</span></div>
+        <div>View: <span id="view-type">Desktop</span></div>
+        <div>Width: <span id="viewport-width">-</span>px</div>
+    </div>
+
+    <h1>Tab Field Mobile View Fix Test</h1>
+    
+    <div class="test-section">
+        <h2>Problem Description</h2>
+        <p><strong>Issue:</strong> When selecting tab fields in the piano app, the view changes to mobile view.</p>
+        <p><strong>Root Cause:</strong> JavaScript was changing viewport settings on input focus to prevent zoom.</p>
+        <p><strong>Fix:</strong> Modified the focus handler to use CSS font-size instead of viewport changes.</p>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test Instructions</h2>
+        <ol>
+            <li>Open the piano app: <button onclick="openPianoApp()">Open Piano App</button></li>
+            <li>Watch the viewport monitor (top-right corner) for changes</li>
+            <li>Click on any tab input field in the piano app</li>
+            <li>Verify that the viewport doesn't change to mobile view</li>
+            <li>Test multiple tab fields to ensure consistency</li>
+        </ol>
+    </div>
+    
+    <div class="test-section">
+        <h2>Local Input Test</h2>
+        <p>Test input focus behavior locally (should NOT change viewport):</p>
+        <input type="text" class="test-input" placeholder="Test Tab Field 1">
+        <input type="text" class="test-input" placeholder="Test Tab Field 2">
+        <input type="text" class="test-input" placeholder="Test Tab Field 3">
+        <p><strong>Expected:</strong> Clicking these inputs should not change the viewport settings.</p>
+    </div>
+    
+    <div class="test-section">
+        <h2>Device Information</h2>
+        <div id="device-info">Loading...</div>
+    </div>
+
+    <script>
+        function openPianoApp() {
+            window.open('index.html', '_blank');
+        }
+        
+        function updateViewportMonitor() {
+            const viewport = document.querySelector('meta[name=viewport]');
+            const viewportContent = viewport ? viewport.getAttribute('content') : 'None';
+            const width = window.innerWidth;
+            
+            document.getElementById('viewport-content').textContent = viewportContent;
+            document.getElementById('viewport-width').textContent = width;
+            
+            // Determine view type based on viewport content
+            let viewType = 'Desktop';
+            if (viewportContent.includes('width=device-width')) {
+                viewType = 'Mobile';
+            } else if (viewportContent.includes('width=1200')) {
+                viewType = 'Desktop Forced';
+            }
+            
+            document.getElementById('view-type').textContent = viewType;
+            document.getElementById('view-type').className = viewType === 'Mobile' ? 'fail' : 'pass';
+        }
+        
+        function detectDevice() {
+            const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent);
+            const isWindows = /Windows/.test(navigator.userAgent);
+            const isAndroid = /Android/.test(navigator.userAgent);
+            const isMobile = /Mobi|Android/i.test(navigator.userAgent);
+            
+            let deviceType = 'Desktop';
+            if (isIOSDevice) deviceType = 'iOS';
+            else if (isAndroid) deviceType = 'Android';
+            else if (isWindows) deviceType = 'Windows';
+            
+            const deviceInfo = `
+                <strong>Device Type:</strong> ${deviceType}<br>
+                <strong>Mobile:</strong> ${isMobile ? 'Yes' : 'No'}<br>
+                <strong>User Agent:</strong> ${navigator.userAgent.substring(0, 100)}...
+            `;
+            
+            document.getElementById('device-info').innerHTML = deviceInfo;
+        }
+        
+        // Monitor viewport changes
+        let lastViewportContent = '';
+        function monitorViewport() {
+            const viewport = document.querySelector('meta[name=viewport]');
+            const currentContent = viewport ? viewport.getAttribute('content') : '';
+            
+            if (currentContent !== lastViewportContent) {
+                console.log('Viewport changed from:', lastViewportContent, 'to:', currentContent);
+                lastViewportContent = currentContent;
+                updateViewportMonitor();
+            }
+        }
+        
+        // Initialize
+        window.addEventListener('DOMContentLoaded', function() {
+            detectDevice();
+            updateViewportMonitor();
+            
+            // Monitor viewport changes every 500ms
+            setInterval(monitorViewport, 500);
+            
+            // Monitor input focus events
+            const inputs = document.querySelectorAll('input');
+            inputs.forEach(input => {
+                input.addEventListener('focus', function() {
+                    console.log('Input focused, checking viewport...');
+                    setTimeout(updateViewportMonitor, 100);
+                });
+                
+                input.addEventListener('blur', function() {
+                    console.log('Input blurred, checking viewport...');
+                    setTimeout(updateViewportMonitor, 100);
+                });
+            });
+        });
+        
+        // Window resize handler
+        window.addEventListener('resize', updateViewportMonitor);
+    </script>
+</body>
+</html>

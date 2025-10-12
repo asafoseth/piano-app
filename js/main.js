@@ -148,17 +148,19 @@ document.addEventListener("DOMContentLoaded", () => {
     const inputs = document.querySelectorAll('input[type="text"], input[type="email"], input[type="password"], textarea');
     inputs.forEach(input => {
       input.addEventListener('focus', function() {
-        // Temporarily adjust viewport to prevent zoom
-        const viewport = document.querySelector('meta[name=viewport]');
-        if (viewport) {
-          const originalContent = viewport.getAttribute('content');
-          viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
-          
-          input.addEventListener('blur', function() {
-            // Restore original viewport after blur
-            viewport.setAttribute('content', originalContent);
-          }, { once: true });
+        // Instead of changing viewport, use CSS to prevent zoom
+        // Apply font-size: 16px to prevent iOS zoom without changing viewport
+        if (isIOS && !input.style.fontSize) {
+          input.style.fontSize = '16px';
         }
+        
+        // Add focused class for styling
+        input.classList.add('ios-input-focused');
+      });
+      
+      input.addEventListener('blur', function() {
+        // Remove focused class
+        input.classList.remove('ios-input-focused');
       });
     });
     
