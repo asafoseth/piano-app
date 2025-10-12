@@ -1,3 +1,43 @@
+/* Desktop Forced Mode Styles for iOS and Windows */
+.desktop-forced {
+  min-width: 1200px !important;
+  overflow-x: auto !important;
+}
+
+.desktop-forced.ios-desktop {
+  /* iOS specific desktop view optimizations */
+  -webkit-text-size-adjust: none !important;
+  text-size-adjust: none !important;
+}
+
+.desktop-forced.windows-desktop {
+  /* Windows specific desktop view optimizations */
+  -ms-text-size-adjust: none !important;
+  text-size-adjust: none !important;
+}
+
+/* Ensure piano container works in desktop forced mode */
+.desktop-forced .piano-container {
+  min-width: 1200px;
+  position: relative;
+  margin: 0 auto;
+}
+
+/* Piano keys layout for desktop forced mode */
+.desktop-forced .piano-keys {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  min-width: max-content;
+  justify-content: center;
+}
+
+/* Touch optimizations for desktop forced mode */
+.desktop-forced .key {
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
 .tab-note-entry.tab-highlight {
     background: linear-gradient(90deg, #ffe066 0%, #ffd700 100%);
     box-shadow: 0 0 8px 2px #ffd70099;
@@ -12,11 +52,64 @@ html, body {
   /* Removed min-width to allow responsive design and zoom */
 }
 
+/* Mobile device specific styles */
+.mobile-device {
+  /* Optimize touch interactions */
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.ios-device {
+  /* iOS-specific optimizations */
+  -webkit-overflow-scrolling: touch;
+}
+
+.android-device {
+  /* Android-specific optimizations */
+  overscroll-behavior: contain;
+}
+
+.windows-mobile-device {
+  /* Windows Mobile-specific optimizations */
+  -ms-touch-action: manipulation;
+  touch-action: manipulation;
+}
+
 /* Only prevent selection on specific interactive elements, not globally */
 button, input[type="text"], input[type="email"], input[type="password"], canvas, .key, .tab-note-input {
   -webkit-user-select: none;
   -webkit-touch-callout: none;
   user-select: none;
+}
+
+/* Enhanced mobile touch targets */
+@media (pointer: coarse) {
+  .key {
+    min-height: 48px !important; /* Minimum touch target size */
+    min-width: 48px !important;
+    padding: 4px !important;
+  }
+  
+  button, .btn {
+    min-height: 48px !important;
+    min-width: 48px !important;
+    padding: 12px 20px !important;
+    font-size: 16px !important;
+  }
+  
+  /* Increase spacing between touch elements */
+  .controls-container,
+  .options-panel {
+    gap: 16px !important;
+  }
+  
+  /* Larger tap areas for small controls */
+  .transpose-btn {
+    min-width: 56px !important;
+    min-height: 56px !important;
+    font-size: 24px !important;
+  }
 }
 
 /* Allow pinch-zoom by ensuring body doesn't force desktop layout */
@@ -1101,53 +1194,234 @@ nav {
     background: #35355a;
 }
 
-/* Mobile responsive CSS disabled - Force desktop view on all devices
+/* Piano key mobile optimizations */
 @media screen and (max-width: 768px) {
     .piano-container {
-        padding: 2em 0.5em 1em 0.5em;
-        transform: scale(0.6);
+        padding: 1em 0.5em 1em 0.5em;
+        transform: scale(0.8);
         transform-origin: center top;
         margin-top: 10px;
-        margin-bottom: -100px;
+        margin-bottom: -50px;
+        overflow-x: auto;
+        /* Mobile-specific piano optimizations */
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-x: contain;
+        scroll-snap-type: x proximity;
+    }
+    
+    .piano-keys {
+        /* Improve touch scrolling on mobile */
+        will-change: transform;
+        contain: layout style paint;
+        scroll-snap-align: start;
+    }
+    
+    /* Enhanced mobile piano keys */
+    .key {
+        /* Better touch response */
+        -webkit-tap-highlight-color: rgba(255, 255, 255, 0.2) !important;
+        tap-highlight-color: rgba(255, 255, 255, 0.2) !important;
+        
+        /* Smoother transitions for touch */
+        transition: all 0.15s ease !important;
+        
+        /* Prevent text selection during touch */
+        -webkit-user-select: none !important;
+        user-select: none !important;
+        -webkit-touch-callout: none !important;
+        
+        /* Optimize for touch performance */
+        will-change: transform, background-color !important;
+        contain: layout style paint !important;
+        
+        /* Minimum touch target size - accessibility guideline */
+        min-height: 48px !important;
+        min-width: 35px !important;
+        
+        /* Touch feedback */
+        cursor: pointer !important;
+        transform-style: preserve-3d !important;
+    }
+    
+    /* Enhanced touch feedback for white keys */
+    .white-key {
+        min-width: 35px !important;
+        height: 140px !important;
+        /* Touch-specific shadow for depth */
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 
+                    0 0 0 1px rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    /* Enhanced touch feedback for black keys */
+    .black-key {
+        min-width: 25px !important;
+        height: 90px !important;
+        /* Slightly larger touch area */
+        padding: 2px !important;
+        /* Touch-specific shadow */
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3),
+                    inset 0 1px 2px rgba(255, 255, 255, 0.1) !important;
+    }
+    
+    /* Active/pressed state optimizations */
+    .key.pressed,
+    .key:active {
+        transform: translateY(2px) scale(0.98) !important;
+        filter: brightness(0.9) !important;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+    }
+    
+    .white-key.pressed,
+    .white-key:active {
+        background: linear-gradient(to bottom, #f0f0f0 0%, #e0e0e0 100%) !important;
+    }
+    
+    .black-key.pressed,
+    .black-key:active {
+        background: linear-gradient(to bottom, #1a1a1a 0%, #000000 100%) !important;
+    }
+    
+    /* Hover effects for devices that support them */
+    @media (hover: hover) {
+        .key:hover {
+            transform: translateY(-1px) !important;
+            filter: brightness(1.05) !important;
+        }
     }
     
     .piano-title {
-        font-size: 1.5em;
-        margin-bottom: -50px;
+        font-size: 1.8em;
+        margin-bottom: -30px;
+        text-align: center;
     }
     
     .container {
-        padding: 1em;
+        padding: 1em 0.5em;
         min-height: auto;
     }
     
     .container > h1 {
-        font-size: 36px;
-        margin-bottom: 10px;
+        font-size: 32px;
+        margin-bottom: 15px;
+        text-align: center;
     }
     
     button {
-        min-height: 44px;
-        padding: 8px 16px;
+        min-height: 48px; /* Better touch target size */
+        padding: 12px 20px;
+        font-size: 16px;
+        margin: 8px 4px;
+        border-radius: 8px;
+        /* Touch optimizations */
+        -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+        tap-highlight-color: rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Touch-friendly controls */
+    .controls-container {
+        flex-direction: column !important;
+        gap: 15px !important;
+        padding: 15px !important;
+        /* Better spacing for touch */
+        margin: 20px 0 !important;
+    }
+    
+    .options-panel {
+        flex-direction: column !important;
+        align-items: center !important;
+        gap: 12px !important;
+        /* Touch-friendly spacing */
+        padding: 20px !important;
+    }
+    
+    /* Mobile navigation */
+    header {
+        padding: 10px 15px !important;
+        /* Touch-optimized header */
+        min-height: 60px !important;
+    }
+    
+    nav ul {
+        flex-direction: column !important;
+        gap: 10px !important;
+    }
+    
+    nav li {
+        width: 100% !important;
+        text-align: center !important;
+        /* Better touch targets */
+        min-height: 48px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+    
+    /* Touch feedback for all interactive elements */
+    button:active,
+    .btn:active,
+    .key:active {
+        transform: scale(0.95) !important;
+        transition: transform 0.1s ease !important;
     }
 }
 
 @media screen and (max-width: 480px) {
     .piano-container {
-        transform: scale(0.5);
-        margin-bottom: -150px;
+        transform: scale(0.65);
+        margin-bottom: -80px;
+        padding: 0.5em 0.25em;
     }
     
     .piano-title {
-        font-size: 1.2em;
-        margin-bottom: -40px;
+        font-size: 1.5em;
+        margin-bottom: -25px;
+    }
+    
+    .container {
+        padding: 0.75em 0.25em;
     }
     
     .container > h1 {
-        font-size: 28px;
+        font-size: 24px;
+        margin-bottom: 10px;
+    }
+    
+    button {
+        min-height: 44px;
+        padding: 10px 16px;
+        font-size: 14px;
+        margin: 6px 2px;
+    }
+    
+    /* Smaller piano keys for very small screens */
+    .white-key {
+        min-width: 28px !important;
+        height: 120px !important;
+    }
+    
+    .black-key {
+        min-width: 20px !important;
+        height: 75px !important;
+    }
+    
+    /* Stack controls vertically on small screens */
+    .tab-note-inputs,
+    .tab-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 8px !important;
+    }
+    
+    .feedback-buttons {
+        flex-direction: column !important;
+        align-items: center !important;
+        gap: 12px !important;
+    }
+    
+    .comment-room-content {
+        flex-direction: column !important;
+        gap: 20px !important;
     }
 }
-*/
 
 /* Comment Room Section */
 .comment-room-section {

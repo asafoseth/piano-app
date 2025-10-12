@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=0.5, minimum-scale=0.3, maximum-scale=3.0, user-scalable=yes, viewport-fit=cover">
+    <title>50% Zoom Test - iOS & Windows</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(160deg, #1a1a2e 0%, #3a204a 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+        }
+        
+        .device-status {
+            background: rgba(33, 150, 243, 0.2);
+            border: 2px solid #2196F3;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .zoom-status {
+            background: rgba(76, 175, 80, 0.2);
+            border: 2px solid #4CAF50;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .test-section {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+        }
+        
+        .piano-mock {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            display: flex;
+            justify-content: center;
+            gap: 2px;
+        }
+        
+        .key-mock {
+            width: 60px;
+            height: 180px;
+            border: 2px solid #333;
+            border-radius: 0 0 8px 8px;
+            cursor: pointer;
+            transition: all 0.1s ease;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            padding-bottom: 10px;
+        }
+        
+        .key-mock.white {
+            background: linear-gradient(to bottom, #fff 0%, #f0f0f0 100%);
+            color: #333;
+        }
+        
+        .key-mock.black {
+            background: linear-gradient(to bottom, #333 0%, #000 100%);
+            color: #fff;
+            height: 120px;
+            width: 40px;
+            margin: 0 -20px;
+            z-index: 2;
+        }
+        
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        
+        .status.success { background: rgba(76, 175, 80, 0.3); color: #4CAF50; }
+        .status.info { background: rgba(33, 150, 243, 0.3); color: #2196F3; }
+        .status.warning { background: rgba(255, 193, 7, 0.3); color: #FFC107; }
+        .status.error { background: rgba(244, 67, 54, 0.3); color: #f44336; }
+        
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .btn {
+            background: #5c6bc0;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-size: 16px;
+            margin: 5px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .btn:hover {
+            background: #3f51b5;
+            transform: translateY(-2px);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+    </style>
+    <script>
+        function detectDeviceAndZoom() {
+            const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent);
+            const isWindows = /Windows/.test(navigator.userAgent);
+            const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
+            const isChrome = /Chrome/.test(navigator.userAgent);
+            const isFirefox = /Firefox/.test(navigator.userAgent);
+            
+            // Update device status
+            let deviceInfo = '';
+            if (isIOSDevice) {
+                deviceInfo = '📱 iOS Device Detected';
+                document.querySelector('.device-status').style.borderColor = '#4CAF50';
+                document.querySelector('.device-status').style.background = 'rgba(76, 175, 80, 0.2)';
+            } else if (isWindows) {
+                deviceInfo = '💻 Windows Device Detected';
+                document.querySelector('.device-status').style.borderColor = '#4CAF50';
+                document.querySelector('.device-status').style.background = 'rgba(76, 175, 80, 0.2)';
+            } else {
+                deviceInfo = '🖥️ Other Device Detected';
+                document.querySelector('.device-status').style.borderColor = '#FFC107';
+                document.querySelector('.device-status').style.background = 'rgba(255, 193, 7, 0.2)';
+            }
+            
+            let browserInfo = '';
+            if (isSafari) browserInfo = '🦁 Safari';
+            else if (isChrome) browserInfo = '🌐 Chrome';
+            else if (isFirefox) browserInfo = '🦊 Firefox';
+            else browserInfo = '❓ Other Browser';
+            
+            document.getElementById('device-info').innerHTML = `
+                <h3>${deviceInfo}</h3>
+                <p>Browser: ${browserInfo}</p>
+                <p>User Agent: ${navigator.userAgent}</p>
+            `;
+            
+            // Check zoom application
+            let zoomApplied = false;
+            let zoomMethod = '';
+            
+            if (isIOSDevice || isWindows) {
+                // Apply 50% zoom
+                console.log('Applying 50% zoom for', isIOSDevice ? 'iOS' : 'Windows');
+                
+                // Method 1: CSS zoom
+                document.documentElement.style.zoom = '0.5';
+                zoomMethod += 'CSS zoom, ';
+                
+                // Method 2: Transform
+                document.documentElement.style.transform = 'scale(0.5)';
+                document.documentElement.style.transformOrigin = 'top left';
+                zoomMethod += 'CSS transform, ';
+                
+                // Method 3: Body scaling
+                document.body.style.width = '200%';
+                document.body.style.height = '200%';
+                zoomMethod += 'Body scaling';
+                
+                zoomApplied = true;
+                
+                // Update viewport
+                const viewport = document.querySelector('meta[name=viewport]');
+                if (viewport) {
+                    viewport.setAttribute('content', 'width=device-width, initial-scale=0.5, minimum-scale=0.3, maximum-scale=3.0, user-scalable=yes, viewport-fit=cover');
+                }
+            }
+            
+            // Update zoom status
+            if (zoomApplied) {
+                document.querySelector('.zoom-status').innerHTML = `
+                    <h3>✅ 50% Zoom Applied</h3>
+                    <p>Methods used: ${zoomMethod}</p>
+                    <p>Page should appear at 50% size</p>
+                `;
+            } else {
+                document.querySelector('.zoom-status').innerHTML = `
+                    <h3>ℹ️ No Zoom Applied</h3>
+                    <p>Device not iOS or Windows</p>
+                    <p>Page displays at normal size</p>
+                `;
+                document.querySelector('.zoom-status').style.borderColor = '#2196F3';
+                document.querySelector('.zoom-status').style.background = 'rgba(33, 150, 243, 0.2)';
+            }
+            
+            // Detailed zoom analysis
+            analyzeZoom();
+        }
+        
+        function analyzeZoom() {
+            const results = document.getElementById('zoom-results');
+            let output = '';
+            
+            // Check viewport
+            const viewport = document.querySelector('meta[name=viewport]');
+            const viewportContent = viewport ? viewport.getAttribute('content') : 'Not found';
+            const hasInitialScale = viewportContent.includes('initial-scale=0.5');
+            
+            if (hasInitialScale) {
+                output += '<div class="status success">✅ Viewport: initial-scale=0.5 configured</div>';
+            } else {
+                output += '<div class="status warning">⚠️ Viewport: initial-scale=0.5 not found</div>';
+            }
+            
+            // Check CSS zoom
+            const htmlStyle = window.getComputedStyle(document.documentElement);
+            const zoom = htmlStyle.zoom || 'not set';
+            const transform = htmlStyle.transform || 'none';
+            
+            output += `<div class="status info">📏 CSS Zoom: ${zoom}</div>`;
+            output += `<div class="status info">🔄 CSS Transform: ${transform}</div>`;
+            
+            // Check dimensions
+            output += `<div class="status info">📐 Window: ${window.innerWidth} × ${window.innerHeight}px</div>`;
+            output += `<div class="status info">📱 Screen: ${screen.width} × ${screen.height}px</div>`;
+            output += `<div class="status info">🔍 Device Pixel Ratio: ${window.devicePixelRatio}</div>`;
+            
+            // Final assessment
+            const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent);
+            const isWindows = /Windows/.test(navigator.userAgent);
+            
+            if ((isIOSDevice || isWindows) && (hasInitialScale || zoom === '0.5' || transform.includes('scale(0.5)'))) {
+                output += '<div class="status success">🎯 SUCCESS: 50% zoom is working!</div>';
+            } else if (!(isIOSDevice || isWindows)) {
+                output += '<div class="status info">ℹ️ INFO: Device not iOS/Windows - zoom not applied</div>';
+            } else {
+                output += '<div class="status error">❌ ERROR: 50% zoom may not be working properly</div>';
+            }
+            
+            results.innerHTML = output;
+        }
+        
+        function manualZoom(factor) {
+            document.body.style.zoom = factor;
+            setTimeout(analyzeZoom, 100);
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            detectDeviceAndZoom();
+            
+            // Test controls
+            document.getElementById('zoom-50').addEventListener('click', () => manualZoom('0.5'));
+            document.getElementById('zoom-75').addEventListener('click', () => manualZoom('0.75'));
+            document.getElementById('zoom-100').addEventListener('click', () => manualZoom('1.0'));
+            document.getElementById('zoom-125').addEventListener('click', () => manualZoom('1.25'));
+            
+            document.getElementById('retest').addEventListener('click', () => {
+                setTimeout(analyzeZoom, 100);
+            });
+        });
+    </script>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔍 50% Zoom Test - iOS & Windows</h1>
+        <p>This page tests the 50% default zoom implementation for iOS and Windows devices.</p>
+        
+        <div class="device-status" id="device-info">
+            <h3>🔍 Detecting Device...</h3>
+        </div>
+        
+        <div class="zoom-status">
+            <h3>⏳ Checking Zoom...</h3>
+        </div>
+        
+        <div class="test-section">
+            <h3>📊 Zoom Analysis</h3>
+            <div id="zoom-results">
+                <p>Analyzing zoom settings...</p>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🎹 Piano Size Reference (50% Scale)</h3>
+            <p>This mock piano shows how elements appear at 50% zoom:</p>
+            
+            <div class="piano-mock">
+                <div class="key-mock white">C</div>
+                <div class="key-mock black">C#</div>
+                <div class="key-mock white">D</div>
+                <div class="key-mock black">D#</div>
+                <div class="key-mock white">E</div>
+                <div class="key-mock white">F</div>
+                <div class="key-mock black">F#</div>
+                <div class="key-mock white">G</div>
+                <div class="key-mock black">G#</div>
+                <div class="key-mock white">A</div>
+                <div class="key-mock black">A#</div>
+                <div class="key-mock white">B</div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🎛️ Manual Zoom Controls</h3>
+            <div class="controls">
+                <button id="zoom-50" class="btn">50% Zoom</button>
+                <button id="zoom-75" class="btn">75% Zoom</button>
+                <button id="zoom-100" class="btn">100% Zoom</button>
+                <button id="zoom-125" class="btn">125% Zoom</button>
+                <button id="retest" class="btn">Re-test</button>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📋 Expected Behavior</h3>
+            <ul>
+                <li><strong>iOS Devices:</strong> Automatically apply 50% zoom on page load</li>
+                <li><strong>Windows Devices:</strong> Automatically apply 50% zoom on page load</li>
+                <li><strong>Other Devices:</strong> Display at normal 100% zoom</li>
+                <li><strong>User Control:</strong> Users can still manually zoom using browser controls</li>
+                <li><strong>Pinch Zoom:</strong> iOS devices maintain pinch-to-zoom functionality</li>
+            </ul>
+        </div>
+        
+        <div class="test-section">
+            <h3>✅ Verification Steps</h3>
+            <ol>
+                <li>Open this page on an iOS device (iPhone/iPad) or Windows computer</li>
+                <li>Page should automatically appear smaller (50% size)</li>
+                <li>Device detection should show green status</li>
+                <li>Zoom analysis should show successful zoom application</li>
+                <li>Piano keys should appear smaller but still functional</li>
+                <li>Users can still zoom in/out manually if needed</li>
+            </ol>
+        </div>
+    </div>
+</body>
+</html>

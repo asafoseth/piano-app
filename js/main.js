@@ -92,6 +92,103 @@ document.addEventListener("DOMContentLoaded", () => {
   // Call iOS audio unlock immediately
   iosAudioUnlock();
 
+  // --- Mobile Device Optimizations ---
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const isAndroid = /Android/i.test(navigator.userAgent);
+  const isWindowsMobile = /Windows Phone|IEMobile/i.test(navigator.userAgent);
+  
+  if (isMobile) {
+    console.log(`Mobile device detected: iOS: ${isIOS}, Android: ${isAndroid}, Windows Mobile: ${isWindowsMobile}`);
+    
+    // Add mobile-specific CSS class to body for conditional styling
+    document.body.classList.add('mobile-device');
+    if (isIOS) document.body.classList.add('ios-device');
+    if (isAndroid) document.body.classList.add('android-device');
+    if (isWindowsMobile) document.body.classList.add('windows-mobile-device');
+    
+    // Prevent zoom on double-tap for better touch experience
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', function (event) {
+      const now = (new Date()).getTime();
+      if (now - lastTouchEnd <= 300) {
+        // Double tap detected on non-piano elements
+        if (!event.target.closest('.key')) {
+          event.preventDefault();
+        }
+      }
+      lastTouchEnd = now;
+    }, false);
+    
+    // Improve touch scrolling performance
+    document.addEventListener('touchstart', function(e) {
+      // Only prevent default on piano keys, allow natural scrolling elsewhere
+      if (!e.target.closest('.key')) {
+        return; // Allow default behavior for scrolling
+      }
+    }, { passive: true });
+    
+    // Add mobile-friendly touch feedback
+    document.addEventListener('touchstart', function(e) {
+      if (e.target.closest('button, .key')) {
+        e.target.style.transform = 'scale(0.95)';
+        e.target.style.transition = 'transform 0.1s ease';
+      }
+    }, { passive: true });
+    
+    document.addEventListener('touchend', function(e) {
+      if (e.target.closest('button, .key')) {
+        setTimeout(() => {
+          e.target.style.transform = '';
+        }, 100);
+      }
+    }, { passive: true });
+    
+    // Optimize for mobile keyboards (prevent zoom on input focus)
+    const inputs = document.querySelectorAll('input[type="text"], input[type="email"], input[type="password"], textarea');
+    inputs.forEach(input => {
+      input.addEventListener('focus', function() {
+        // Temporarily adjust viewport to prevent zoom
+        const viewport = document.querySelector('meta[name=viewport]');
+        if (viewport) {
+          const originalContent = viewport.getAttribute('content');
+          viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+          
+          input.addEventListener('blur', function() {
+            // Restore original viewport after blur
+            viewport.setAttribute('content', originalContent);
+          }, { once: true });
+        }
+      });
+    });
+    
+    // Add swipe gesture support for navigation (optional)
+    let touchStartX = 0;
+    let touchStartY = 0;
+    
+    document.addEventListener('touchstart', function(e) {
+      if (e.target.closest('.piano-keys')) return; // Don't interfere with piano
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+    }, { passive: true });
+    
+    document.addEventListener('touchmove', function(e) {
+      if (e.target.closest('.piano-keys')) return; // Don't interfere with piano
+      
+      const touchEndX = e.touches[0].clientX;
+      const touchEndY = e.touches[0].clientY;
+      const deltaX = touchEndX - touchStartX;
+      const deltaY = touchEndY - touchStartY;
+      
+      // Add custom swipe logic here if needed for navigation
+      // For now, just ensure smooth scrolling
+      if (Math.abs(deltaY) > Math.abs(deltaX)) {
+        // Vertical swipe - allow default scrolling
+        return;
+      }
+    }, { passive: true });
+  }
+
   // --- Delete TAB Button Color Feedback ---
   const deleteTabBtn = document.getElementById('delete-tab-btn');
   if (deleteTabBtn) {

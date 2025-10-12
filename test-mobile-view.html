@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Enhanced mobile-friendly viewport -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=0.5, maximum-scale=3.0, user-scalable=yes, viewport-fit=cover">
+    
+    <!-- iOS Web App Configuration -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Piano Mobile Test">
+    
+    <!-- Android/Chrome Mobile Configuration -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#1a1a2e">
+    
+    <!-- Windows Mobile Configuration -->
+    <meta name="msapplication-TileColor" content="#1a1a2e">
+    <meta name="msapplication-navbutton-color" content="#1a1a2e">
+    
+    <!-- Prevent phone number detection -->
+    <meta name="format-detection" content="telephone=no">
+    
+    <!-- Optimize for touch -->
+    <meta name="HandheldFriendly" content="true">
+    <meta name="MobileOptimized" content="width">
+    
+    <title>Piano Mobile View Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(160deg, #1a1a2e 0%, #3a204a 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        
+        .test-container {
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+        }
+        
+        .mobile-indicator {
+            background: rgba(76, 175, 80, 0.2);
+            border: 2px solid #4CAF50;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .desktop-indicator {
+            background: rgba(244, 67, 54, 0.2);
+            border: 2px solid #f44336;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+            display: none;
+        }
+        
+        .test-section {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+        }
+        
+        .piano-container {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .piano-keys {
+            display: flex;
+            flex-wrap: nowrap;
+            min-width: max-content;
+            gap: 2px;
+            justify-content: flex-start;
+        }
+        
+        .key {
+            border: 2px solid #333;
+            border-radius: 0 0 8px 8px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            padding-bottom: 10px;
+            /* Mobile touch optimizations */
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: rgba(255, 255, 255, 0.2);
+            min-height: 48px;
+            min-width: 35px;
+        }
+        
+        .key.white {
+            background: linear-gradient(to bottom, #fff 0%, #f0f0f0 100%);
+            color: #333;
+            width: 40px;
+            height: 120px;
+        }
+        
+        .key.black {
+            background: linear-gradient(to bottom, #333 0%, #000 100%);
+            color: #fff;
+            height: 80px;
+            width: 30px;
+            margin: 0 -15px;
+            z-index: 2;
+        }
+        
+        .key.pressed,
+        .key:active {
+            transform: translateY(2px) scale(0.98);
+            filter: brightness(0.9);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .mobile-features {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .feature-box {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            min-height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .device-info {
+            background: rgba(33, 150, 243, 0.2);
+            border: 2px solid #2196F3;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        
+        .status.success { background: rgba(76, 175, 80, 0.3); color: #4CAF50; }
+        .status.warning { background: rgba(255, 193, 7, 0.3); color: #FFC107; }
+        .status.error { background: rgba(244, 67, 54, 0.3); color: #f44336; }
+        
+        .touch-btn {
+            background: #5c6bc0;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 16px 24px;
+            font-size: 16px;
+            margin: 10px;
+            min-height: 48px;
+            min-width: 120px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+        }
+        
+        .touch-btn:active {
+            transform: scale(0.95);
+            background: #3f51b5;
+        }
+        
+        /* Mobile responsive test */
+        @media screen and (max-width: 768px) {
+            .mobile-indicator {
+                display: block !important;
+            }
+            .desktop-indicator {
+                display: none !important;
+            }
+            
+            .piano-container {
+                transform: scale(0.8);
+                transform-origin: center top;
+                margin-bottom: -20px;
+            }
+            
+            .mobile-features {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+            
+            .key.white {
+                width: 35px;
+                height: 140px;
+            }
+            
+            .key.black {
+                width: 25px;
+                height: 90px;
+            }
+        }
+        
+        @media screen and (max-width: 480px) {
+            .piano-container {
+                transform: scale(0.65);
+                margin-bottom: -40px;
+            }
+            
+            .key.white {
+                width: 28px;
+                height: 120px;
+            }
+            
+            .key.black {
+                width: 20px;
+                height: 75px;
+            }
+        }
+        
+        /* Desktop override for testing */
+        @media screen and (min-width: 769px) {
+            .mobile-indicator {
+                display: none !important;
+            }
+            .desktop-indicator {
+                display: block !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>📱 Mobile Piano Test</h1>
+        <p>This page tests the mobile view functionality of the piano web app.</p>
+        
+        <div class="mobile-indicator">
+            <h2>✅ MOBILE VIEW ACTIVE</h2>
+            <p>Mobile responsive design is working! Piano should be touch-optimized.</p>
+        </div>
+        
+        <div class="desktop-indicator">
+            <h2>💻 DESKTOP VIEW</h2>
+            <p>You're viewing this on a desktop device.</p>
+        </div>
+        
+        <div class="device-info">
+            <h3>📱 Device Information</h3>
+            <div id="device-details">Loading...</div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🎹 Mobile Piano Test</h3>
+            <p>Try touching these piano keys. They should be optimized for mobile touch:</p>
+            
+            <div class="piano-container">
+                <div class="piano-keys" id="piano-keys">
+                    <!-- Keys will be generated by JavaScript -->
+                </div>
+            </div>
+            
+            <p><strong>Expected Mobile Behavior:</strong></p>
+            <ul>
+                <li>Piano keys should be larger and touch-friendly</li>
+                <li>Scrollable horizontally with smooth touch scrolling</li>
+                <li>Visual feedback when touching keys</li>
+                <li>Responsive layout that adapts to screen size</li>
+                <li>Pinch-to-zoom should work on the piano</li>
+            </ul>
+        </div>
+        
+        <div class="test-section">
+            <h3>📱 Mobile Features Test</h3>
+            <p>These elements should be mobile-optimized:</p>
+            
+            <div class="mobile-features">
+                <button class="touch-btn" id="test-btn-1">Touch Button 1</button>
+                <button class="touch-btn" id="test-btn-2">Touch Button 2</button>
+                <button class="touch-btn" id="test-btn-3">Touch Button 3</button>
+                <div class="feature-box">
+                    <span>Touch-Friendly Element</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📊 Mobile Test Results</h3>
+            <div id="test-results">
+                <!-- Results will be populated by JavaScript -->
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🧪 Touch Test Log</h3>
+            <div id="touch-log" style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 12px;">
+                <!-- Touch events will be logged here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let touchLog = [];
+        
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            touchLog.push(`${timestamp}: ${message}`);
+            if (touchLog.length > 20) touchLog.shift(); // Keep only last 20 logs
+            
+            const logElement = document.getElementById('touch-log');
+            logElement.innerHTML = touchLog.join('<br>');
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+        
+        function detectDevice() {
+            const userAgent = navigator.userAgent;
+            const isIOS = /iPad|iPhone|iPod/.test(userAgent);
+            const isAndroid = /Android/.test(userAgent);
+            const isWindowsMobile = /Windows Phone|IEMobile/.test(userAgent);
+            const isMobile = isIOS || isAndroid || isWindowsMobile || /Mobile|webOS|BlackBerry/.test(userAgent);
+            
+            const isSafari = /Safari/.test(userAgent) && !/Chrome/.test(userAgent);
+            const isChrome = /Chrome/.test(userAgent);
+            const isFirefox = /Firefox/.test(userAgent);
+            
+            let deviceInfo = '<strong>Device Type:</strong> ';
+            if (isIOS) deviceInfo += '📱 iOS Device';
+            else if (isAndroid) deviceInfo += '🤖 Android Device';
+            else if (isWindowsMobile) deviceInfo += '📱 Windows Mobile';
+            else if (isMobile) deviceInfo += '📱 Other Mobile Device';
+            else deviceInfo += '💻 Desktop/Laptop';
+            
+            deviceInfo += '<br><strong>Browser:</strong> ';
+            if (isSafari) deviceInfo += '🦁 Safari';
+            else if (isChrome) deviceInfo += '🌐 Chrome';
+            else if (isFirefox) deviceInfo += '🦊 Firefox';
+            else deviceInfo += '❓ Other Browser';
+            
+            deviceInfo += `<br><strong>Screen Size:</strong> ${window.innerWidth} × ${window.innerHeight}px`;
+            deviceInfo += `<br><strong>Touch Support:</strong> ${'ontouchstart' in window ? '✅ Yes' : '❌ No'}`;
+            deviceInfo += `<br><strong>Orientation:</strong> ${window.innerHeight > window.innerWidth ? 'Portrait' : 'Landscape'}`;
+            
+            document.getElementById('device-details').innerHTML = deviceInfo;
+            
+            log(`Device detected: ${isMobile ? 'Mobile' : 'Desktop'}`);
+            return { isMobile, isIOS, isAndroid, isWindowsMobile };
+        }
+        
+        function createPiano() {
+            const pianoKeys = document.getElementById('piano-keys');
+            const keyPattern = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+            
+            // Create two octaves
+            for (let octave = 0; octave < 2; octave++) {
+                for (let i = 0; i < 12; i++) {
+                    const key = document.createElement('div');
+                    key.className = keyPattern[i].includes('#') ? 'key black' : 'key white';
+                    key.textContent = keyPattern[i] + (octave + 4);
+                    
+                    // Touch events
+                    key.addEventListener('touchstart', (e) => {
+                        e.preventDefault();
+                        key.classList.add('pressed');
+                        log(`🎹 Touch start: ${keyPattern[i]}${octave + 4}`);
+                    }, { passive: false });
+                    
+                    key.addEventListener('touchend', (e) => {
+                        key.classList.remove('pressed');
+                        log(`🎹 Touch end: ${keyPattern[i]}${octave + 4}`);
+                    }, { passive: true });
+                    
+                    // Mouse events for desktop testing
+                    key.addEventListener('mousedown', (e) => {
+                        key.classList.add('pressed');
+                        log(`🖱️ Mouse down: ${keyPattern[i]}${octave + 4}`);
+                    });
+                    
+                    key.addEventListener('mouseup', (e) => {
+                        key.classList.remove('pressed');
+                        log(`🖱️ Mouse up: ${keyPattern[i]}${octave + 4}`);
+                    });
+                    
+                    key.addEventListener('mouseleave', (e) => {
+                        key.classList.remove('pressed');
+                    });
+                    
+                    pianoKeys.appendChild(key);
+                }
+            }
+            
+            log('Piano keys created with touch optimization');
+        }
+        
+        function setupTouchTests() {
+            // Test buttons
+            document.querySelectorAll('.touch-btn').forEach((btn, index) => {
+                btn.addEventListener('touchstart', (e) => {
+                    log(`Touch button ${index + 1} pressed`);
+                    btn.style.background = '#3f51b5';
+                }, { passive: true });
+                
+                btn.addEventListener('touchend', (e) => {
+                    setTimeout(() => {
+                        btn.style.background = '#5c6bc0';
+                    }, 150);
+                }, { passive: true });
+                
+                btn.addEventListener('click', (e) => {
+                    log(`Button ${index + 1} clicked`);
+                });
+            });
+            
+            // Global touch event monitoring
+            document.addEventListener('touchstart', (e) => {
+                log(`Touch started - ${e.touches.length} finger(s)`);
+            }, { passive: true });
+            
+            document.addEventListener('touchmove', (e) => {
+                if (e.touches.length > 1) {
+                    log(`Multi-touch gesture - ${e.touches.length} fingers`);
+                }
+            }, { passive: true });
+            
+            // Gesture detection for iOS
+            document.addEventListener('gesturestart', function(e) {
+                log(`🤏 Pinch gesture started (scale: ${e.scale.toFixed(2)})`);
+            }, { passive: true });
+            
+            document.addEventListener('gesturechange', function(e) {
+                log(`🤏 Pinch gesture (scale: ${e.scale.toFixed(2)})`);
+            }, { passive: true });
+            
+            document.addEventListener('gestureend', function(e) {
+                log(`🤏 Pinch gesture ended (scale: ${e.scale.toFixed(2)})`);
+            }, { passive: true });
+        }
+        
+        function runTests() {
+            const device = detectDevice();
+            const resultsDiv = document.getElementById('test-results');
+            
+            let results = '';
+            
+            // Test 1: Mobile detection
+            if (device.isMobile) {
+                results += '<div class="status success">✅ Mobile Device: Successfully detected as mobile device</div>';
+            } else {
+                results += '<div class="status warning">⚠️ Desktop Device: Viewing on desktop (mobile features may not be visible)</div>';
+            }
+            
+            // Test 2: Touch support
+            if ('ontouchstart' in window) {
+                results += '<div class="status success">✅ Touch Support: Touch events are supported</div>';
+            } else {
+                results += '<div class="status error">❌ Touch Support: No touch support detected</div>';
+            }
+            
+            // Test 3: Viewport
+            const viewportWidth = window.innerWidth;
+            if (viewportWidth <= 768) {
+                results += '<div class="status success">✅ Mobile Viewport: Mobile responsive layout active</div>';
+            } else {
+                results += '<div class="status warning">⚠️ Desktop Viewport: Desktop layout (resize window to test mobile)</div>';
+            }
+            
+            // Test 4: CSS Media Queries
+            const mobileIndicator = document.querySelector('.mobile-indicator');
+            const desktopIndicator = document.querySelector('.desktop-indicator');
+            const mobileVisible = window.getComputedStyle(mobileIndicator).display !== 'none';
+            const desktopVisible = window.getComputedStyle(desktopIndicator).display !== 'none';
+            
+            if (mobileVisible && !desktopVisible) {
+                results += '<div class="status success">✅ CSS Media Queries: Mobile styles active</div>';
+            } else if (desktopVisible && !mobileVisible) {
+                results += '<div class="status warning">⚠️ CSS Media Queries: Desktop styles active</div>';
+            } else {
+                results += '<div class="status error">❌ CSS Media Queries: Unexpected state</div>';
+            }
+            
+            // Test 5: Piano layout
+            const pianoContainer = document.querySelector('.piano-container');
+            const computedStyle = window.getComputedStyle(pianoContainer);
+            const hasTransform = computedStyle.transform !== 'none';
+            
+            if (device.isMobile && hasTransform) {
+                results += '<div class="status success">✅ Piano Layout: Mobile-optimized piano scaling detected</div>';
+            } else if (!device.isMobile) {
+                results += '<div class="status success">✅ Piano Layout: Desktop layout appropriate</div>';
+            } else {
+                results += '<div class="status warning">⚠️ Piano Layout: May not be mobile-optimized</div>';
+            }
+            
+            // Summary
+            results += '<div class="status warning"><strong>🧪 Test Instructions:</strong></div>';
+            results += '<div class="status warning">• Touch piano keys to test touch responsiveness</div>';
+            results += '<div class="status warning">• Try pinch-to-zoom on the piano area</div>';
+            results += '<div class="status warning">• Scroll horizontally on the piano</div>';
+            results += '<div class="status warning">• Test buttons should respond to touch</div>';
+            
+            resultsDiv.innerHTML = results;
+        }
+        
+        // Initialize everything
+        document.addEventListener('DOMContentLoaded', function() {
+            detectDevice();
+            createPiano();
+            setupTouchTests();
+            runTests();
+            
+            log('Mobile piano test page loaded');
+            log('Ready for testing!');
+        });
+        
+        // Re-run tests on resize
+        window.addEventListener('resize', function() {
+            setTimeout(runTests, 100);
+            log(`Screen resized to ${window.innerWidth}×${window.innerHeight}`);
+        });
+        
+        // Re-run tests on orientation change
+        window.addEventListener('orientationchange', function() {
+            setTimeout(() => {
+                runTests();
+                detectDevice();
+                log(`Orientation changed to ${window.innerHeight > window.innerWidth ? 'Portrait' : 'Landscape'}`);
+            }, 500);
+        });
+    </script>
+</body>
+</html>

@@ -1,68 +1,159 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <!-- iOS-friendly viewport that allows pinch-to-zoom -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=0.5, maximum-scale=3.0, user-scalable=yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <!-- Desktop view with pinch zoom enabled -->
+    <meta name="viewport" content="width=1200, initial-scale=1.0, minimum-scale=0.3, maximum-scale=5.0, user-scalable=yes">
+    
+    <!-- Prevent phone number detection -->
+    <meta name="format-detection" content="telephone=no">
+    
     <title>UA Piano (Demo)</title>
     <!-- Style CSS -->
     <link rel="stylesheet" href="css/style.css">
     <script>
-      // iOS pinch-zoom optimization - Allow natural zoom behavior
+      // Force desktop view for iOS and Windows devices
       window.addEventListener('DOMContentLoaded', function() {
         const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent);
-        const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
+        const isWindows = /Windows/.test(navigator.userAgent);
         
+        console.log('Device detected - iOS:', isIOSDevice, 'Windows:', isWindows);
+        
+        // Force desktop view for iOS and Windows
+        if (isIOSDevice || isWindows) {
+          console.log('Forcing desktop view mode');
+          
+          // Update viewport to force desktop width
+          const viewport = document.querySelector('meta[name=viewport]');
+          if (viewport) {
+            viewport.setAttribute('content', 'width=1200, initial-scale=1.0, minimum-scale=0.3, maximum-scale=5.0, user-scalable=yes');
+          }
+          
+          // Add desktop-mode CSS class
+          document.documentElement.classList.add('desktop-forced');
+          document.body.classList.add('desktop-forced');
+          if (isIOSDevice) document.body.classList.add('ios-desktop');
+          if (isWindows) document.body.classList.add('windows-desktop');
+        }
+        
+        // Enhanced iOS pinch zoom support
         if (isIOSDevice) {
-          console.log('iOS detected - enabling pinch-zoom support');
+          console.log('iOS detected - enabling enhanced pinch-zoom support');
           
-          // Remove any conflicting transform styles
-          document.body.style.transform = "";
-          document.body.style.zoom = "";
-          
-          // Add iOS-optimized CSS that doesn't interfere with pinch-zoom
+          // Add iOS-optimized CSS for desktop view with pinch zoom
           const style = document.createElement('style');
           style.textContent = `
-            /* iOS pinch-zoom friendly styles */
-            .piano-container {
-              position: relative;
-              /* Allow zoom and pan */
-              transform-origin: top left;
+            /* iOS desktop view with enhanced pinch zoom */
+            .ios-desktop {
+              /* Ensure desktop layout */
+              min-width: 1200px !important;
+              overflow-x: auto !important;
             }
             
-            .piano-keys {
+            .ios-desktop .piano-container {
+              /* Enable smooth pinch zoom */
+              position: relative;
+              transform-origin: center center;
+              min-width: 1200px;
+            }
+            
+            .ios-desktop .piano-keys {
+              /* Maintain piano layout during zoom */
               display: flex !important;
               flex-wrap: nowrap !important;
-              /* Maintain layout during zoom */
               min-width: max-content;
+              touch-action: manipulation;
             }
             
-            /* Only prevent text selection on interactive elements, not touch gestures */
-            .key, .tab-note-input, .feedback-btn {
+            /* Prevent text selection but allow zoom gestures */
+            .ios-desktop .key, .ios-desktop .tab-note-input, .ios-desktop .feedback-btn {
               -webkit-user-select: none;
               user-select: none;
+              -webkit-touch-callout: none;
+            }
+            
+            /* Ensure touch events work properly */
+            .ios-desktop * {
+              -webkit-tap-highlight-color: transparent;
             }
           `;
           document.head.appendChild(style);
           
-          // Enable pinch-zoom by ensuring no gesture prevention
+          // Enable comprehensive pinch-zoom gesture support
+          let isGesturing = false;
+          
+          // Support for iOS gesture events
           document.addEventListener('gesturestart', function(e) {
-            // Allow pinch gestures - do not prevent default
-            console.log('Pinch gesture detected - allowing zoom');
+            isGesturing = true;
+            console.log('iOS pinch gesture started - scale:', e.scale);
+            // Allow default pinch behavior
           }, { passive: true });
           
           document.addEventListener('gesturechange', function(e) {
-            // Allow pinch gestures - do not prevent default
+            if (isGesturing) {
+              console.log('iOS pinch gesture changing - scale:', e.scale);
+              // Allow default pinch behavior
+            }
           }, { passive: true });
           
           document.addEventListener('gestureend', function(e) {
-            // Allow pinch gestures - do not prevent default
+            console.log('iOS pinch gesture ended - final scale:', e.scale);
+            isGesturing = false;
+            // Allow default pinch behavior
+          }, { passive: true });
+          
+          // Additional touch event support for pinch zoom
+          let touchCount = 0;
+          
+          document.addEventListener('touchstart', function(e) {
+            touchCount = e.touches.length;
+            if (touchCount >= 2) {
+              console.log('Multi-touch detected - enabling zoom');
+              // Allow default multi-touch behavior for zoom
+            }
+          }, { passive: true });
+          
+          document.addEventListener('touchmove', function(e) {
+            if (touchCount >= 2) {
+              // Allow default multi-touch behavior for zoom
+              console.log('Multi-touch move - zoom active');
+            }
+          }, { passive: true });
+          
+          document.addEventListener('touchend', function(e) {
+            touchCount = e.touches.length;
+            if (touchCount < 2) {
+              console.log('Multi-touch ended');
+            }
           }, { passive: true });
         }
+        
+        // Windows desktop view optimizations
+        if (isWindows) {
+          console.log('Windows detected - optimizing desktop view');
+          
+          // Add Windows-specific desktop styling
+          const style = document.createElement('style');
+          style.textContent = `
+            /* Windows desktop view optimizations */
+            .windows-desktop {
+              min-width: 1200px !important;
+              overflow-x: auto !important;
+            }
+            
+            .windows-desktop .piano-container {
+              min-width: 1200px;
+              position: relative;
+            }
+            
+            .windows-desktop .piano-keys {
+              display: flex !important;
+              flex-wrap: nowrap !important;
+              min-width: max-content;
+            }
+          `;
+          document.head.appendChild(style);
+        }
       });
-    </script>
-    </script>
     </script>
   </head>
   <body>
