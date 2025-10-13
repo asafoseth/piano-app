@@ -1,6 +1,5 @@
 /* Desktop Forced Mode Styles for iOS and Windows */
 .desktop-forced {
-  min-width: 1200px !important;
   overflow-x: auto !important;
 }
 
@@ -18,7 +17,9 @@
 
 /* Ensure piano container works in desktop forced mode */
 .desktop-forced .piano-container {
-  min-width: 1200px;
+  width: max-content !important;
+  min-width: unset !important;
+  max-width: 100% !important;
   position: relative;
   margin: 0 auto;
 }
@@ -27,7 +28,8 @@
 .desktop-forced .piano-keys {
   display: flex !important;
   flex-wrap: nowrap !important;
-  min-width: max-content;
+  width: max-content !important;
+  min-width: unset !important;
   justify-content: center;
 }
 
