@@ -471,11 +471,24 @@
   </div>
 </section>
 
-<!-- Facebook SDK Root -->
-<div id="fb-root"></div>
-<script async defer crossorigin="anonymous" 
-  src="https://connect.facebook.net/en_GB/sdk.js#xfbml=1&version=v23.0">
-</script>
+    <!-- Facebook Comments Plugin -->
+    <div id="fb-root"></div>
+    <script async defer crossorigin="anonymous"
+      src="https://connect.facebook.net/en_GB/sdk.js#xfbml=1&version=v24.0&appId=4447069772182756&autoLogAppEvents=1"></script>
+
+    <div class="fb-comments" 
+         data-href="https://www.unclealipiano.com/" 
+         data-width="100%" 
+         data-numposts="5"></div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function() {
+        if (typeof FB !== 'undefined') {
+          FB.XFBML.parse();
+        }
+      });
+    </script>
+    <!-- End Facebook Comments Plugin -->
 
     <script type="module" src="/js/main.js"></script>
   </body>
