@@ -337,9 +337,10 @@ nav {
 
 .piano-title {
     position: relative; /* Allow z-index to work */
-    margin-bottom: -70px;
+    margin-bottom: -40px; /* Move text further down into gray section */
     z-index: 2; /* Bring it on top of the piano container */
     color: #e0e0e0; /* Ensure text is visible against the dark piano */
+    margin-top: 20px; /* Add space above to prevent overlaying buttons */
 }
 
 .piano-container {
@@ -1310,8 +1311,9 @@ nav {
     
     .piano-title {
         font-size: 1.8em;
-        margin-bottom: -30px;
+        margin-bottom: -20px; /* Move text down into gray section */
         text-align: center;
+        margin-top: 15px; /* Add space above */
     }
     
     .container {
@@ -1393,7 +1395,8 @@ nav {
     
     .piano-title {
         font-size: 1.5em;
-        margin-bottom: -25px;
+        margin-bottom: -15px; /* Move text down into gray section */
+        margin-top: 10px; /* Add space above */
     }
     
     .container {
