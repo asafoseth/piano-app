@@ -477,6 +477,88 @@
   src="https://connect.facebook.net/en_GB/sdk.js#xfbml=1&version=v23.0">
 </script>
 
+<script>
+// Hide Facebook Comments Plugin text/link
+function hideFacebookPluginText() {
+  // Wait for Facebook widget to load
+  setTimeout(() => {
+    // Target Facebook comment iframes
+    const fbIframes = document.querySelectorAll('.fb-comments iframe, iframe[src*="facebook.com"]');
+    
+    fbIframes.forEach(iframe => {
+      try {
+        // Hide iframe content that contains plugin text
+        iframe.style.marginBottom = '-30px';
+        iframe.style.clipPath = 'inset(0 0 30px 0)';
+        iframe.style.overflow = 'hidden';
+        
+        // Try to access iframe content if same-origin
+        if (iframe.contentDocument) {
+          const pluginLinks = iframe.contentDocument.querySelectorAll('a[href*="developers.facebook.com"], a[href*="facebook.com/plugins"]');
+          pluginLinks.forEach(link => {
+            link.style.display = 'none';
+            if (link.parentElement) {
+              link.parentElement.style.display = 'none';
+            }
+          });
+          
+          // Hide text containing "plugin"
+          const allElements = iframe.contentDocument.querySelectorAll('*');
+          allElements.forEach(el => {
+            if (el.textContent && el.textContent.toLowerCase().includes('plugin')) {
+              el.style.display = 'none';
+            }
+          });
+        }
+      } catch (e) {
+        // Cross-origin restrictions prevent direct access
+        console.log('Cannot access iframe content due to CORS');
+      }
+    });
+    
+    // Also hide any direct text nodes containing "plugin"
+    const walker = document.createTreeWalker(
+      document.querySelector('.fb-comments') || document.body,
+      NodeFilter.SHOW_TEXT,
+      null,
+      false
+    );
+    
+    const textNodes = [];
+    let node;
+    while (node = walker.nextNode()) {
+      if (node.textContent.toLowerCase().includes('plugin')) {
+        textNodes.push(node);
+      }
+    }
+    
+    textNodes.forEach(textNode => {
+      if (textNode.parentElement) {
+        textNode.parentElement.style.display = 'none';
+      }
+    });
+    
+  }, 2000); // Wait 2 seconds for Facebook to load
+  
+  // Check again after 5 seconds in case of delayed loading
+  setTimeout(hideFacebookPluginText, 5000);
+}
+
+// Run when page loads
+window.addEventListener('load', hideFacebookPluginText);
+
+// Also run when Facebook SDK loads
+window.fbAsyncInit = function() {
+  FB.init({
+    xfbml: true,
+    version: 'v23.0'
+  });
+  
+  // Hide plugin text after Facebook widgets are rendered
+  setTimeout(hideFacebookPluginText, 1000);
+};
+</script>
+
     <script type="module" src="/js/main.js"></script>
   </body>
 </html>
