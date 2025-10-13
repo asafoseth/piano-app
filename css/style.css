@@ -1615,61 +1615,6 @@ nav {
     filter: none !important;
 }
 
-/* Hide Facebook Comments Plugin text/link */
-.fb-comments iframe[src*="facebook.com"] {
-    /* Hide the "Facebook Comments Plugin" text at the bottom */
-    margin-bottom: -30px !important;
-    overflow: hidden !important;
-    clip-path: inset(0 0 30px 0) !important;
-    max-height: calc(100% - 30px) !important;
-}
-
-/* Additional rules to hide plugin attribution */
-.fb-comments *[href*="developers.facebook.com"],
-.fb-comments a[href*="facebook.com/plugins"],
-.fb-comments span:contains("Facebook Comments Plugin"),
-.fb-comments div:contains("Facebook Comments Plugin"),
-.fb-comments *:contains("Plugin") {
-    display: none !important;
-    visibility: hidden !important;
-    opacity: 0 !important;
-    height: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    position: absolute !important;
-    left: -9999px !important;
-}
-
-/* Hide any element containing "plugin" text in Facebook comments */
-.fb-comments iframe::after {
-    content: "";
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 30px;
-    background: white;
-    z-index: 1000;
-}
-
-/* Alternative approach - hide bottom portion of Facebook widget */
-.fb-comments {
-    position: relative;
-    overflow: hidden;
-}
-
-.fb-comments::after {
-    content: "";
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 25px;
-    background: rgba(255, 255, 255, 1);
-    z-index: 1000;
-    pointer-events: none;
-}
-
 /* Legacy styles for backward compatibility */
 .comment-room {
     margin: 40px auto;
