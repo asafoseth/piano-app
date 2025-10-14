@@ -105,6 +105,11 @@
           let touchCount = 0;
           
           document.addEventListener('touchstart', function(e) {
+            // Don't interfere with Facebook login elements
+            if (e.target.closest('.fb-comments') || e.target.closest('[data-href*="facebook"]') || e.target.closest('.fb_dialog')) {
+              return;
+            }
+            
             touchCount = e.touches.length;
             if (touchCount >= 2) {
               console.log('Multi-touch detected - enabling zoom');
@@ -113,6 +118,11 @@
           }, { passive: true });
           
           document.addEventListener('touchmove', function(e) {
+            // Don't interfere with Facebook login elements
+            if (e.target.closest('.fb-comments') || e.target.closest('[data-href*="facebook"]') || e.target.closest('.fb_dialog')) {
+              return;
+            }
+            
             if (touchCount >= 2) {
               // Allow default multi-touch behavior for zoom
               console.log('Multi-touch move - zoom active');
@@ -120,6 +130,11 @@
           }, { passive: true });
           
           document.addEventListener('touchend', function(e) {
+            // Don't interfere with Facebook login elements
+            if (e.target.closest('.fb-comments') || e.target.closest('[data-href*="facebook"]') || e.target.closest('.fb_dialog')) {
+              return;
+            }
+            
             touchCount = e.touches.length;
             if (touchCount < 2) {
               console.log('Multi-touch ended');
@@ -483,6 +498,58 @@
 
     <script>
       document.addEventListener("DOMContentLoaded", function() {
+        // Enhanced Facebook SDK initialization for mobile compatibility
+        window.fbAsyncInit = function() {
+          FB.init({
+            appId: '4447069772182756',
+            cookie: true,
+            xfbml: true,
+            version: 'v24.0'
+          });
+          
+          // Parse XFBML after initialization
+          FB.XFBML.parse();
+          
+          // Mobile-specific Facebook login handling
+          const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+          
+          if (isMobile) {
+            console.log('Mobile device detected - optimizing Facebook login');
+            
+            // Override Facebook login popup behavior for mobile
+            document.addEventListener('click', function(e) {
+              // Check if clicked element is related to Facebook login
+              if (e.target.closest('.fb-comments') || e.target.closest('[data-href*="facebook"]')) {
+                // Temporarily disable our custom touch handlers during Facebook interaction
+                e.stopPropagation();
+                
+                // Allow Facebook's native mobile handling
+                setTimeout(function() {
+                  if (typeof FB !== 'undefined' && FB.XFBML) {
+                    FB.XFBML.parse();
+                  }
+                }, 100);
+              }
+            }, true);
+            
+            // Ensure Facebook login popups aren't blocked by our viewport manipulation
+            const originalPreventDefault = Event.prototype.preventDefault;
+            Event.prototype.preventDefault = function() {
+              // Don't prevent default for Facebook-related events
+              if (this.target && (
+                this.target.closest('.fb-comments') || 
+                this.target.closest('[data-href*="facebook"]') ||
+                this.target.closest('.fb_dialog') ||
+                window.location.href.includes('facebook.com')
+              )) {
+                return;
+              }
+              originalPreventDefault.call(this);
+            };
+          }
+        };
+        
+        // Fallback for when FB is already loaded
         if (typeof FB !== 'undefined') {
           FB.XFBML.parse();
         }
