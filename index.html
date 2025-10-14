@@ -459,7 +459,9 @@
               data-href="https://www.unclealipiano.com/" 
               data-width="100%" 
               data-numposts="5"
-              data-colorscheme="light">
+              data-colorscheme="light"
+              data-mobile="true"
+              data-order-by="social">
             </div>
           </div>
           
@@ -488,13 +490,37 @@
 
     <!-- Facebook Comments Plugin -->
     <div id="fb-root"></div>
-    <script async defer crossorigin="anonymous"
-      src="https://connect.facebook.net/en_GB/sdk.js#xfbml=1&version=v24.0&appId=4447069772182756&autoLogAppEvents=1"></script>
+    
+    <!-- Mobile-optimized Facebook SDK -->
+    <script>
+      // Detect mobile and adjust Facebook SDK loading
+      const isMobileDevice = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      
+      if (isMobileDevice) {
+        // For mobile: Load SDK with specific mobile parameters
+        const fbScript = document.createElement('script');
+        fbScript.async = true;
+        fbScript.defer = true;
+        fbScript.crossOrigin = 'anonymous';
+        fbScript.src = 'https://connect.facebook.net/en_GB/sdk.js#xfbml=1&version=v24.0&appId=4447069772182756&autoLogAppEvents=1&display=popup';
+        document.head.appendChild(fbScript);
+      } else {
+        // For desktop: Use standard loading
+        const fbScript = document.createElement('script');
+        fbScript.async = true;
+        fbScript.defer = true;
+        fbScript.crossOrigin = 'anonymous';
+        fbScript.src = 'https://connect.facebook.net/en_GB/sdk.js#xfbml=1&version=v24.0&appId=4447069772182756&autoLogAppEvents=1';
+        document.head.appendChild(fbScript);
+      }
+    </script>
 
     <div class="fb-comments" 
          data-href="https://www.unclealipiano.com/" 
          data-width="100%" 
-         data-numposts="5"></div>
+         data-numposts="5"
+         data-mobile="true"
+         data-order-by="social"></div>
 
     <script>
       document.addEventListener("DOMContentLoaded", function() {
@@ -504,7 +530,9 @@
             appId: '4447069772182756',
             cookie: true,
             xfbml: true,
-            version: 'v24.0'
+            version: 'v24.0',
+            // Force popup mode for mobile devices instead of redirect
+            display: 'popup'
           });
           
           // Parse XFBML after initialization
@@ -516,36 +544,86 @@
           if (isMobile) {
             console.log('Mobile device detected - optimizing Facebook login');
             
-            // Override Facebook login popup behavior for mobile
+            // Override Facebook login to force popup mode on mobile
             document.addEventListener('click', function(e) {
               // Check if clicked element is related to Facebook login
               if (e.target.closest('.fb-comments') || e.target.closest('[data-href*="facebook"]')) {
-                // Temporarily disable our custom touch handlers during Facebook interaction
+                console.log('Facebook login clicked on mobile - forcing popup mode');
+                
+                // Stop the default behavior
+                e.preventDefault();
                 e.stopPropagation();
                 
-                // Allow Facebook's native mobile handling
-                setTimeout(function() {
-                  if (typeof FB !== 'undefined' && FB.XFBML) {
-                    FB.XFBML.parse();
-                  }
-                }, 100);
+                // Force Facebook login with popup display
+                if (typeof FB !== 'undefined') {
+                  FB.login(function(response) {
+                    if (response.authResponse) {
+                      console.log('Facebook login successful');
+                      // Refresh the comments plugin
+                      FB.XFBML.parse();
+                    } else {
+                      console.log('Facebook login cancelled');
+                    }
+                  }, {
+                    scope: 'public_profile,email',
+                    display: 'popup',
+                    return_scopes: true
+                  });
+                }
+                
+                return false;
               }
             }, true);
             
-            // Ensure Facebook login popups aren't blocked by our viewport manipulation
-            const originalPreventDefault = Event.prototype.preventDefault;
-            Event.prototype.preventDefault = function() {
-              // Don't prevent default for Facebook-related events
-              if (this.target && (
-                this.target.closest('.fb-comments') || 
-                this.target.closest('[data-href*="facebook"]') ||
-                this.target.closest('.fb_dialog') ||
-                window.location.href.includes('facebook.com')
-              )) {
-                return;
+            // Alternative approach: Override Facebook's default mobile behavior
+            if (typeof FB !== 'undefined') {
+              // Override FB's mobile detection
+              FB._https = true;
+              FB._domain = {
+                www: 'https://www.facebook.com/',
+                m: 'https://m.facebook.com/'
+              };
+            }
+            
+            // Add mobile-specific Facebook CSS to force popup behavior
+            const mobileStyle = document.createElement('style');
+            mobileStyle.textContent = `
+              /* Force Facebook login popup on mobile */
+              @media screen and (max-width: 768px) {
+                .fb_dialog {
+                  position: fixed !important;
+                  top: 50% !important;
+                  left: 50% !important;
+                  transform: translate(-50%, -50%) !important;
+                  width: 90% !important;
+                  max-width: 400px !important;
+                  height: auto !important;
+                  max-height: 80% !important;
+                  z-index: 999999 !important;
+                  background: white !important;
+                  border-radius: 8px !important;
+                  box-shadow: 0 4px 20px rgba(0,0,0,0.3) !important;
+                }
+                
+                .fb_dialog_content {
+                  width: 100% !important;
+                  height: auto !important;
+                  overflow: hidden !important;
+                }
+                
+                .fb_dialog iframe {
+                  width: 100% !important;
+                  height: 500px !important;
+                  border: none !important;
+                }
+                
+                /* Prevent full-page redirect */
+                .fb-comments[data-mobile-display="popup"] {
+                  position: relative !important;
+                }
               }
-              originalPreventDefault.call(this);
-            };
+            `;
+            document.head.appendChild(mobileStyle);
           }
         };
         
