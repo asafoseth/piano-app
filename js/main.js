@@ -458,6 +458,7 @@ document.addEventListener("DOMContentLoaded", () => {
 }); // End DOMContentLoaded
 
 const loginBtn = document.getElementById('show-login-modal');
+const floatingLoginBtn = document.getElementById('floating-login-btn');
 const userInfoSpan = document.getElementById('user-info');
 
 // Listen for auth state changes
@@ -465,6 +466,12 @@ onAuthStateChanged(auth, user => {
   if (user) {
     // User is logged in
     loginBtn.textContent = "Logout";
+    if (floatingLoginBtn) {
+      floatingLoginBtn.textContent = "Logout";
+      floatingLoginBtn.onclick = () => {
+        signOut(auth);
+      };
+    }
     userInfoSpan.textContent = user.displayName || user.email;
     userInfoSpan.style.display = "inline";
     loginBtn.onclick = () => {
@@ -473,6 +480,12 @@ onAuthStateChanged(auth, user => {
   } else {
     // User is logged out
     loginBtn.textContent = "Login";
+    if (floatingLoginBtn) {
+      floatingLoginBtn.textContent = "Login";
+      floatingLoginBtn.onclick = () => {
+        document.getElementById('login-modal').style.display = 'block';
+      };
+    }
     userInfoSpan.textContent = "";
     userInfoSpan.style.display = "none";
     loginBtn.onclick = () => {
@@ -494,6 +507,14 @@ onAuthStateChanged(auth, user => {
 document.getElementById('show-login-modal').onclick = () => {
   document.getElementById('login-modal').style.display = 'block';
 };
+
+// Floating login button functionality (same as main login button)
+if (floatingLoginBtn) {
+  floatingLoginBtn.onclick = () => {
+    document.getElementById('login-modal').style.display = 'block';
+  };
+}
+
 document.getElementById('close-login-modal').onclick = () => {
   document.getElementById('login-modal').style.display = 'none';
 };
