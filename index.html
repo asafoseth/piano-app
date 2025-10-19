@@ -346,7 +346,7 @@
 
         <!-- TAB Feature Section -->
         <!-- Container for Piano Keys -->
-        <h2 class="piano-title">uncle Ali Piano</h2>
+        <h2 class="piano-title" id="piano-title-btn" style="cursor: pointer; user-select: none; transition: transform 0.1s ease;">uncle Ali Piano</h2>
         <div class="piano-container" id="keyboard-container"></div>
 
         <!-- Feedback Section -->
@@ -591,6 +591,51 @@
       });
     </script>
     <!-- End Facebook Comments Plugin -->
+
+    <!-- Piano Title Button Animation Script -->
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const pianoTitle = document.getElementById('piano-title-btn');
+        
+        if (pianoTitle) {
+          console.log('🎹 Piano title button initialized');
+          
+          // Add press animation on mousedown/touchstart
+          const handlePressStart = (e) => {
+            console.log('🎹 Piano title pressed');
+            pianoTitle.style.transform = 'scale(0.98) translateY(2px)';
+            pianoTitle.style.filter = 'brightness(0.9)';
+          };
+          
+          // Remove press animation on mouseup/touchend
+          const handlePressEnd = (e) => {
+            console.log('🎹 Piano title released');
+            pianoTitle.style.transform = 'scale(1) translateY(0)';
+            pianoTitle.style.filter = 'brightness(1)';
+          };
+          
+          // Mouse events
+          pianoTitle.addEventListener('mousedown', handlePressStart);
+          pianoTitle.addEventListener('mouseup', handlePressEnd);
+          pianoTitle.addEventListener('mouseleave', handlePressEnd);
+          
+          // Touch events for mobile
+          pianoTitle.addEventListener('touchstart', handlePressStart, { passive: true });
+          pianoTitle.addEventListener('touchend', handlePressEnd, { passive: true });
+          pianoTitle.addEventListener('touchcancel', handlePressEnd, { passive: true });
+          
+          // Optional click handler (you can add functionality here)
+          pianoTitle.addEventListener('click', function(e) {
+            console.log('🎹 Piano title clicked!');
+            // Add any click functionality here if needed
+          });
+          
+          console.log('✅ Piano title button events attached');
+        } else {
+          console.error('❌ Piano title button not found');
+        }
+      });
+    </script>
 
     <script type="module" src="/js/main.js"></script>
   </body>

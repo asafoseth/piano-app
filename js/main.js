@@ -1987,48 +1987,44 @@ window.refreshFeedbackCounts = async function() {
     }
 };
 
-// TAB INPUT HOME BUTTON REDIRECT WITH YELLOW FLASH
+// TAB INPUT "UNCLE ALI PIANO" BUTTON REDIRECT WITH YELLOW FLASH
 document.addEventListener("DOMContentLoaded", () => {
-    console.log('🎯 Setting up TAB input home button redirect system...');
+    console.log('🎹 Setting up TAB input uncle Ali Piano button redirect system...');
     
     // Wait for everything to be fully loaded
     setTimeout(() => {
         const tabInputs = document.querySelectorAll('.tab-note-input');
-        const homeButton = document.querySelector('.nav-button') || 
-                          document.querySelector('a[href="#"]') || 
-                          document.querySelector('nav a:first-child');
+        const pianoButton = document.getElementById('piano-title-btn') || 
+                           document.querySelector('.piano-title') ||
+                           document.querySelector('h2:contains("uncle Ali Piano")');
         
         console.log('📝 Found TAB inputs:', tabInputs.length);
-        console.log('🏠 Home button found:', !!homeButton);
+        console.log('🎹 Uncle Ali Piano button found:', !!pianoButton);
         
-        if (homeButton && tabInputs.length > 0) {
+        if (pianoButton && tabInputs.length > 0) {
             console.log('✅ Initializing TAB redirect system for', tabInputs.length, 'inputs');
             
-            // Home button flash function - FAST VERSION
-            const flashHomeButton = () => {
-                // Store original styles
-                const originalBg = homeButton.style.backgroundColor;
-                const originalBorder = homeButton.style.border;
-                const originalTransition = homeButton.style.transition;
+            // Uncle Ali Piano button flash function - FAST TEXT COLOR FLASH
+            const flashPianoButton = () => {
+                // Store original text color and transition
+                const originalColor = pianoButton.style.color || 
+                                    window.getComputedStyle(pianoButton).color;
+                const originalTransition = pianoButton.style.transition;
                 
-                // Apply yellow flash with FAST transition
-                homeButton.style.transition = 'all 0.05s ease-in-out';
-                homeButton.style.backgroundColor = '#ffff00';
-                homeButton.style.border = '2px solid #ff6600';
-                homeButton.style.boxShadow = '0 0 8px rgba(255, 255, 0, 0.8)';
+                console.log('⚡ Uncle Ali Piano text FAST flashing YELLOW!');
                 
-                console.log('⚡ Home button FAST flash YELLOW!');
+                // Apply yellow text color with FAST transition
+                pianoButton.style.transition = 'color 0.05s ease-in-out'; // Reduced from 0.15s to 0.05s
+                pianoButton.style.color = '#ffff00'; // Bright yellow text
                 
-                // Return to normal after FAST flash
+                // Return to original color after FAST flash
                 setTimeout(() => {
-                    homeButton.style.backgroundColor = originalBg;
-                    homeButton.style.border = originalBorder;
-                    homeButton.style.boxShadow = '';
+                    pianoButton.style.color = originalColor;
                     
                     // Remove transition after animation
                     setTimeout(() => {
-                        homeButton.style.transition = originalTransition;
-                    }, 50);
+                        pianoButton.style.transition = originalTransition;
+                    }, 50); // Reduced from 150ms to 50ms
                 }, 80); // FAST flash duration - reduced from 300ms to 80ms
             };
             
@@ -2040,7 +2036,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const handleTabInteraction = (event, eventType) => {
                     if (isRedirecting) return; // Prevent recursive calls
                     
-                    console.log(`🎯 ${eventType} on TAB input #${index + 1} - Starting redirect sequence`);
+                    console.log(`🎯 ${eventType} on TAB input #${index + 1} - Redirecting through uncle Ali Piano button`);
                     
                     // Prevent default behavior
                     event.preventDefault();
@@ -2052,11 +2048,11 @@ document.addEventListener("DOMContentLoaded", () => {
                     const cursorPosition = input.selectionStart || 0;
                     const textContent = input.value;
                     
-                    // Step 1: Focus home button and flash yellow
-                    homeButton.focus();
-                    flashHomeButton();
+                    // Step 1: Focus uncle Ali Piano button and flash yellow
+                    pianoButton.focus();
+                    flashPianoButton();
                     
-                    console.log('🏠 Home button focused and flashing');
+                    console.log('🎹 Uncle Ali Piano button focused and flashing');
                     
                     // Step 2: After FAST flash, quickly refocus the TAB input
                     setTimeout(() => {
@@ -2094,22 +2090,22 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 }, true);
                 
-                console.log(`✅ Redirect handlers set for TAB input #${index + 1}`);
+                console.log(`✅ Uncle Ali Piano redirect handlers set for TAB input #${index + 1}`);
             });
             
-            console.log('🎉 TAB input redirect system fully initialized!');
+            console.log('🎉 TAB input uncle Ali Piano redirect system fully initialized!');
             
             // Create global test function
-            window.testTabRedirect = () => {
-                console.log('🧪 Testing home button flash...');
-                flashHomeButton();
+            window.testPianoButtonFlash = () => {
+                console.log('🧪 Testing uncle Ali Piano button flash...');
+                flashPianoButton();
             };
             
-            console.log('💡 Test the flash manually with: testTabRedirect()');
+            console.log('💡 Test the flash manually with: testPianoButtonFlash()');
             
         } else {
             console.error('❌ TAB redirect setup failed:');
-            console.error('   Home button found:', !!homeButton);
+            console.error('   Uncle Ali Piano button found:', !!pianoButton);
             console.error('   TAB inputs found:', tabInputs.length);
         }
     }, 500); // Wait 500ms for DOM to be fully ready
