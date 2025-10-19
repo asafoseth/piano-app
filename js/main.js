@@ -1986,3 +1986,131 @@ window.refreshFeedbackCounts = async function() {
         console.error('❌ Error refreshing feedback counts:', error);
     }
 };
+
+// TAB INPUT HOME BUTTON REDIRECT WITH YELLOW FLASH
+document.addEventListener("DOMContentLoaded", () => {
+    console.log('🎯 Setting up TAB input home button redirect system...');
+    
+    // Wait for everything to be fully loaded
+    setTimeout(() => {
+        const tabInputs = document.querySelectorAll('.tab-note-input');
+        const homeButton = document.querySelector('.nav-button') || 
+                          document.querySelector('a[href="#"]') || 
+                          document.querySelector('nav a:first-child');
+        
+        console.log('📝 Found TAB inputs:', tabInputs.length);
+        console.log('🏠 Home button found:', !!homeButton);
+        
+        if (homeButton && tabInputs.length > 0) {
+            console.log('✅ Initializing TAB redirect system for', tabInputs.length, 'inputs');
+            
+            // Home button flash function
+            const flashHomeButton = () => {
+                // Store original styles
+                const originalBg = homeButton.style.backgroundColor;
+                const originalBorder = homeButton.style.border;
+                const originalTransition = homeButton.style.transition;
+                
+                // Apply yellow flash with smooth transition
+                homeButton.style.transition = 'all 0.15s ease-in-out';
+                homeButton.style.backgroundColor = '#ffff00';
+                homeButton.style.border = '2px solid #ff6600';
+                homeButton.style.boxShadow = '0 0 10px rgba(255, 255, 0, 0.7)';
+                
+                console.log('💛 Home button flashing YELLOW!');
+                
+                // Return to normal after flash
+                setTimeout(() => {
+                    homeButton.style.backgroundColor = originalBg;
+                    homeButton.style.border = originalBorder;
+                    homeButton.style.boxShadow = '';
+                    
+                    // Remove transition after animation
+                    setTimeout(() => {
+                        homeButton.style.transition = originalTransition;
+                    }, 150);
+                }, 300); // Flash duration
+            };
+            
+            // Set up redirect for each TAB input
+            tabInputs.forEach((input, index) => {
+                let isRedirecting = false;
+                
+                // Handle both click and focus events
+                const handleTabInteraction = (event, eventType) => {
+                    if (isRedirecting) return; // Prevent recursive calls
+                    
+                    console.log(`🎯 ${eventType} on TAB input #${index + 1} - Starting redirect sequence`);
+                    
+                    // Prevent default behavior
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                    
+                    isRedirecting = true;
+                    
+                    // Store cursor position and text for restoration
+                    const cursorPosition = input.selectionStart || 0;
+                    const textContent = input.value;
+                    
+                    // Step 1: Focus home button and flash yellow
+                    homeButton.focus();
+                    flashHomeButton();
+                    
+                    console.log('🏠 Home button focused and flashing');
+                    
+                    // Step 2: After flash, refocus the TAB input
+                    setTimeout(() => {
+                        console.log(`🔄 Refocusing TAB input #${index + 1}`);
+                        
+                        // Focus the original TAB input
+                        input.focus();
+                        
+                        // Restore cursor position
+                        try {
+                            input.setSelectionRange(cursorPosition, cursorPosition);
+                        } catch (e) {
+                            console.log('Could not restore cursor position:', e);
+                        }
+                        
+                        console.log(`✅ TAB input #${index + 1} refocused successfully`);
+                        isRedirecting = false;
+                        
+                    }, 350); // Wait for flash to complete
+                };
+                
+                // Add event listeners for click and focus
+                input.addEventListener('click', (e) => handleTabInteraction(e, 'CLICK'), true);
+                input.addEventListener('focus', (e) => {
+                    // Only handle user-initiated focus events
+                    if (e.isTrusted) {
+                        handleTabInteraction(e, 'FOCUS');
+                    }
+                }, true);
+                
+                // Also handle mousedown for complete coverage
+                input.addEventListener('mousedown', (e) => {
+                    if (!isRedirecting && !input.matches(':focus')) {
+                        handleTabInteraction(e, 'MOUSEDOWN');
+                    }
+                }, true);
+                
+                console.log(`✅ Redirect handlers set for TAB input #${index + 1}`);
+            });
+            
+            console.log('🎉 TAB input redirect system fully initialized!');
+            
+            // Create global test function
+            window.testTabRedirect = () => {
+                console.log('🧪 Testing home button flash...');
+                flashHomeButton();
+            };
+            
+            console.log('💡 Test the flash manually with: testTabRedirect()');
+            
+        } else {
+            console.error('❌ TAB redirect setup failed:');
+            console.error('   Home button found:', !!homeButton);
+            console.error('   TAB inputs found:', tabInputs.length);
+        }
+    }, 500); // Wait 500ms for DOM to be fully ready
+});
