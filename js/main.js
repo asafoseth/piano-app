@@ -2114,3 +2114,177 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }, 500); // Wait 500ms for DOM to be fully ready
 });
+
+// ADVERTISE EMAIL POPUP FUNCTIONALITY
+document.addEventListener("DOMContentLoaded", () => {
+    console.log('📧 Setting up advertise email popup...');
+    
+    setTimeout(() => {
+        const advertiseBtn = document.getElementById('advertise-cta-btn');
+        
+        if (advertiseBtn) {
+            console.log('✅ Advertise button found, adding email popup functionality');
+            
+            advertiseBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                console.log('📧 Advertise button clicked - showing email popup');
+                
+                // Create email popup modal
+                const emailModal = document.createElement('div');
+                emailModal.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100vw;
+                    height: 100vh;
+                    background: rgba(0, 0, 0, 0.8);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 10000;
+                    backdrop-filter: blur(5px);
+                `;
+                
+                // Create email content
+                emailModal.innerHTML = `
+                    <div style="
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        border-radius: 20px;
+                        padding: 40px;
+                        max-width: 400px;
+                        width: 90%;
+                        text-align: center;
+                        color: white;
+                        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+                        position: relative;
+                        border: 1px solid rgba(255, 255, 255, 0.1);
+                    ">
+                        <div style="
+                            width: 80px;
+                            height: 80px;
+                            background: rgba(255, 255, 255, 0.15);
+                            border-radius: 50%;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            margin: 0 auto 20px auto;
+                            backdrop-filter: blur(10px);
+                            border: 1px solid rgba(255, 255, 255, 0.2);
+                        ">
+                            📧
+                        </div>
+                        
+                        <h2 style="
+                            font-size: 24px;
+                            margin: 0 0 10px 0;
+                            font-weight: 700;
+                        ">Let's Partner! 🚀</h2>
+                        
+                        <p style="
+                            font-size: 16px;
+                            margin: 0 0 25px 0;
+                            opacity: 0.9;
+                        ">Ready to reach thousands of music lovers?</p>
+                        
+                        <div style="
+                            background: rgba(255, 255, 255, 0.1);
+                            border-radius: 12px;
+                            padding: 20px;
+                            margin: 20px 0;
+                            backdrop-filter: blur(10px);
+                            border: 1px solid rgba(255, 255, 255, 0.1);
+                        ">
+                            <p style="
+                                margin: 0 0 10px 0;
+                                font-size: 14px;
+                                opacity: 0.8;
+                            ">Contact Uncle Ali:</p>
+                            
+                            <div style="
+                                background: rgba(255, 255, 255, 0.2);
+                                border-radius: 8px;
+                                padding: 12px;
+                                margin: 10px 0;
+                                font-family: monospace;
+                                font-size: 16px;
+                                font-weight: 600;
+                                letter-spacing: 1px;
+                                border: 1px solid rgba(255, 255, 255, 0.2);
+                                cursor: pointer;
+                            " onclick="
+                                navigator.clipboard.writeText('uncleali@yahoo.com');
+                                this.innerHTML = '✅ Copied to clipboard!';
+                                setTimeout(() => {
+                                    this.innerHTML = 'uncleali@yahoo.com';
+                                }, 2000);
+                            ">
+                                uncleali@yahoo.com
+                            </div>
+                            
+                            <p style="
+                                margin: 10px 0 0 0;
+                                font-size: 12px;
+                                opacity: 0.7;
+                            ">👆 Click to copy email</p>
+                        </div>
+                        
+                        <button onclick="document.body.removeChild(this.closest('div').parentElement)" style="
+                            background: linear-gradient(45deg, #FFD700, #FFA500);
+                            color: #333;
+                            border: none;
+                            border-radius: 25px;
+                            padding: 12px 30px;
+                            font-size: 16px;
+                            font-weight: 600;
+                            cursor: pointer;
+                            transition: all 0.3s ease;
+                            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+                        " onmouseover="
+                            this.style.transform = 'translateY(-2px)';
+                            this.style.boxShadow = '0 6px 20px rgba(255, 215, 0, 0.4)';
+                        " onmouseout="
+                            this.style.transform = 'translateY(0)';
+                            this.style.boxShadow = '0 4px 15px rgba(255, 215, 0, 0.3)';
+                        ">
+                            🎵 Got it! Close
+                        </button>
+                        
+                        <button onclick="document.body.removeChild(this.closest('div').parentElement)" style="
+                            position: absolute;
+                            top: 15px;
+                            right: 15px;
+                            background: rgba(255, 255, 255, 0.2);
+                            color: white;
+                            border: none;
+                            border-radius: 50%;
+                            width: 35px;
+                            height: 35px;
+                            font-size: 18px;
+                            cursor: pointer;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            backdrop-filter: blur(10px);
+                        ">×</button>
+                    </div>
+                `;
+                
+                // Close modal when clicking outside
+                emailModal.addEventListener('click', function(e) {
+                    if (e.target === emailModal) {
+                        document.body.removeChild(emailModal);
+                    }
+                });
+                
+                // Add modal to page
+                document.body.appendChild(emailModal);
+                
+                console.log('✅ Email popup displayed');
+            });
+            
+        } else {
+            console.log('❌ Advertise button not found');
+        }
+    }, 600); // Wait for DOM to be ready
+});
