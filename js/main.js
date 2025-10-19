@@ -2004,22 +2004,22 @@ document.addEventListener("DOMContentLoaded", () => {
         if (homeButton && tabInputs.length > 0) {
             console.log('✅ Initializing TAB redirect system for', tabInputs.length, 'inputs');
             
-            // Home button flash function
+            // Home button flash function - FAST VERSION
             const flashHomeButton = () => {
                 // Store original styles
                 const originalBg = homeButton.style.backgroundColor;
                 const originalBorder = homeButton.style.border;
                 const originalTransition = homeButton.style.transition;
                 
-                // Apply yellow flash with smooth transition
-                homeButton.style.transition = 'all 0.15s ease-in-out';
+                // Apply yellow flash with FAST transition
+                homeButton.style.transition = 'all 0.05s ease-in-out';
                 homeButton.style.backgroundColor = '#ffff00';
                 homeButton.style.border = '2px solid #ff6600';
-                homeButton.style.boxShadow = '0 0 10px rgba(255, 255, 0, 0.7)';
+                homeButton.style.boxShadow = '0 0 8px rgba(255, 255, 0, 0.8)';
                 
-                console.log('💛 Home button flashing YELLOW!');
+                console.log('⚡ Home button FAST flash YELLOW!');
                 
-                // Return to normal after flash
+                // Return to normal after FAST flash
                 setTimeout(() => {
                     homeButton.style.backgroundColor = originalBg;
                     homeButton.style.border = originalBorder;
@@ -2028,8 +2028,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     // Remove transition after animation
                     setTimeout(() => {
                         homeButton.style.transition = originalTransition;
-                    }, 150);
-                }, 300); // Flash duration
+                    }, 50);
+                }, 80); // FAST flash duration - reduced from 300ms to 80ms
             };
             
             // Set up redirect for each TAB input
@@ -2058,9 +2058,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     
                     console.log('🏠 Home button focused and flashing');
                     
-                    // Step 2: After flash, refocus the TAB input
+                    // Step 2: After FAST flash, quickly refocus the TAB input
                     setTimeout(() => {
-                        console.log(`🔄 Refocusing TAB input #${index + 1}`);
+                        console.log(`⚡ FAST refocusing TAB input #${index + 1}`);
                         
                         // Focus the original TAB input
                         input.focus();
@@ -2072,10 +2072,10 @@ document.addEventListener("DOMContentLoaded", () => {
                             console.log('Could not restore cursor position:', e);
                         }
                         
-                        console.log(`✅ TAB input #${index + 1} refocused successfully`);
+                        console.log(`✅ TAB input #${index + 1} refocused FAST!`);
                         isRedirecting = false;
                         
-                    }, 350); // Wait for flash to complete
+                    }, 100); // FAST refocus - reduced from 350ms to 100ms
                 };
                 
                 // Add event listeners for click and focus
