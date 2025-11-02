@@ -41,8 +41,8 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
     let currentBeatBPM = 0; // To store the BPM of the currently playing beat track
     const beatTrackBuffers = {}; // Cache for decoded beat track AudioBuffers
 
-    let transposeOffset = 0; // For CHORD MODE transposition (0-11)
-    let singleNoteTransposeOffset = 0; // For SINGLE NOTE MODE transposition (0-11)
+    let transposeOffset = 0; // For CHORD MODE transposition (-11 to +11)
+    let singleNoteTransposeOffset = 0; // For SINGLE NOTE MODE transposition (-11 to +11)
 
     // These will hold the specific slice of the map for the current key and current offset
     let currentChordMapSlice = chordMaps[currentKey]?.[transposeOffset] || {};
@@ -138,9 +138,13 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
     };
 
     function updateInternalMapSlices() {
-        currentChordMapSlice = chordMaps[currentKey]?.[transposeOffset] || {};
-        currentSingleNoteMapSlice = SingleNoteMaps[currentKey]?.[singleNoteTransposeOffset] || {};
-        console.log(`Internal map slices updated. Key: ${currentKey}, ChordOffset: ${transposeOffset}, SingleOffset: ${singleNoteTransposeOffset}`);
+        // Convert numeric transpose offset to string key for the new mapping system
+        const chordMapKey = String(transposeOffset);
+        const singleNoteMapKey = String(singleNoteTransposeOffset);
+        
+        currentChordMapSlice = chordMaps[currentKey]?.[chordMapKey] || {};
+        currentSingleNoteMapSlice = SingleNoteMaps[currentKey]?.[singleNoteMapKey] || {};
+        console.log(`Internal map slices updated. Key: ${currentKey}, ChordOffset: ${transposeOffset} (${chordMapKey}), SingleOffset: ${singleNoteTransposeOffset} (${singleNoteMapKey})`);
         // console.log('Current Chord Map Slice:', currentChordMapSlice);
         // console.log('Current Single Note Map Slice:', currentSingleNoteMapSlice);
     }
@@ -319,15 +323,43 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
 
     // --- Beat Track Playback Functions ---
 
-    // --- Patch: Also clear visuals and state on transpose in chord mode ---
+    // --- Updated transpose function to support -11 to +11 range ---
     function transpose(amount) {
         clearPressedKeysAndState();
         if (chordMode) {
-            transposeOffset = (transposeOffset + amount + 12) % 12;
+            const newOffset = transposeOffset + amount;
+            // Clamp to range -11 to +11
+            if (newOffset >= -11 && newOffset <= 11) {
+                const mapKey = String(newOffset);
+                if (chordMaps[currentKey]?.[mapKey]) {
+                    transposeOffset = newOffset;
+                    console.log(`Chord Transpose for key ${currentKey} to offset: ${transposeOffset}`);
+                } else {
+                    console.warn(`Chord map for ${currentKey}[${mapKey}] not found. Transposition aborted.`);
+                    return;
+                }
+            } else {
+                console.warn(`Transpose offset ${newOffset} out of range (-11 to +11). Transposition aborted.`);
+                return;
+            }
             updateInternalMapSlices();
             updateTransposeDisplay();
         } else {
-            singleNoteTransposeOffset = (singleNoteTransposeOffset + amount + 12) % 12;
+            const newOffset = singleNoteTransposeOffset + amount;
+            // Clamp to range -11 to +11
+            if (newOffset >= -11 && newOffset <= 11) {
+                const mapKey = String(newOffset);
+                if (SingleNoteMaps[currentKey]?.[mapKey]) {
+                    singleNoteTransposeOffset = newOffset;
+                    console.log(`Single Note Transpose for key ${currentKey} to offset: ${singleNoteTransposeOffset}`);
+                } else {
+                    console.warn(`SingleNoteMap for ${currentKey}[${mapKey}] not found. Transposition aborted.`);
+                    return;
+                }
+            } else {
+                console.warn(`Single note transpose offset ${newOffset} out of range (-11 to +11). Transposition aborted.`);
+                return;
+            }
             updateInternalMapSlices();
             updateTransposeDisplay();
         }
@@ -439,22 +471,36 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
     // Transpose function (affects either chord or single note offset based on mode)
     function transpose(semitones) {
         if (chordMode) {
-            const newChordOffset = (transposeOffset + semitones + 12) % 12;
-            if (chordMaps[currentKey]?.[newChordOffset]) {
-                transposeOffset = newChordOffset;
-                console.log(`Chord Transpose for key ${currentKey} to offset: ${transposeOffset}`);
+            const newChordOffset = transposeOffset + semitones;
+            // Clamp to range -11 to +11
+            if (newChordOffset >= -11 && newChordOffset <= 11) {
+                const mapKey = String(newChordOffset);
+                if (chordMaps[currentKey]?.[mapKey]) {
+                    transposeOffset = newChordOffset;
+                    console.log(`Chord Transpose for key ${currentKey} to offset: ${transposeOffset}`);
+                } else {
+                    console.warn(`Chord map for ${currentKey}[${mapKey}] not found. Transposition aborted.`);
+                    return; // Abort if new offset is invalid for chords
+                }
             } else {
-                console.warn(`Chord map for ${currentKey}[${newChordOffset}] not found. Transposition aborted.`);
-                return; // Abort if new offset is invalid for chords
+                console.warn(`Chord transpose offset ${newChordOffset} out of range (-11 to +11). Transposition aborted.`);
+                return;
             }
         } else { // Single note mode
-            const newSingleNoteOffset = (singleNoteTransposeOffset + semitones + 12) % 12;
-            if (SingleNoteMaps[currentKey]?.[newSingleNoteOffset]) {
-                singleNoteTransposeOffset = newSingleNoteOffset;
-                console.log(`Single Note Transpose for key ${currentKey} to offset: ${singleNoteTransposeOffset}`);
+            const newSingleNoteOffset = singleNoteTransposeOffset + semitones;
+            // Clamp to range -11 to +11
+            if (newSingleNoteOffset >= -11 && newSingleNoteOffset <= 11) {
+                const mapKey = String(newSingleNoteOffset);
+                if (SingleNoteMaps[currentKey]?.[mapKey]) {
+                    singleNoteTransposeOffset = newSingleNoteOffset;
+                    console.log(`Single Note Transpose for key ${currentKey} to offset: ${singleNoteTransposeOffset}`);
+                } else {
+                    console.warn(`SingleNoteMap for ${currentKey}[${mapKey}] not found. Transposition aborted.`);
+                    return; // Abort if new offset is invalid for single notes
+                }
             } else {
-                console.warn(`SingleNoteMap for ${currentKey}[${newSingleNoteOffset}] not found. Transposition aborted.`);
-                return; // Abort if new offset is invalid for single notes
+                console.warn(`Single note transpose offset ${newSingleNoteOffset} out of range (-11 to +11). Transposition aborted.`);
+                return;
             }
         }
         updateInternalMapSlices(); // Update the internal map slices to reflect new offset
@@ -1181,7 +1227,8 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
         setSyncKeyFinderEnabled(enabled);
         if (enabled) {
             // Always use the current key and transpose offset at the time of enabling
-            let syncKeyToPlay = syncKeyMaps[currentKey]?.[chordMode ? transposeOffset : singleNoteTransposeOffset] || currentKey;
+            const offsetKey = String(chordMode ? transposeOffset : singleNoteTransposeOffset);
+            let syncKeyToPlay = syncKeyMaps[currentKey]?.[offsetKey] || currentKey;
             handleKeyPress(syncKeyToPlay);
         } else {
             stopAllAudio(); // Stop all audio immediately when unchecked
@@ -1191,7 +1238,8 @@ export default function enableChordPlaying(audioContext, passedAudioBuffers) {
     function updateSyncKey() {
         if (syncKeyFinderEnabled) {
             stopAllAudio();
-            let newSyncKey = syncKeyMaps[currentKey]?.[chordMode ? transposeOffset : singleNoteTransposeOffset] || currentKey;
+            const offsetKey = String(chordMode ? transposeOffset : singleNoteTransposeOffset);
+            let newSyncKey = syncKeyMaps[currentKey]?.[offsetKey] || currentKey;
             // Save the last used key and offset for toggling
             lastSyncKey = currentKey;
             lastSyncOffset = chordMode ? transposeOffset : singleNoteTransposeOffset;
